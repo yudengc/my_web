@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+# Environments
+.env
+# project
+.pyre/
+db.sqlite3
+/tiktokvideo/*/migrations/*
+!/tiktokvideo/*/migrations/__init__.py
+/tiktokvideo/.idea/
+/requirements/src/
+.DS_Store
+*/__pycache__
+/.idea/
+/tiktokvideo/celerybeat-schedule.db
+
+
+/tiktokvideo/dump.rdb
+/tiktokvideo/src/
+/tiktokvideo/tiktokvideo/logs
+nohup.out
+/.env/
+/tiktokvideo/.env
+/.venv/
+/tiktokvideo/users/.env
+
+/tiktokvideo/celerybeat-schedule*
+/tiktokvideo/restart.sh
+/tiktokvideo/migrate.sh
+/tiktokvideo/tiktokvideo/collectedstatic/
+/tiktokvideo/tiktokvideo/static/
+/tiktokvideo/tiktokvideo/collectstatic/
