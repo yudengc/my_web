@@ -43,6 +43,9 @@ INSTALLED_APPS = [
 
     # app
     'users',
+    'transaction',
+    'config',
+    'relations',
 ]
 
 MIDDLEWARE = [
@@ -131,9 +134,67 @@ STATIC_URL = '/static/'
 AUTH_USER_MODEL = 'users.Users'
 
 
+# ############# REST FRAMEWORK ###################
+
+REST_FRAMEWORK = {
+
+    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'libs.pagination.StandardResultsSetPagination',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        # 'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'libs.jwt.authentication.JSONWebTokenAuthentication',
+    ),
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
+}
+
+
+# ################### Cache SETTINGS ##########################
+CACHE_COUNT_TIMEOUT = 60
+CACHE_MACHINE_USE_REDIS = True
+CACHE_MACHINE_NO_INVALIDATION = False
+REDIS_BACKEND = os.environ.get('REDIS_BACKEND', 'redis://localhost:6379')
+DEFAULT_TIMEOUT = 60
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"{REDIS_BACKEND}/0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+
+# ################### Celery SETTINGS ##########################
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
+CELERY_TASK_RESULT_EXPIRES = os.environ.get('CELERY_TASK_RESULT_EXPIRES', 60)
+CELERY_BROKER_URL = os.environ.get('BROKER_URL')
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+CELERY_SEND_TASK_SENT_EVENT = True
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+
+
 # Json web token 设置/ 登陆凭证设置
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=int(os.environ.get('DAYS'))),
     # 'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=20),
     'JWT_AUTH_HEADER_PREFIX': os.environ.get('HEADER_PREFIX'),
 }
+
+# 微信小程序配置
+APP_ID = os.environ.get('APP_ID')
+SECRET = os.environ.get('SECRET')

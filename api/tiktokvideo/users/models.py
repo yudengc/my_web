@@ -68,16 +68,16 @@ class Users(AbstractUser):
         null=True
     )
 
-    KOL, BUSINESS, NONE = range(3)
+    SALESMAN, BUSINESS, NONE = range(3)
     IDENTITY = (
-        (KOL, 'kol'),
-        (BUSINESS, 'business'),
+        (SALESMAN, '业务员'),
+        (BUSINESS, '商家'),
         (NONE, 'none'),
     )
     identity = models.PositiveIntegerField(
         _('用户身份'),
         choices=IDENTITY,
-        default=NONE
+        default=BUSINESS
     )
 
     iCode = models.CharField(
@@ -86,6 +86,13 @@ class Users(AbstractUser):
         default=get_iCode,
         unique=True,
 
+    )
+    team = models.ForeignKey(
+        # 所属团队
+        "users.Team",
+        on_delete=models.DO_NOTHING,
+        related_name='team_user',
+        null=True,
     )
     date_created = models.DateTimeField(
         _('注册时间'),
@@ -210,3 +217,74 @@ class UserExtra(BaseModel):
         verbose_name = '用户扩展信息表'
         verbose_name_plural = verbose_name
         db_table = 'UserExtra'
+
+
+class UserBusiness(BaseModel):
+    """
+    商家信息
+    """
+    uid = models.OneToOneField(
+        "Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+        related_name='user_business',
+    )
+    bus_name = models.CharField(
+        _('商家名称'),
+        max_length=100,
+        null=True,
+    )
+    name_abb = models.CharField(
+        _('商家简称，不超过6字符'),
+        max_length=6,
+        null=True
+    )
+    contact = models.CharField(
+        _('联系人'),
+        max_length=10,
+        null=True,
+    )
+    industry = models.CharField(
+        _('所属行业'),
+        max_length=50,
+        null=True,
+    )
+    category = models.CharField(
+        _('商品品类'),
+        max_length=50,
+        null=True,
+    )
+    desc = models.TextField(
+        _('详细说明'),
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = '商家信息'
+        verbose_name_plural = verbose_name
+        db_table = 'UserBusiness'
+
+
+class Team(BaseModel):
+    """
+    团队
+    """
+    leader = models.OneToOneField(
+        "Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+        related_name='user_team',
+    )
+    name = models.CharField(
+        _('团队名称'),
+        max_length=100,
+    )
+    number = models.PositiveSmallIntegerField(
+        _('团队人数'),
+    )
+
+    class Meta:
+        verbose_name = '团队信息'
+        verbose_name_plural = verbose_name
+        db_table = 'Team'
+
