@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from transaction.serializers import PackageSerializer, PackageDetailSerializer
+from transaction.serializers import PackageSerializer, PackageRecordSerializer, MyPackageSerializer
 from transaction.tasks import update_order_status
 from transaction.models import OrderInfo, UserPackageRelation
 from libs.common.pay import WeChatPay
@@ -89,43 +89,26 @@ class PayCancelViewSet(APIView):
         return Response(status=status.HTTP_201_CREATED)
 
 
-class PackageViewSet(viewsets.ModelViewSet):
-    permission_classes = (SalesmanPermission,)
-    queryset = Package.objects.all()
+class PackageViewSet(viewsets.ReadOnlyModelViewSet):
+    """套餐客户端"""
+    permission_classes = (ManagerPermission,)
+    queryset = Package.objects.filter(status=Package.PUBLISHED, expiration_time__gte=datetime.now())
     serializer_class = PackageSerializer
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            self.permission_classes = (ManagerPermission, )
-        return super().get_permissions()
 
-
-class PackageDetailViewSet(viewsets.ModelViewSet):
-    permission_classes = (SalesmanPermission,)
-    serializer_class = PackageDetailSerializer
+class MyPackageViewSet(viewsets.ModelViewSet):
+    """我的套餐"""
+    permission_classes = (ManagerPermission,)
+    serializer_class = MyPackageSerializer
 
     def get_queryset(self):
         self.queryset = UserPackageRelation.objects.filter(uid=self.request.user).select_related('package')
         return super().get_queryset()
 
-    @action(methods=['get'], detail=False)
-    def records(self, request):
-        data_lis = []
-        for qs in self.get_queryset():
-            data_dic = {}
-            order_number = qs.order_number
-            try:
-                order_obj = OrderInfo.objects.get(out_trade_no=order_number)
-            except OrderInfo.DoesNotExist:
-                print('找不到订单号：%s' % order_number)
-                continue
-            data_dic['package_title'] = qs.package.package_title
-            data_dic['amount'] = order_obj.amount
-            data_dic['order_num'] = order_obj.out_trade_no
-            data_dic['date_payed'] = order_obj.date_payed
-            data_dic['id'] = order_obj.id
-            data_lis.append(data_dic)
-        return Response(data_lis)
+    @action(methods=['get'], detail=False, serializer_class=PackageRecordSerializer)
+    def records(self, request, *args, **kwargs):
+        # 套餐购买记录
+        return super().list(request, *args, **kwargs)
 
 
 

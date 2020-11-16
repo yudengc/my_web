@@ -235,8 +235,8 @@ class UserBusiness(BaseModel):
         null=True,
     )
     name_abb = models.CharField(
-        _('商家简称，不超过6字符'),
-        max_length=6,
+        _('商家简称'),
+        max_length=10,
         null=True
     )
     contact = models.CharField(

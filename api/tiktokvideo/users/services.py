@@ -39,7 +39,7 @@ class WXBizDataCrypt:
     def decrypt(self, encrypted_data, iv):
         # base64 decode
         try:
-            print(self.sessionKey)
+            # print(self.sessionKey)
             session_key = base64.b64decode(self.sessionKey)
             encrypted_data = base64.b64decode(encrypted_data)
             iv = base64.b64decode(iv)

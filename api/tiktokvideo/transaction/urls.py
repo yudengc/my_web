@@ -7,11 +7,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from transaction.views import WeChatPayViewSet, WeChatPayBackViewSet, PayCancelViewSet
+from transaction.views import WeChatPayViewSet, WeChatPayBackViewSet, PayCancelViewSet, PackageViewSet, MyPackageViewSet
 
 app_name = "transaction"
 router = DefaultRouter()
-
+router.register(r'package', PackageViewSet, basename='package')
+router.register(r'my-package', MyPackageViewSet, basename='my_package')
 
 urlpatterns = [
     path(r'', include(router.urls)),

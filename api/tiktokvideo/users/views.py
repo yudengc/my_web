@@ -1,22 +1,27 @@
 from django.contrib.auth.hashers import check_password
-from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
+from django_redis import get_redis_connection
+from redis import StrictRedis
 from rest_framework import mixins, exceptions, filters
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
-from libs.common.permission import AllowAny, SalesmanPermission
+from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermission
 from relations.tasks import save_invite_relation
 
 from tiktokvideo.settings import APP_ID, SECRET
 from users.filter import TeamFilter
-from users.models import Users, UserExtra, UserBase, Team
+from users.models import Users, UserExtra, UserBase, Team, UserBusiness
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
-from users.serializers import TeamSerializer
+from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi
+
+
+redis_conn = get_redis_connection('default')  # type: StrictRedis
 
 
 class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -65,14 +70,14 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
     def get_phone(self, request):
         """获取手机号码"""
-        if {'session_key', 'encrypted_data', 'iv', 'openid'}.issubset(set(request.data.keys())):
+        if {'encrypted_data', 'iv', 'openid'}.issubset(set(request.data.keys())):
             openid = request.data.get('openid')
-            session_key = cache.get(openid)
+            session_key = redis_conn.get(openid)
             if not session_key:
                 return Response({'detail': '找不到session_key'}, status=status.HTTP_400_BAD_REQUEST)
             encrypted_data = request.data.get('encrypted_data')
             iv = request.data.get('iv')
-            pc = WXBizDataCrypt(APP_ID, session_key)
+            pc = WXBizDataCrypt(APP_ID, str(session_key, encoding='utf8'))
             data = pc.decrypt(encrypted_data, iv)
             if not data:
                 return Response({'code': 0, 'detail': 'session_key错误/已过期'}, status=status.HTTP_200_OK)
@@ -90,7 +95,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         code = request.data.get('code', None)
         if code:
             openid, session_key = WeChatApi(APP_ID, SECRET).get_openid_and_session_key(code)
-            cache.set(openid, session_key)
+            redis_conn.set(openid, session_key)
             return Response({'openid': openid}, status=status.HTTP_200_OK)
         else:
             return Response({'detail': 'code不能为空'}, status=status.HTTP_400_BAD_REQUEST)
@@ -126,3 +131,36 @@ class TeamViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
     search_fields = ('name', 'leader__username')
     filter_class = TeamFilter
+
+
+class UserBusinessViewSet(mixins.CreateModelMixin,
+                          mixins.UpdateModelMixin,
+                          mixins.RetrieveModelMixin,
+                          GenericViewSet):
+    permission_classes = (ManagerPermission,)
+    queryset = UserBusiness.objects.all()
+    serializer_class = UserBusinessSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            self.serializer_class = UserBusinessCreateSerializer
+        return super().get_serializer_class()
+
+
+class UserInfoViewSet(viewsets.ReadOnlyModelViewSet):
+    """用户中心"""
+    permission_classes = (ManagerPermission,)
+    serializer_class = UserInfoSerializer
+
+    def get_queryset(self):
+        self.queryset = Users.objects.select_related('user_business').filter(uid=self.request.user.uid)
+        return super().get_queryset()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data[0])
+
+    @action(methods=['get'], detail=False, permission_classes=[ManagerPermission])
+    def get_iCode(self, request):
+        return Response({'iCode': request.user.iCode})

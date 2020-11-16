@@ -20,6 +20,8 @@ def save_invite_relation(code, phone):
     if not inviter_user:
         print('iCode错误')
         return
+    if InviteRelationManager.objects.filter(inviter=inviter_user, invitee=invitee_user).exists():
+        return
 
     # 查询邀请者是否拥有上级
     inviter_queryset = InviteRelationManager.objects.filter(invitee=inviter_user)
