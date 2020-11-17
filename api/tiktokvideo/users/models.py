@@ -1,5 +1,6 @@
 import uuid
 
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -41,7 +42,7 @@ class Users(AbstractUser):
         null=True,
     )
     username = models.CharField(
-        _('用户名'),
+        _('用户账号'),
         max_length=100,
         unique=True,
     )
@@ -58,28 +59,34 @@ class Users(AbstractUser):
         (FROZEN, '冻结'),
     )
     status = models.PositiveIntegerField(
-        _('账户状态'),
+        _('用户状态'),
         choices=STATUS,
         default=APPROVED
     )
     reason = models.CharField(
         _('冻结原因'),
         max_length=100,
+        blank=True,
         null=True
     )
 
-    SALESMAN, BUSINESS, NONE = range(3)
+    SALESMAN, BUSINESS = range(2)
     IDENTITY = (
         (SALESMAN, '业务员'),
         (BUSINESS, '商家'),
-        (NONE, 'none'),
     )
     identity = models.PositiveIntegerField(
         _('用户身份'),
         choices=IDENTITY,
         default=BUSINESS
     )
-
+    salesman_name = models.CharField(
+        # 为业务员时才有该字段
+        _('业务员名称'),
+        max_length=100,
+        null=True,
+        blank=True,
+    )
     iCode = models.CharField(
         _('注册码'),
         max_length=100,
@@ -106,7 +113,7 @@ class Users(AbstractUser):
 
     class Meta:
         db_table = 'Users'
-        verbose_name = '用户表'
+        verbose_name = '用户管理'
         verbose_name_plural = verbose_name
         unique_together = (
             ('username', 'uid',),
@@ -133,7 +140,7 @@ class UserBase(BaseModel):
     )
 
     nickname = models.CharField(
-        _('昵称'),
+        _('用户昵称'),
         max_length=128,
         null=True,
         blank=True,

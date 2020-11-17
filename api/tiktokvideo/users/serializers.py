@@ -59,18 +59,19 @@ class UserInfoSerializer(serializers.ModelSerializer):
     用户页
     """
     user_business = serializers.SerializerMethodField()
-    package = serializers.SerializerMethodField()
+    package_info = serializers.SerializerMethodField()
 
     class Meta:
         model = Users
-        fields = ('username', 'identity', 'user_business', 'package')
+        fields = ('username', 'identity', 'user_business', 'package_info')
 
     def get_user_business(self, obj):
         bus_obj = obj.user_business
         if bus_obj:
             return dict(id=bus_obj.id, bus_name=bus_obj.bus_name, name_abb=bus_obj.name_abb)
+        return None
 
-    def get_package(self, obj):
+    def get_package_info(self, obj):
         r_ps = UserPackageRelation.objects.filter(uid=obj).order_by('-date_created')
         if r_ps.exists():
             r_obj = r_ps[0]

@@ -8,11 +8,6 @@ class CustomerService(BaseModel):
     """
     客服联系
     """
-    desc = models.CharField(
-        _("客服描述"),
-        max_length=200,
-        null=True,
-    )
     name = models.CharField(
         _("客服名称"),
         max_length=100,
@@ -25,11 +20,6 @@ class CustomerService(BaseModel):
     )
     qr_code = models.URLField(
         _("微信二维码"),
-        max_length=1000,
-        null=True,
-    )
-    avatar = models.URLField(
-        _("客服头像"),
         max_length=1000,
         null=True,
     )
