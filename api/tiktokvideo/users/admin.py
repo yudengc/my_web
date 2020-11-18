@@ -1,10 +1,10 @@
 from django.contrib import admin
-from django.http import QueryDict
+from django.http import QueryDict, HttpResponseRedirect
 from django.utils.html import format_html
 
 from relations.models import InviteRelationManager
 from transaction.models import UserPackageRelation
-from users.models import Users, UserBase, UserBusiness
+from users.models import Users, UserBase, UserBusiness, Team
 
 
 @admin.register(Users)
@@ -111,3 +111,92 @@ class UserBusinessAdmin(admin.ModelAdmin):
 
     nickname.short_description = '用户名称'
     username.short_description = '用户账号'
+
+
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    """团队管理"""
+    # 定义admin总览里每行的显示信息
+    list_display = (
+        'leader_username', 'name', 'number', 'date_created', 'edit_audit_button')
+    # 定义搜索框以哪些字段可以搜索
+    search_fields = ('leader__username', 'name')
+    # 定义过滤器以哪些字段可以搜索
+    list_filter = ('date_created', )
+    # 列表页每页展示的条数
+    list_per_page = 20
+    # 详情页的只读字段
+    readonly_fields = ('number', 'date_created')
+    # 编辑链接展示字段
+    # list_display_links = ('leader_username', 'name', 'number', 'date_created')
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def leader_username(self, obj):
+        return obj.leader.username
+
+    def number(self, obj):
+        return obj.team_user.count()
+
+    def response_add(self, request, obj, post_url_continue=None):
+        response_add = super().response_add(request, obj, post_url_continue=None)
+        # 创建团队时把leader加进团队
+        leader_uid = request.POST.get('leader')
+        leader_obj = Users.objects.get(uid=leader_uid)
+        leader_obj.team = obj
+        leader_obj.save()
+        return response_add
+
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        # create或update时，外键leader 需要过滤
+        context['adminform'].form.fields['leader'].queryset = Users.objects.filter(identity=Users.SALESMAN)
+        return super(TeamAdmin, self).render_change_form(request, context, add, change, form_url, obj)
+
+    leader_username.short_description = '账号'
+    number.short_description = '团队人数'
+
+
+class TeamUsers(Users):
+    class Meta:
+        verbose_name = '团队成员'
+        verbose_name_plural = verbose_name
+        proxy = True
+
+
+@admin.register(TeamUsers)
+class TeamUsersAdmin(admin.ModelAdmin):
+    """团队成员"""
+    # 定义admin总览里每行的显示信息
+    list_display = (
+        'salesman_username', 'salesman_name', 'team_name', 'leader_username')
+    # 定义搜索框以哪些字段可以搜索
+    search_fields = ('salesman_username', 'salesman_name')
+    # 定义过滤器以哪些字段可以搜索
+    list_filter = ('date_created', 'team__name')
+    # 列表页每页展示的条数
+    list_per_page = 20
+    # 详情页的只读字段
+    # readonly_fields = ('leader_username', 'team_name')
+    # 详情页面展示的字段
+    fields = ('salesman_username', 'salesman_name', )
+
+    def get_queryset(self, request):
+        queryset = self.model.objects.filter(identity=Users.SALESMAN)
+        return queryset
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def team_name(self, obj):
+        return obj.team.name
+
+    def leader_username(self, obj):
+        return obj.team.leader.username
+
+    def salesman_username(self, obj):
+        return obj.username
+
+    leader_username.short_description = '所属团队账号'
+    team_name.short_description = '所属团队名称'
+    salesman_username.short_description = '业务员账号'

@@ -17,8 +17,8 @@ class MyRelationInfoViewSet(viewsets.ReadOnlyModelViewSet):
     filter_class = MyRelationInfoFilter
 
     def get_queryset(self):
-        self.queryset = InviteRelationManager.objects.filter(inviter=self.request.user,
-                                                             invitee__identity=Users.BUSINESS)
+        self.queryset = InviteRelationManager.objects.filter(salesman=self.request.user,
+                                                             invitee__identity=Users.BUSINESS).order_by('-date_created')
         return super(MyRelationInfoViewSet, self).get_queryset()
 
     @action(methods=['get'], detail=False, serializer_class=MyRecordsSerializer)

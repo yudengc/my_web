@@ -2,21 +2,22 @@ from rest_framework import serializers
 
 from relations.models import InviteRelationManager
 from transaction.models import UserPackageRelation
-from users.models import Users
+from users.models import Users, UserBusiness
 
 
 class BusinessInfoSerializer(serializers.ModelSerializer):
     bus_name = serializers.SerializerMethodField()
-    package = serializers.SerializerMethodField()
+    has_package = serializers.SerializerMethodField()
 
     class Meta:
         model = Users
-        fields = ('id', 'username', 'date_created', 'bus_name')
+        fields = ('id', 'username', 'date_created', 'bus_name', 'has_package')
 
     def get_bus_name(self, obj):
-        return obj.user_business.bus_name if obj.user_business else ''
+        bus_obj = UserBusiness.objects.filter(uid=obj).first()
+        return bus_obj.bus_name if bus_obj else ''
 
-    def get_package(self, obj):
+    def get_has_package(self, obj):
         return UserPackageRelation.objects.filter(uid=obj).exists()
 
 

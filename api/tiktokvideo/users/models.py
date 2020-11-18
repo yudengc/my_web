@@ -4,13 +4,14 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 from safedelete.models import SafeDeleteModel
 
 from libs.common.utils import get_iCode
 
 
-class BaseModel(SafeDeleteModel):
+class BaseModel(models.Model):
     date_created = models.DateTimeField(
         _('创建时间'),
         auto_now_add=True
@@ -273,6 +274,7 @@ class UserBusiness(BaseModel):
 
 
 class Team(BaseModel):
+    pass
     """
     团队
     """
@@ -281,17 +283,33 @@ class Team(BaseModel):
         to_field='uid',
         on_delete=models.DO_NOTHING,
         related_name='user_team',
+        null=True,
+        unique=True,
+        verbose_name='团队主管'
     )
     name = models.CharField(
         _('团队名称'),
         max_length=100,
+        null=True
     )
-    number = models.PositiveSmallIntegerField(
-        _('团队人数'),
-    )
+    # number = models.PositiveSmallIntegerField(
+    #     _('团队人数'),
+    #     default=1,
+    # )
 
     class Meta:
         verbose_name = '团队信息'
         verbose_name_plural = verbose_name
         db_table = 'Team'
+
+    def edit_audit_button(self):
+        # 自定义admin按钮
+        btn_str = '<a class="btn btn-xs btn-warning" href="{}">' \
+                  '<input name="团队成员"' \
+                  'type="button" id="passButton" ' \
+                  'title="passButton" value="团队成员" class="el-button el-button--primary">' \
+                  '</a >'
+        return format_html(btn_str, f'/admin/users/teamusers/?team__name={self.name}')
+
+    edit_audit_button.short_description = "操作"
 

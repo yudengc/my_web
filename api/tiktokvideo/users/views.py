@@ -1,3 +1,5 @@
+import threading
+
 from django.contrib.auth.hashers import check_password
 from django_filters.rest_framework import DjangoFilterBackend
 from django_redis import get_redis_connection
@@ -54,6 +56,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
     def auth(self, request):
         """微信授权登录"""
+        print(request.data, 44444444)
         openid = request.data.get('openid', None)
         username = request.data.get('username', None)
         # role = request.data.get('role', None)
@@ -64,7 +67,9 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         user_instance = self.save_user_and_openid(username, openid, user_info)
         user_info = JwtServers(user=user_instance).get_token_and_user_info()
         if code:  # 存在注册码绑定邀请关系
-            save_invite_relation.delay(code, username)  # 绑定邀请关系
+            # save_invite_relation.delay(code, username)  # 绑定邀请关系
+            threading.Thread(target=save_invite_relation,
+                             args=(code, username)).start()  # 绑定邀请关系
         return Response(user_info, status=status.HTTP_200_OK)
 
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
@@ -161,6 +166,3 @@ class UserInfoViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data[0])
 
-    @action(methods=['get'], detail=False, permission_classes=[ManagerPermission])
-    def get_iCode(self, request):
-        return Response({'iCode': request.user.iCode})

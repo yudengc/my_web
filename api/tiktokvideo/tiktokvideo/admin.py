@@ -38,10 +38,27 @@ SIMPLEUI_CONFIG = \
                     ]
                 },
                 {
-                    'app': 'CustomerService',
+                    'app': 'config',
                     'name': '联系客服',
                     'icon': 'fa fa-users',
                     'url': '/admin/config/customerservice/',
+                },
+                {
+                    'app': 'users',
+                    'name': '团队管理',
+                    'icon': 'fa fa-users',
+                    'models': [
+                        {
+                            'name': '团队信息',
+                            'url': '/admin/users/team/',
+                            'icon': 'fas fa-baby'
+                        },
+                        {
+                            'name': '团队成员',
+                            'url': '/admin/users/teamusers/',
+                            'icon': 'fas fa-baby'
+                        },
+                    ]
                 },
 
             ]

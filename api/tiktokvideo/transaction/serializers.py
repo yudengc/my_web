@@ -10,7 +10,7 @@ class PackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Package
-        exclude = ('uid', 'date_updated', 'deleted', 'status', 'date_created')
+        exclude = ('uid', 'date_updated', 'status', 'date_created')
 
 
 class MyPackageSerializer(serializers.ModelSerializer):
@@ -21,7 +21,7 @@ class MyPackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserPackageRelation
-        exclude = ('uid', 'date_updated', 'deleted', 'order', 'id')
+        exclude = ('uid', 'date_updated', 'order', 'id')
 
 
 class PackageRecordSerializer(serializers.ModelSerializer):

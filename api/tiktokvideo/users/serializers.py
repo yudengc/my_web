@@ -11,9 +11,7 @@ class UsersLoginSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users
-        fields = (
-            'username',
-        )
+        fields = ('username', 'iCode',)
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -66,7 +64,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
         fields = ('username', 'identity', 'user_business', 'package_info')
 
     def get_user_business(self, obj):
-        bus_obj = obj.user_business
+        bus_obj = UserBusiness.objects.filter(uid=obj).first()
         if bus_obj:
             return dict(id=bus_obj.id, bus_name=bus_obj.bus_name, name_abb=bus_obj.name_abb)
         return None

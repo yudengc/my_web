@@ -7,6 +7,6 @@ class CustomerServiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomerService
-        exclude = ('date_updated', 'date_updated')
+        exclude = ('date_created', 'date_updated')
 
 
