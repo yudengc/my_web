@@ -8,8 +8,6 @@ from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 from safedelete.models import SafeDeleteModel
 
-from libs.common.utils import get_iCode
-
 
 class BaseModel(models.Model):
     date_created = models.DateTimeField(
@@ -70,7 +68,16 @@ class Users(AbstractUser):
         blank=True,
         null=True
     )
-
+    ADMIN, MANAGER, COMMON = range(3)
+    sys_role = models.PositiveSmallIntegerField(
+        verbose_name="系统身份",
+        default=COMMON,
+        choices=(
+            (ADMIN, '超管'),
+            (MANAGER, '管理员'),
+            (COMMON, '普通用户'),
+        ),
+    )
     SALESMAN, BUSINESS, SUPERVISOR = range(3)
     IDENTITY = (
         (SALESMAN, '业务员'),

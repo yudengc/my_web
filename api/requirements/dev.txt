@@ -34,7 +34,7 @@ pycryptodomex
 
 requests
 
-lxml
+# lxml
 
 django-filter==2.2.0
 
@@ -43,3 +43,5 @@ bs4
 django-safedelete==0.5.4
 
 django-ckeditor
+
+simpleui
