@@ -179,7 +179,7 @@ class Package(BaseModel):
         related_name='user_package',
     )
     package_title = models.CharField(
-        _('套餐包名称'),
+        _('套餐名称'),
         max_length=512,
     )
     package_amount = models.DecimalField(

@@ -71,10 +71,11 @@ class Users(AbstractUser):
         null=True
     )
 
-    SALESMAN, BUSINESS = range(2)
+    SALESMAN, BUSINESS, SUPERVISOR = range(3)
     IDENTITY = (
         (SALESMAN, '业务员'),
         (BUSINESS, '商家'),
+        (SUPERVISOR, '团队主管'),
     )
     identity = models.PositiveIntegerField(
         _('用户身份'),
@@ -92,6 +93,7 @@ class Users(AbstractUser):
         _('注册码'),
         max_length=100,
         unique=True,  # 改成跟id有映射关系的了，不要乱改邀请码
+        null=True,
     )
     team = models.ForeignKey(
         # 所属团队
