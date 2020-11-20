@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-if [ ! -f /inittest.sh ];then
-    echo "只能初始化一次"
-    exit 0
-fi
-bash /inittest.sh && rm /inittest.sh

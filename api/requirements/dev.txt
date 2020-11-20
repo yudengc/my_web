@@ -34,7 +34,7 @@ pycryptodomex
 
 requests
 
-lxml
+# lxml
 
 django-filter==2.2.0
 
