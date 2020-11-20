@@ -28,7 +28,6 @@ nohup.out
 
 /tiktokvideo/celerybeat-schedule*
 /tiktokvideo/restart.sh
-/tiktokvideo/migrate.sh
 /tiktokvideo/tiktokvideo/collectedstatic/
 /tiktokvideo/tiktokvideo/static/
 /tiktokvideo/tiktokvideo/collectstatic/

@@ -36,3 +36,21 @@ class ManagerPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         print(">>>>>>>基本权限")
         return is_user(request)
+
+
+class SalesmanPermission(permissions.BasePermission):
+    """业务员基本权限"""
+
+    def has_permission(self, request, view):
+        print(">>>>>>>基本权限")
+        return request.user.is_authenticated and isinstance(request.user, Users) \
+            and request.user.identity == Users.SALESMAN
+
+
+class BusinessPermission(permissions.BasePermission):
+    """商家基本权限"""
+
+    def has_permission(self, request, view):
+        print(">>>>>>>基本权限")
+        return request.user.is_authenticated and isinstance(request.user, Users) \
+            and request.user.identity == Users.BUSINESS
