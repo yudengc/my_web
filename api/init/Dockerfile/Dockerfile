@@ -29,7 +29,7 @@ ADD initdatabase.sh /initdatabase.sh
 ADD manage.sh /usr/local/bin/manage
 
 RUN sed -i "s/\r//g" /initdatabase.sh && sed -i "s/\r//g" /entrypoint.sh \
-    && su - postgres -c "bash /initdatabase.sh Y"
+    && sed -i "s/\r//g" /usr/local/bin/manage && su - postgres -c "bash /initdatabase.sh Y"
 #RUN bash /inittest.sh Y && rm /initdatabase.sh /inittest.sh
 
 
