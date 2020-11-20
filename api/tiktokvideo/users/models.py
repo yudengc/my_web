@@ -71,6 +71,12 @@ class Users(AbstractUser):
         null=True
     )
 
+    ADMIN, MANAGER, COMMON = range(3)
+    sys_role = models.PositiveSmallIntegerField(
+        verbose_name="系统身份",
+        default=COMMON
+    )
+
     SALESMAN, BUSINESS = range(2)
     IDENTITY = (
         (SALESMAN, '业务员'),
