@@ -221,7 +221,6 @@ class TeamUsersAdmin(admin.ModelAdmin):
         """
         if not change:
             if form.is_valid():
-
                 user = form.save()
                 user.identity = Users.SALESMAN
                 user.set_password(form.data.get('password'))

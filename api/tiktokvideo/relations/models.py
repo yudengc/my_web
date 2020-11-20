@@ -30,7 +30,8 @@ class InviteRelationManager(BaseModel):
     superior = models.CharField(
         null=True,
         blank=True,
-        default=''
+        default='',
+        max_length=200,
     )
     UNTREATED, PROCESSED = range(2)
     STATUS = (
