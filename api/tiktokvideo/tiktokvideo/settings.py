@@ -198,6 +198,10 @@ JWT_AUTH = {
     'JWT_AUTH_HEADER_PREFIX': os.environ.get('HEADER_PREFIX'),
 }
 
-# 微信小程序配置
+# 微信小程序
 APP_ID = os.environ.get('APP_ID')
 SECRET = os.environ.get('SECRET')
+# 微信支付
+MCH_ID = os.environ.get('MCH_ID')
+MCH_KEY = os.environ.get('MCH_KEY')
+PAY_NOTIFY_URL = os.environ.get('PAY_NOTIFY_URL')

@@ -12,7 +12,7 @@ import requests
 import logging
 
 from libs.common import utils
-from tiktokvideo.settings import APP_ID
+from tiktokvideo.settings import APP_ID, MCH_ID, MCH_KEY, PAY_NOTIFY_URL
 
 logger = logging.getLogger()
 
@@ -157,5 +157,4 @@ class GenerateSign:
         dict_data = {**kwargs, **params, **extra_dict}
         sign = self.pay_sign(dict_data)
         dict_data['sign'] = sign
-        print(dict_data)
         return utils.dict_to_xml(dict_data)

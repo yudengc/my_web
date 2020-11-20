@@ -56,10 +56,8 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
     def auth(self, request):
         """微信授权登录"""
-        print(request.data, 44444444)
         openid = request.data.get('openid', None)
         username = request.data.get('username', None)
-        # role = request.data.get('role', None)
         user_info = request.data.get('userInfo', None)
         code = request.data.get('iCode', None)
         if not openid and not username:
@@ -122,7 +120,16 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 nickname=user_info.get('nickName'),
                 avatars=user_info.get('avatarUrl')
             )
-        user = user_qs.first()
+        else:
+            # 如果后台创建的用户要补充微信信息
+            user = user_qs.first()
+            user_base = UserBase.objects.filter(uid=user).first()
+            if user_base:
+                user_base.phone = username
+                user_base.nickname = user_info.get('nickName')
+                user_base.avatars = user_info.get('avatarUrl')
+                user_base.save()
+
         if user.status == Users.FROZEN:
             raise exceptions.ParseError('用户已被冻结，请联系管理员')
         # 是否换微信登录
