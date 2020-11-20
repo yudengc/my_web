@@ -27,6 +27,11 @@ class InviteRelationManager(BaseModel):
         _('等级关系'),
         default=0
     )
+    superior = models.CharField(
+        null=True,
+        blank=True,
+        default=''
+    )
     UNTREATED, PROCESSED = range(2)
     STATUS = (
         (UNTREATED, '待跟进'),
