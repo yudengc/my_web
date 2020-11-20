@@ -11,15 +11,20 @@ mkdir -p $record_path
 
 schemas_name=$1
 
+if [[ $schemas_name == "" ]];then
+    echo "请输入schemas"
+    exit 1
+fi
+
 done_flag=$record_path/$schemas_name.init
 
 redo=$2
 
 if [[ -f done_flag ]];then
-    if [[ $redo != "redo" ]]; then
+    if [[ $redo != "redo" ]];then
         echo "$schemas_name 已经初始化过了，重新初始化执行 init $schemas_name redo"
         exit 1
-    if
+    fi
 fi
 
 # rm */migrations/0*
