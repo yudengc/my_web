@@ -7,7 +7,7 @@ HelpTips="
 
 "
 
-runpath="$RUNPATH/api/tools/manage"
+runpath="$ROOTPATH/api/tools/manage"
 
 if [ ! -d $runpath ];then
     echo "运行路径不存在："

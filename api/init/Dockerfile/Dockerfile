@@ -11,7 +11,7 @@ RUN apk update && apk add --no-cache nginx git build-base openldap-dev superviso
     && mkdir -p /data/pgsql/data \
     && mkdir -p /run/postgresql && chown -R postgres:postgres /run/postgresql && chown -R postgres:postgres /data/pgsql/data
 RUN apk add --no-cache --virtual .build-deps  openssl-dev gcc musl-dev python3-dev libffi-dev openssh-client make openrc\
-    && mkdir /etc/supervisor.d
+    && mkdir /etc/supervisor.d && mkdir /logs
 
 
 RUN git clone http://yudengc:123456@git.darentui.com:3000/lorcyu/tiktokvideo.git -b dengyu-dev --depth=1 $ROOTPATH \
@@ -29,7 +29,7 @@ ADD initdatabase.sh /initdatabase.sh
 ADD manage.sh /usr/local/bin/manage
 
 RUN sed -i "s/\r//g" /initdatabase.sh && sed -i "s/\r//g" /entrypoint.sh \
-    && su - postgres -c "bash /initdatabase.sh Y"
+    && sed -i "s/\r//g" /usr/local/bin/manage && su - postgres -c "bash /initdatabase.sh Y"
 #RUN bash /inittest.sh Y && rm /initdatabase.sh /inittest.sh
 
 
