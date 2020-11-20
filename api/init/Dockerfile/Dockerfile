@@ -12,19 +12,19 @@ RUN apk add --no-cache --virtual .build-deps  openssl-dev gcc musl-dev python3-d
 
 
 ENV VERSION=0.0.1
-RUN git clone http://yudengc:123456@git.darentui.com:3000/songshujiedan/songshu_selection_api.git -b master --depth=1 /selection \
-    && cd /selection && git pull && mkdir /selection/logs/
+RUN git clone http://yudengc:123456@git.darentui.com:3000/lorcyu/tiktokvideo.git -b master --depth=1 /tiktokvideo \
+    && cd /tiktokvideo && git pull && mkdir /tiktokvideo/logs/
 
 #RUN git clone https://github.com/openspug/spug.git --depth=1 /spug && cd /spug && git pull
 
-RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/  && pip install --upgrade pip && pip install --no-cache-dir -r /selection/requirements/base.txt \
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/  && pip install --upgrade pip && pip install --no-cache-dir -r /tiktokvideo/requirements/base.txt \
     && pip install --no-cache-dir gunicorn \
     && apk del .build-deps && mv /usr/local/lib/python3.6/site-packages/crypto /usr/local/lib/python3.6/site-packages/Crypto
 
-ADD spug.ini /etc/supervisor.d/spug.ini
+ADD tiktokvideo.ini /etc/supervisor.d/tiktokvideo.ini
 ADD default.conf /etc/nginx/conf.d/default.conf
 ADD entrypoint.sh /entrypoint.sh
-ADD .env /selection/api/.env
+ADD .env /tiktokvideo/api/.env
 ADD initdatabase.sh /initdatabase.sh
 ADD inittest.sh /inittest.sh
 ADD init_model /usr/local/bin/init_model
