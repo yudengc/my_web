@@ -7,7 +7,8 @@ ENV ROOTPATH=$ROOTPATH
 ENV RUNPATH=$RUNPATH
 
 RUN echo -e "http://mirrors.aliyun.com/alpine/v3.11/main\nhttp://mirrors.aliyun.com/alpine/v3.11/community" > /etc/apk/repositories
-RUN apk update && apk add --no-cache nginx git build-base openldap-dev supervisor redis bash postgresql postgresql-dev && mkdir -p /data/pgsql/data \
+RUN apk update && apk add --no-cache nginx git build-base openldap-dev supervisor redis bash postgresql postgresql-dev python3-dev ipython libxslt-dev libxml2-dev\
+    && mkdir -p /data/pgsql/data \
     && mkdir -p /run/postgresql && chown -R postgres:postgres /run/postgresql && chown -R postgres:postgres /data/pgsql/data
 RUN apk add --no-cache --virtual .build-deps  openssl-dev gcc musl-dev python3-dev libffi-dev openssh-client make openrc\
     && mkdir /etc/supervisor.d
@@ -25,8 +26,9 @@ ADD default.conf /etc/nginx/conf.d/default.conf
 ADD entrypoint.sh /entrypoint.sh
 ADD .env $RUNPATH/.env
 ADD initdatabase.sh /initdatabase.sh
+ADD manage.sh /usr/local/bin/manage
 
-RUN sed -i "s/\r//g" /inittest.sh && sed -i "s/\r//g" /initdatabase.sh && sed -i "s/\r//g" /entrypoint.sh \
+RUN sed -i "s/\r//g" /initdatabase.sh && sed -i "s/\r//g" /entrypoint.sh \
     && su - postgres -c "bash /initdatabase.sh Y"
 #RUN bash /inittest.sh Y && rm /initdatabase.sh /inittest.sh
 
