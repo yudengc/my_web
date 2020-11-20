@@ -7,7 +7,7 @@
 docker pull yudengc/public:tiktokvideo
 docker run -d --restart=always --name=tiktokvideo -p 8000:80 yudengc/public:tiktokvideo
 特别的, 要使用本地目录(如用自己的分支，不用master)的时候, 执行：
-docker run -d --restart=always --name=tiktokvideo -p 8000:80 -v /我的目录:/selection yudengc/public:tiktokvideo
+docker run -d --restart=always --name=tiktokvideo -p 8000:80 -v /我的目录:/tiktokvideo yudengc/public:tiktokvideo
 # docker ps -a 查看等待完全启动完毕后执行model初始化
 docker exec tiktokvideo manage init test [schemas]
 docker restart tiktokvideo
