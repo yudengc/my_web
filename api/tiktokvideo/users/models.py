@@ -91,9 +91,7 @@ class Users(AbstractUser):
     iCode = models.CharField(
         _('注册码'),
         max_length=100,
-        default=get_iCode,
-        unique=True,
-
+        unique=True,  # 改成跟id有映射关系的了，不要乱改邀请码
     )
     team = models.ForeignKey(
         # 所属团队
