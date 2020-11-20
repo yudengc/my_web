@@ -21,8 +21,7 @@ from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer
 
-from users.services import WXBizDataCrypt, WeChatApi
-
+from users.services import WXBizDataCrypt, WeChatApi, InviteCls
 
 redis_conn = get_redis_connection('default')  # type: StrictRedis
 
@@ -114,6 +113,8 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 username=username,
                 openid=openid,
             )
+            user.iCode = InviteCls.encode_invite_code(user.id)
+            user.save()
             UserExtra.objects.create(uid=user)
             UserBase.objects.create(
                 uid=user,

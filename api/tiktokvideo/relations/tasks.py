@@ -33,26 +33,30 @@ def save_invite_relation(code, phone):
                 invitee = invitee_user
                 salesman = instance.salesman   # 业务员
                 level = instance.level + 1
+                superior = f'{instance.superior}|{inviter_user.id}'
                 if inviter_identity == Users.SALESMAN:   # 邀请者为业务员（即上级是老大A,邀请者自己是下属B），则salesman字段记录邀请者
                     InviteRelationManager(
                         inviter=inviter_user,
                         invitee=invitee,
                         level=level,
-                        salesman=inviter_user
+                        salesman=inviter_user,
+                        superior=superior
                     ).save()
                 elif inviter_identity == Users.BUSINESS:  # 邀请者为商家，则salesman字段与上一级的salesman保持一致
                     InviteRelationManager(
                         inviter=inviter_user,
                         invitee=invitee,
                         level=level,
-                        salesman=salesman
+                        salesman=salesman,
+                        superior=superior
                     ).save()
         else:  # 不存在上级, 业务员即邀请者
             InviteRelationManager(
                 inviter=inviter_user,
                 invitee=invitee_user,
                 level=1,
-                salesman=inviter_user
+                salesman=inviter_user,
+                superior=inviter_user.id
             ).save()
             print("======= END =======")
     except Exception as e:
