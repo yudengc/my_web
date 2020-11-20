@@ -86,7 +86,7 @@ class UserBusinessAdmin(admin.ModelAdmin):
     """商家信息"""
     # 定义admin总览里每行的显示信息
     list_display = (
-        'username', 'nickname', 'contact', 'bus_name', 'name_abb', 'industry', 'category', 'desc', 'date_created', )
+        'username', 'nickname', 'contact', 'bus_name', 'name_abb', 'industry', 'category', 'selling_point', 'date_created', )
     # 定义搜索框以哪些字段可以搜索
     search_fields = ('uid__username', 'uid__auth_base__nickname', 'contact')
     # 定义过滤器以哪些字段可以搜索

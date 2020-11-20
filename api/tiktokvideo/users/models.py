@@ -270,9 +270,10 @@ class UserBusiness(BaseModel):
         max_length=50,
         null=True,
     )
-    desc = models.TextField(
-        _('详细说明'),
+    selling_point = models.TextField(
+        verbose_name='商品卖点',
         null=True,
+        blank=True
     )
 
     A, B, C, D, E, F = range(6)
