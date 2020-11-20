@@ -8,6 +8,7 @@ from rest_framework import mixins, exceptions, filters
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermission
@@ -15,7 +16,7 @@ from relations.tasks import save_invite_relation
 
 from tiktokvideo.settings import APP_ID, SECRET
 from users.filter import TeamFilter
-from users.models import Users, UserExtra, UserBase, Team, UserBusiness
+from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer
@@ -166,3 +167,15 @@ class UserInfoViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data[0])
 
+
+class BusInfoOtherView(APIView):
+    permission_classes = (ManagerPermission,)
+
+    def get(self, request):
+        style_lis = []
+        script_lis = []
+        for obj in CelebrityStyle.objects.all():
+            style_lis.append(dict(id=obj.id, title=obj.title))
+        for obj in ScriptType.objects.all():
+            script_lis.append(dict(id=obj.id, title=obj.title))
+        return Response(dict(style=style_lis, script=script_lis))

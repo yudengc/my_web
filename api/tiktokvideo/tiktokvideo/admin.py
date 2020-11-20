@@ -38,12 +38,6 @@ SIMPLEUI_CONFIG = \
                     ]
                 },
                 {
-                    'app': 'config',
-                    'name': '联系客服',
-                    'icon': 'fa fa-users',
-                    'url': '/admin/config/customerservice/',
-                },
-                {
                     'app': 'users',
                     'name': '团队管理',
                     'icon': 'fa fa-users',
@@ -59,6 +53,18 @@ SIMPLEUI_CONFIG = \
                             'icon': 'fas fa-baby'
                         },
                     ]
+                },
+                {
+                    'app': 'relations',
+                    'name': '邀请关系记录',
+                    'icon': 'fa fa-users',
+                    'url': '/admin/relations/inviterelationmanager/'
+                },
+                {
+                    'app': 'config',
+                    'name': '联系客服',
+                    'icon': 'fa fa-users',
+                    'url': '/admin/config/customerservice/',
                 },
 
             ]

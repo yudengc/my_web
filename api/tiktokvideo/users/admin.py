@@ -1,10 +1,14 @@
+import re
+
+from django import forms
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from django.http import QueryDict, HttpResponseRedirect
 from django.utils.html import format_html
 
 from relations.models import InviteRelationManager
 from transaction.models import UserPackageRelation
-from users.models import Users, UserBase, UserBusiness, Team
+from users.models import Users, UserBase, UserBusiness, Team, UserExtra
 
 
 @admin.register(Users)
@@ -126,7 +130,7 @@ class TeamAdmin(admin.ModelAdmin):
     # 列表页每页展示的条数
     list_per_page = 20
     # 详情页的只读字段
-    readonly_fields = ('number', 'date_created')
+    readonly_fields = ('number', 'date_created', )
     # 编辑链接展示字段
     # list_display_links = ('leader_username', 'name', 'number', 'date_created')
 
@@ -164,6 +168,19 @@ class TeamUsers(Users):
         proxy = True
 
 
+class UsersForm(forms.ModelForm):
+    class Meta:
+        model = Users
+        fields = ('username', )
+
+    def clean(self):
+        username = self.cleaned_data.get('username')
+        phone_re = re.match(r"^1[35678]\d{9}$", username)
+        if not phone_re:
+            raise forms.ValidationError(u'请输入正确的手机号')
+        return self.cleaned_data
+
+
 @admin.register(TeamUsers)
 class TeamUsersAdmin(admin.ModelAdmin):
     """团队成员"""
@@ -177,9 +194,10 @@ class TeamUsersAdmin(admin.ModelAdmin):
     # 列表页每页展示的条数
     list_per_page = 20
     # 详情页的只读字段
-    # readonly_fields = ('leader_username', 'team_name')
+    # readonly_fields = ('username', 'password',)
     # 详情页面展示的字段
-    fields = ('salesman_username', 'salesman_name', )
+    fields = ('username', 'password', 'salesman_name', 'team', )
+    form = UsersForm
 
     def get_queryset(self, request):
         queryset = self.model.objects.filter(identity=Users.SALESMAN)
@@ -196,6 +214,23 @@ class TeamUsersAdmin(admin.ModelAdmin):
 
     def salesman_username(self, obj):
         return obj.username
+
+    def save_model(self, request, obj, form, change):
+        """
+        Given a model instance save it to the database.
+        """
+        if not change:
+            if form.is_valid():
+
+                user = form.save()
+                user.identity = Users.SALESMAN
+                user.set_password(form.data.get('password'))
+                user.save()
+                UserExtra.objects.create(uid=user)
+                UserBase.objects.create(
+                    uid=user,
+                    phone=user.username
+                )
 
     leader_username.short_description = '所属团队账号'
     team_name.short_description = '所属团队名称'
