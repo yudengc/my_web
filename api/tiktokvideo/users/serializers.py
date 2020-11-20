@@ -40,12 +40,12 @@ class UserBusinessSerializer(serializers.ModelSerializer):
 
 class UserBusinessCreateSerializer(serializers.ModelSerializer):
     """
-    商家信息
+    商家信息create
     """
 
     class Meta:
         model = UserBusiness
-        exclude = ('date_updated', 'uid', 'date_created')
+        exclude = ('date_updated', 'uid', 'date_created', 'id')
 
     def create(self, validated_data):
         validated_data['uid'] = self.context['request'].user
