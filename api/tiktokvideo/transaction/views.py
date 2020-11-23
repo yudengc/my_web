@@ -49,7 +49,7 @@ class WeChatPayViewSet(APIView):
         # print(data)
         if data:
             return Response(data, status=status.HTTP_200_OK)
-        return Response("请求支付失败")
+        return Response("请求支付失败", status=status.HTTP_400_BAD_REQUEST)
 
 
 class WeChatPayBackViewSet(APIView):
