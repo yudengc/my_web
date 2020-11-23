@@ -14,10 +14,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.views.static import serve
+
+from tiktokvideo.base import MEDIA_ROOT
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    re_path(r'^media/(?P<path>.*)$', serve, {"document_root": MEDIA_ROOT}),
     path(r'api/v1/users/', include('users.urls', namespace='users')),
     path(r'api/v1/config/', include('config.urls', namespace='config')),
     path(r'api/v1/relation/', include('relations.urls', namespace='relations')),

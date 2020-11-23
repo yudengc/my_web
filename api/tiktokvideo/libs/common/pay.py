@@ -12,7 +12,7 @@ import requests
 import logging
 
 from libs.common import utils
-from tiktokvideo.settings import APP_ID, MCH_ID, MCH_KEY, PAY_NOTIFY_URL
+from tiktokvideo.base import APP_ID, MCH_ID, MCH_KEY, PAY_NOTIFY_URL
 
 logger = logging.getLogger()
 
