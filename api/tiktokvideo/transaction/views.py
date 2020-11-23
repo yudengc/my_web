@@ -45,7 +45,7 @@ class WeChatPayViewSet(APIView):
         client_ip = get_ip(request)
         attach = str(request.user.uid) + '_' + str(p_id)  # 自定义参数，回调要用
 
-        data = WeChatPay().pay(Decimal(str(money)) * Decimal('0.01'),
+        data = WeChatPay().pay(100,
                                client_ip, order.out_trade_no, request.user.openid, attach)
         # print(data)
         if data:
