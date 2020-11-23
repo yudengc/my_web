@@ -5,7 +5,7 @@
 from rest_framework.settings import api_settings
 from rest_framework_jwt.utils import *
 
-from tiktokvideo.settings import JWT_AUTH
+from tiktokvideo.base import JWT_AUTH
 from users.serializers import UsersLoginSerializer
 
 

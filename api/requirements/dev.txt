@@ -45,3 +45,5 @@ django-safedelete==0.5.4
 django-ckeditor
 
 simpleui
+
+Pillow
