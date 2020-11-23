@@ -5,7 +5,7 @@ branch=$1
 
 cd $RUNPATH
 
-if [[ $branch != "" ]]];then
+if [[ $branch != "" ]];then
   git pull origin $branch
 else
   git pull
