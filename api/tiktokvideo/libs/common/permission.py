@@ -44,7 +44,7 @@ class SalesmanPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         print(">>>>>>>基本权限")
         return request.user.is_authenticated and isinstance(request.user, Users) \
-            and request.user.identity == Users.SALESMAN
+            and request.user.identity in [Users.SALESMAN, Users.SUPERVISOR]
 
 
 class BusinessPermission(permissions.BasePermission):

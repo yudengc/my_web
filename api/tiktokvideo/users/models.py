@@ -8,8 +8,6 @@ from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 from safedelete.models import SafeDeleteModel
 
-from libs.common.utils import get_iCode
-
 
 class BaseModel(models.Model):
     date_created = models.DateTimeField(
@@ -70,7 +68,6 @@ class Users(AbstractUser):
         blank=True,
         null=True
     )
-
     ADMIN, MANAGER, COMMON = range(3)
     sys_role = models.PositiveSmallIntegerField(
         verbose_name="系统身份",
@@ -81,11 +78,11 @@ class Users(AbstractUser):
             (COMMON, '普通用户'),
         ),
     )
-
-    SALESMAN, BUSINESS = range(2)
+    SALESMAN, BUSINESS, SUPERVISOR = range(3)
     IDENTITY = (
         (SALESMAN, '业务员'),
         (BUSINESS, '商家'),
+        (SUPERVISOR, '团队主管'),
     )
     identity = models.PositiveIntegerField(
         _('用户身份'),
@@ -103,6 +100,7 @@ class Users(AbstractUser):
         _('注册码'),
         max_length=100,
         unique=True,  # 改成跟id有映射关系的了，不要乱改邀请码
+        null=True,
     )
     team = models.ForeignKey(
         # 所属团队
@@ -272,9 +270,10 @@ class UserBusiness(BaseModel):
         max_length=50,
         null=True,
     )
-    desc = models.TextField(
-        _('详细说明'),
+    selling_point = models.TextField(
+        verbose_name='商品卖点',
         null=True,
+        blank=True
     )
 
     A, B, C, D, E, F = range(6)
