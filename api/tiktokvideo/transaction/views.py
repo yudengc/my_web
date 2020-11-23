@@ -43,7 +43,7 @@ class WeChatPayViewSet(APIView):
         # 获取客户端ip
         client_ip = get_ip(request)
         attach = str(request.user.uid) + '_' + str(p_id)  # 自定义参数，回调要用
-        data = WeChatPay().pay(money, client_ip, order.out_trade_no, request.user.openid, attach)
+        data = WeChatPay().pay(float(money), client_ip, order.out_trade_no, request.user.openid, attach)
         # print(data)
         if data:
             return Response(data, status=status.HTTP_200_OK)
