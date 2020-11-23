@@ -62,7 +62,7 @@ class InviteCls:
     # 千万别乱改这个地方
     invite_char = [
         'x', 'v', 'f', 'u', 'c', 'k', '1', '3', '5', '0', 'a', 'q', 'm', '9', 'n', 'e', 's', '4', '2',
-        't', 'h', 'i', 'l', 'y', 'R', 'd', 'Q', 'F', 'w', 'o', 'p', 'g', 'j', 'A', '6', 'K'
+        't', 'h', 'i', 'l', 'y', 'R', 'd', 'Q', 'F', 'w', 'o', 'p', 'g', 'j', 'A', '6', 'S', 'M', 'K'
     ]
     fill_char = '8'
     length = len(invite_char)
@@ -73,7 +73,7 @@ class InviteCls:
     def encode_invite_code(cls, user_id: int):
         if not isinstance(user_id, int):
             raise ValueError('用户id不是一个int')
-        if user_id > cls.max_id or user_id <= 0:
+        if user_id >= cls.max_id or user_id <= 0:
             raise ValueError(f'id范围:(0, {cls.max_id})')
         this_int = user_id
         invite_code = []
