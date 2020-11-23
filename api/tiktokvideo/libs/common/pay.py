@@ -58,7 +58,6 @@ class WeChatPay(Payment):
                                  headers={'Content-Type': 'text/xml;charset=utf-8'})
         # 返回数据为xml,将其转为字典
         content = utils.xml_to_dict(response.content)
-        print(content)
         logger.info(f'微信支付接口返回数据{content}')
         if content["return_code"] == 'SUCCESS':
             # 获取预支付交易会话标识
