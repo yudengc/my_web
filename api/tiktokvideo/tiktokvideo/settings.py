@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'safedelete',
+    'ckeditor',
 
     # app
     'users',
@@ -134,7 +135,13 @@ USE_TZ = False
 
 STATIC_URL = '/static/'
 AUTH_USER_MODEL = 'users.Users'
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static').replace('\\', '/'),
+)
 
+SITE_ROOT = os.path.dirname(os.path.abspath(__file__))
+SITE_ROOT = os.path.abspath(os.path.join(SITE_ROOT, '../'))
+STATIC_ROOT = os.path.join(SITE_ROOT, 'collectstatic')
 
 # ############# REST FRAMEWORK ###################
 
@@ -192,11 +199,15 @@ CELERY_ACCEPT_CONTENT = ['json']
 
 # Json web token 设置/ 登陆凭证设置
 JWT_AUTH = {
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=int(os.environ.get('DAYS'))),
-    # 'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=20),
+    #'JWT_EXPIRATION_DELTA': datetime.timedelta(days=int(os.environ.get('DAYS'))),
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=30),
     'JWT_AUTH_HEADER_PREFIX': os.environ.get('HEADER_PREFIX'),
 }
 
-# 微信小程序配置
+# 微信小程序
 APP_ID = os.environ.get('APP_ID')
 SECRET = os.environ.get('SECRET')
+# 微信支付
+MCH_ID = os.environ.get('MCH_ID')
+MCH_KEY = os.environ.get('MCH_KEY')
+PAY_NOTIFY_URL = os.environ.get('PAY_NOTIFY_URL')

@@ -31,7 +31,7 @@ class WeChatPayViewSet(APIView):
         p_id = request_data.get('p_id', None)   # 购买的商品对应的id
         if not p_id:
             return Response({"detail": "缺少参数配置ID"}, status=status.HTTP_400_BAD_REQUEST)
-        if t_type == '0':
+        if t_type in ['0', 0]:
             package_ps = Package.objects.filter(id=p_id)
             if not package_ps.exists():
                 return Response({"detail": '该套餐不存在'}, status=status.HTTP_400_BAD_REQUEST)
@@ -97,6 +97,12 @@ class PackageViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (ManagerPermission,)
     queryset = Package.objects.filter(status=Package.PUBLISHED, expiration_time__gte=datetime.now())
     serializer_class = PackageSerializer
+
+    def list(self, request, *args, **kwargs):
+        # 不需要分页
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class MyPackageViewSet(viewsets.ModelViewSet):

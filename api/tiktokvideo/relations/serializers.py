@@ -31,6 +31,11 @@ class MyRelationSerializer(serializers.ModelSerializer):
         model = InviteRelationManager
         fields = ('invitee', 'status')
 
+    def to_representation(self, instance):
+        data = super(MyRelationSerializer, self).to_representation(instance).get('invitee')
+        data['status'] = super(MyRelationSerializer, self).to_representation(instance).get('status')
+        return data
+
 
 class MyRecordsSerializer(serializers.ModelSerializer):
     """

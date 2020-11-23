@@ -8,8 +8,6 @@ from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 from safedelete.models import SafeDeleteModel
 
-from libs.common.utils import get_iCode
-
 
 class BaseModel(models.Model):
     date_created = models.DateTimeField(
@@ -70,7 +68,6 @@ class Users(AbstractUser):
         blank=True,
         null=True
     )
-
     ADMIN, MANAGER, COMMON = range(3)
     sys_role = models.PositiveSmallIntegerField(
         verbose_name="系统身份",
@@ -81,11 +78,11 @@ class Users(AbstractUser):
             (COMMON, '普通用户'),
         ),
     )
-
-    SALESMAN, BUSINESS = range(2)
+    SALESMAN, BUSINESS, SUPERVISOR = range(3)
     IDENTITY = (
         (SALESMAN, '业务员'),
         (BUSINESS, '商家'),
+        (SUPERVISOR, '团队主管'),
     )
     identity = models.PositiveIntegerField(
         _('用户身份'),
@@ -103,6 +100,7 @@ class Users(AbstractUser):
         _('注册码'),
         max_length=100,
         unique=True,  # 改成跟id有映射关系的了，不要乱改邀请码
+        null=True,
     )
     team = models.ForeignKey(
         # 所属团队
@@ -110,6 +108,7 @@ class Users(AbstractUser):
         on_delete=models.DO_NOTHING,
         related_name='team_user',
         null=True,
+        verbose_name='所属团队'
     )
     date_created = models.DateTimeField(
         _('注册时间'),
@@ -271,15 +270,96 @@ class UserBusiness(BaseModel):
         max_length=50,
         null=True,
     )
-    desc = models.TextField(
-        _('详细说明'),
+    selling_point = models.TextField(
+        verbose_name='商品卖点',
         null=True,
+        blank=True
+    )
+
+    A, B, C, D, E, F = range(6)
+    AGE = (
+        (A, '6岁以下'),
+        (B, '7-17岁'),
+        (C, '18-30岁'),
+        (D, '31-45岁'),
+        (E, '45-60岁'),
+        (F, '60岁以上'),
+    )
+    group_age = models.PositiveSmallIntegerField(
+        _('面向消费群体年龄段'),
+        choices=AGE,
+        default=A
+    )
+    group_desc = models.TextField(
+        _('面向消费群体自定义说明'),
+        null=True,
+        blank=True
+    )
+
+    MALE, FEMALE, ALL = range(3)
+    GENDER = (
+        (MALE, '男'),
+        (FEMALE, '女'),
+        (ALL, '不限'),
+    )
+    group_gender = models.PositiveSmallIntegerField(
+        _('面向消费群体性别'),
+        choices=GENDER,
+        default=MALE
+    )
+
+    point_gender = models.PositiveSmallIntegerField(
+        _('拍摄达人侧重点性别'),
+        choices=GENDER,
+        default=MALE
+    )
+    style = models.ManyToManyField(
+        'CelebrityStyle',
+        related_name='bus_style',
+        verbose_name='拍摄达人侧重点达人风格'
+
+    )
+    script_type = models.ManyToManyField(
+        'ScriptType',
+        related_name='bus_script',
+        verbose_name='拍摄达人侧重点脚本类别'
+    )
+    style_desc = models.TextField(
+        _('达人拍摄重点其他说明'),
+        null=True,
+        blank=True
     )
 
     class Meta:
         verbose_name = '商家信息'
         verbose_name_plural = verbose_name
         db_table = 'UserBusiness'
+
+
+class CelebrityStyle(BaseModel):
+    title = models.CharField(
+        _('风格标题'),
+        max_length=50,
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = '达人风格'
+        verbose_name_plural = verbose_name
+        db_table = 'CelebrityStyle'
+
+
+class ScriptType(BaseModel):
+    title = models.CharField(
+        _('脚本类别标题'),
+        max_length=50,
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = '脚本类别'
+        verbose_name_plural = verbose_name
+        db_table = 'ScriptType'
 
 
 class Team(BaseModel):
@@ -310,6 +390,9 @@ class Team(BaseModel):
         verbose_name = '团队信息'
         verbose_name_plural = verbose_name
         db_table = 'Team'
+
+    def __str__(self):
+        return self.name
 
     def edit_audit_button(self):
         # 自定义admin按钮
