@@ -1,3 +1,4 @@
+import logging
 
 from celery import shared_task
 
@@ -5,7 +6,10 @@ from relations.models import InviteRelationManager
 from users.models import Users
 
 
-@shared_task
+logger = logging.getLogger()
+
+
+# @shared_task
 def save_invite_relation(code, phone):
     """
     存储邀请关系
@@ -13,12 +17,14 @@ def save_invite_relation(code, phone):
     :param phone: 被邀请者账号
     :return:
     """
-    print("======= Start Save Invite Relation =======")
+    # print("======= Start Save Invite Relation =======")
+    logger.info("======= Start Save Invite Relation =======")
     inviter_user = Users.objects.filter(iCode=code).first()   # 邀请者
     inviter_identity = inviter_user.identity  # 邀请者的角色，0：业务员，1：商家
     invitee_user = Users.objects.filter(username=phone).first()   # 被邀请者
     if not inviter_user:
-        print('iCode错误')
+        # print('iCode错误')
+        logger.info('iCode错误')
         return
     if InviteRelationManager.objects.filter(invitee=invitee_user).exists():
         # 已被邀请过无需再保存
@@ -50,7 +56,7 @@ def save_invite_relation(code, phone):
                         salesman=salesman,
                         superior=superior
                     ).save()
-        else:  # 不存在上级, 业务员即邀请者
+        else:  # 不存在上级（团队老大）, 业务员即邀请者
             InviteRelationManager(
                 inviter=inviter_user,
                 invitee=invitee_user,
@@ -58,6 +64,8 @@ def save_invite_relation(code, phone):
                 salesman=inviter_user,
                 superior=inviter_user.id
             ).save()
-            print("======= END =======")
+            # print("======= END =======")
+            logger.info("======= END =======")
     except Exception as e:
-        print("Error: ", e)
+        # print("Error: ", e)
+        logger.info("Error: ", e)
