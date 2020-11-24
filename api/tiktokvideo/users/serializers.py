@@ -73,6 +73,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
         r_ps = UserPackageRelation.objects.filter(uid=obj).order_by('-date_created')
         if r_ps.exists():
             r_obj = r_ps[0]
-            return dict(package_title=r_obj.package.package_title, expiration_time=r_obj.package.expiration_time)
+            return dict(package_title=r_obj.package.package_title, expiration_time=r_obj.expiration_time)
         return None
 
