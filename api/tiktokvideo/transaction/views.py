@@ -65,6 +65,7 @@ class WeChatPayBackViewSet(APIView):
         xml = str(_xml, encoding="utf-8")
         return_dict = {}
         tree = et.fromstring(xml)
+        logger.info(tree)
         # xml 解析
         return_code = tree.find("return_code").text
         logger.info(f'微信支付回调结果{return_code}')
@@ -78,6 +79,8 @@ class WeChatPayBackViewSet(APIView):
                 out_trade_no = tree.find("out_trade_no").text
                 # 修改订单状态
                 # update_order_status.delay(out_trade_no, datetime.now(), attach)
+                logger.info('微信回调微信回调微信回调微信回调')
+                logger.info(attach)
                 threading.Thread(target=update_order_status,
                                  args=(out_trade_no, datetime.now(), attach)).start()
                 return HttpResponse(
