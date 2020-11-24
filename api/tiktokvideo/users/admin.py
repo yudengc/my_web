@@ -296,4 +296,5 @@ class TeamUsersAdmin(admin.ModelAdmin):
                     uid=user,
                     phone=user.username
                 )
-        super().save_model(request, obj, form, change)
+        else:
+            super().save_model(request, obj, form, change)
