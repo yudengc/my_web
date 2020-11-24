@@ -4,6 +4,7 @@ import xml.etree.ElementTree as et
 from datetime import datetime
 from decimal import Decimal
 
+from django.db.transaction import atomic
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets, filters
@@ -45,11 +46,12 @@ class WeChatPayViewSet(APIView):
         client_ip = get_ip(request)
         attach = str(request.user.uid) + '_' + str(p_id)  # 自定义参数，回调要用
 
-        data = WeChatPay().pay(1, client_ip, order.out_trade_no, request.user.openid, attach)
+        money = int(money * Decimal('100'))  # 微信单位是分(int)
+        data = WeChatPay().pay(money, client_ip, order.out_trade_no, request.user.openid, attach)
         # print(data)
         if data:
             return Response(data, status=status.HTTP_200_OK)
-        return Response("请求支付失败", status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "请求支付失败"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class WeChatPayBackViewSet(APIView):
