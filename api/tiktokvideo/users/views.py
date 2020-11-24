@@ -14,7 +14,7 @@ from rest_framework.viewsets import GenericViewSet
 from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermission
 from relations.tasks import save_invite_relation
 
-from tiktokvideo.settings import APP_ID, SECRET
+from tiktokvideo.base import APP_ID, SECRET
 from users.filter import TeamFilter
 from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle
 from libs.jwt.serializers import CusTomSerializer
