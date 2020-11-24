@@ -15,24 +15,30 @@ def update_order_status(out_trade_no, gmt_payment, attach):
     # print("======= Pay Success And Update Order Status =======")
     logger.info("======= Pay Success And Update Order Status =======")
     if order.exists():
+        logger.info("111111======= Pay Success And Update Order Status =======")
         with atomic():
+            logger.info("2222======= Pay Success And Update Order Status =======")
             order_info = OrderInfo.objects.filter(out_trade_no=out_trade_no, status=OrderInfo.WAIT).update(
                 status=OrderInfo.SUCCESS,
                 pay_time=gmt_payment
             )
+            logger.info("33333======= Pay Success And Update Order Status =======")
             if order_info == 0:
                 logger.info('更新订单状态失败')
             else:
                 parm_lis = attach.split('_')
                 p_obj = Package.objects.get(id=parm_lis[1])
                 expiration = p_obj.expiration  # 套餐有效天数
+                logger.info("444444======= Pay Success And Update Order Status =======")
                 try:
                     r_obj = UserPackageRelation.objects.get(uid=parm_lis[0], package=p_obj)
                     r_obj.expiration_time += timedelta(days=expiration)
                     r_obj.save()
+                    logger.info("5555555======= Pay Success And Update Order Status =======")
                 except UserPackageRelation.DoesNotExist:
                     UserPackageRelation.objects.create(uid=parm_lis[0], package=p_obj,
                                                        expiration_time=datetime.now() + timedelta(days=expiration))
+                    logger.info("66666======= Pay Success And Update Order Status =======")
         logger.info("======= Pay Success And Update Order Status!!!!!! =======")
 
     else:
