@@ -20,7 +20,7 @@ def update_order_status(out_trade_no, gmt_payment, attach):
             logger.info("2222======= Pay Success And Update Order Status =======")
             order_info = OrderInfo.objects.filter(out_trade_no=out_trade_no, status=OrderInfo.WAIT).update(
                 status=OrderInfo.SUCCESS,
-                pay_time=gmt_payment
+                date_payed=gmt_payment
             )
             logger.info("33333======= Pay Success And Update Order Status =======")
             if order_info == 0:
