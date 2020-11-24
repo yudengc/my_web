@@ -77,6 +77,25 @@ SIMPLEUI_CONFIG = \
                     'icon': 'fa fa-users',
                     'url': '/admin/config/customerservice/',
                 },
+                {
+                    'app': 'users',
+                    'name': '配置',
+                    'icon': 'fa fa-users',
+                    'models': [
+                        {
+                            'name': '风格标题',
+                            'url': '/admin/users/celebritystyle/',
+                            'icon': 'fas fa-baby'
+                        },
+                        {
+                            'name': '脚本类别',
+                            'url': '/admin/users/scripttype/',
+                            'icon': 'fas fa-baby'
+                        },
+
+                    ]
+
+                },
 
             ]
     }

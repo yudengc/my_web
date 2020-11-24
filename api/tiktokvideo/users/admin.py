@@ -8,7 +8,7 @@ from django.utils.html import format_html
 
 from relations.models import InviteRelationManager
 from transaction.models import UserPackageRelation
-from users.models import Users, UserBase, UserBusiness, Team, UserExtra
+from users.models import Users, UserBase, UserBusiness, Team, UserExtra, CelebrityStyle, ScriptType
 from users.services import InviteCls
 
 
@@ -298,3 +298,31 @@ class TeamUsersAdmin(admin.ModelAdmin):
                 )
         else:
             super().save_model(request, obj, form, change)
+
+
+@admin.register(CelebrityStyle)
+class CelebrityStyleAdmin(admin.ModelAdmin):
+    """商家信息风格标题"""
+    # 定义admin总览里每行的显示信息
+    list_display = ('id', 'title', 'date_created')
+    # 定义搜索框以哪些字段可以搜索
+    search_fields = ('title',)
+    # 详情页面展示的字段
+    fields = ('title', )
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ScriptType)
+class CelebrityStyleAdmin(admin.ModelAdmin):
+    """商家信息脚本类别"""
+    # 定义admin总览里每行的显示信息
+    list_display = ('id', 'title', 'date_created')
+    # 定义搜索框以哪些字段可以搜索
+    search_fields = ('title',)
+    # 详情页面展示的字段
+    fields = ('title',)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
