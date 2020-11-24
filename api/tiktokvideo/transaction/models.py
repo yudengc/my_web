@@ -198,9 +198,9 @@ class Package(BaseModel):
         null=True,
         blank=True,
     )
-    expiration_time = models.DateTimeField(
-        _('套餐到期时间'),
-        null=True
+    expiration = models.PositiveIntegerField(
+        _('套餐有限期(天)'),
+        default=0
     )
 
     class Meta:
@@ -220,9 +220,13 @@ class UserPackageRelation(BaseModel):
         "Package",
         on_delete=models.DO_NOTHING,
     )
-    order = models.OneToOneField(
-        'OrderInfo',
-        on_delete=models.DO_NOTHING,
+    # order = models.OneToOneField(
+    #     'OrderInfo',
+    #     on_delete=models.DO_NOTHING,
+    # )
+    expiration_time = models.DateTimeField(
+        _('套餐到期时间'),
+        null=True
     )
 
     class Meta:

@@ -99,7 +99,7 @@ class PayCancelViewSet(APIView):
 class PackageViewSet(viewsets.ReadOnlyModelViewSet):
     """套餐客户端"""
     permission_classes = (ManagerPermission,)
-    queryset = Package.objects.filter(status=Package.PUBLISHED, expiration_time__gte=datetime.now())
+    queryset = Package.objects.filter(status=Package.PUBLISHED)
     serializer_class = PackageSerializer
 
     def list(self, request, *args, **kwargs):
