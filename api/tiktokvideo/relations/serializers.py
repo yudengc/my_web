@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from relations.models import InviteRelationManager
-from transaction.models import UserPackageRelation
+from transaction.models import UserPackageRelation, OrderInfo, Package
 from users.models import Users, UserBusiness
 
 
@@ -49,14 +49,14 @@ class MyRecordsSerializer(serializers.ModelSerializer):
 
     def get_invitee(self, obj):
         lis = []
-        for i in UserPackageRelation.objects.filter(uid=obj.invitee).select_related('order', 'package').all():
-            order = i.order
+        invitee = obj.invitee
+        for order in OrderInfo.objects.filter(uid=invitee, status=OrderInfo.SUCCESS, tran_type=OrderInfo.PACKAGE).all():
             lis.append({'out_trade_no': order.out_trade_no,
                         'date_payed': order.date_payed,
                         'amount': order.amount,
-                        'bus_name': obj.invitee.user_business.bus_name,
-                        'username': obj.invitee.username,
-                        'package_title': i.package.package_title})
+                        'bus_name': invitee.user_business.bus_name,
+                        'username': invitee.username,
+                        'package_title':  Package.objects.get(id=order.parm_id).package_title})
         return lis
 
     def to_representation(self, instance):

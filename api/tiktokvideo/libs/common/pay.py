@@ -49,7 +49,7 @@ class WeChatPay(Payment):
         """
         # 拿到封装好的xml数据
         sign_obj = GenerateSign()
-        body_data = sign_obj.get_body_data(spbill_create_ip=client_ip, out_trade_no=order_number, total_fee=1,
+        body_data = sign_obj.get_body_data(spbill_create_ip=client_ip, out_trade_no=order_number, total_fee=money,
                                            openid=openid, attach=attach)
         # 获取时间戳
         timestamp = str(int(time.time()))
