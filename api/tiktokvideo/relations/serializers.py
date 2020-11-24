@@ -76,7 +76,10 @@ class MyRecordsSerializer(serializers.ModelSerializer):
         fields = ('id', 'out_trade_no', 'date_payed', 'amount', 'bus_name', 'username', 'package_title')
 
     def get_bus_name(self, obj):
-        return obj.uid.user_business.bus_name
+        bus_obj = UserBusiness.objects.filter(uid=obj.uid).first()
+        if bus_obj:
+            return bus_obj.bus_name
+        return None
 
     def get_username(self, obj):
         return obj.uid.username
