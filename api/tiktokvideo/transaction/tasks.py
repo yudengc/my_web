@@ -33,13 +33,11 @@ def update_order_status(out_trade_no, gmt_payment, attach):
                 expiration = p_obj.expiration  # 套餐有效天数
                 logger.info("444444======= Pay Success And Update Order Status =======")
                 try:
-                    logger.info(9999999999)
                     r_obj = UserPackageRelation.objects.get(uid=order.first().uid, package=p_obj)
                     r_obj.expiration_time += timedelta(days=expiration)
                     r_obj.save()
                     logger.info("5555555======= Pay Success And Update Order Status =======")
                 except UserPackageRelation.DoesNotExist:
-                    logger.info(parm_lis[0])
                     UserPackageRelation.objects.create(uid=order.first().uid,
                                                        package=p_obj,
                                                        expiration_time=datetime.now() + timedelta(days=expiration))
