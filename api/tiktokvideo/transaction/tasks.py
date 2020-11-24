@@ -30,13 +30,15 @@ def update_order_status(out_trade_no, gmt_payment, attach):
                 expiration = p_obj.expiration  # 套餐有效天数
                 try:
                     r_obj = UserPackageRelation.objects.get(uid=order.first().uid, package=p_obj)
-                    r_obj.expiration_time += timedelta(days=expiration)
+                    if r_obj.expiration_time > datetime.now():  # 未过期
+                        r_obj.expiration_time += timedelta(days=expiration)
+                    else:  # 已过期
+                        r_obj.expiration_time = datetime.now() + timedelta(days=expiration)
                     r_obj.save()
                 except UserPackageRelation.DoesNotExist:
                     UserPackageRelation.objects.create(uid=order.first().uid,
                                                        package=p_obj,
                                                        expiration_time=datetime.now() + timedelta(days=expiration))
         logger.info("======= Pay Success And Update Order Status!!!!!! =======")
-
     else:
         logger.info('找不到订单，订单号：%s' % out_trade_no)
