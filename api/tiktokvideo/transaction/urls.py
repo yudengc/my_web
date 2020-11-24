@@ -7,12 +7,14 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from transaction.views import WeChatPayViewSet, WeChatPayBackViewSet, PayCancelViewSet, PackageViewSet, MyPackageViewSet
+from transaction.views import WeChatPayViewSet, WeChatPayBackViewSet, PayCancelViewSet, PackageViewSet, \
+    MyPackageViewSet, OrderInfoViewSet
 
 app_name = "transaction"
 router = DefaultRouter()
 router.register(r'package', PackageViewSet, basename='package')
 router.register(r'my-package', MyPackageViewSet, basename='my_package')
+router.register(r'order-info', OrderInfoViewSet, basename='order_info')
 
 urlpatterns = [
     path(r'', include(router.urls)),

@@ -189,18 +189,15 @@ class Package(BaseModel):
         decimal_places=2,
         default=0
     )
-    # package_content = RichTextField(
-    #     _('套餐包内容')
-    # )
     package_content = ImageField(
         verbose_name='套餐包内容图片',
         upload_to='package',
         null=True,
         blank=True,
     )
-    expiration_time = models.DateTimeField(
-        _('套餐到期时间'),
-        null=True
+    expiration = models.PositiveIntegerField(
+        _('套餐有效天数'),
+        default=0
     )
 
     class Meta:
@@ -220,12 +217,17 @@ class UserPackageRelation(BaseModel):
         "Package",
         on_delete=models.DO_NOTHING,
     )
-    order = models.OneToOneField(
-        'OrderInfo',
-        on_delete=models.DO_NOTHING,
+    # order = models.OneToOneField(
+    #     'OrderInfo',
+    #     on_delete=models.DO_NOTHING,
+    # )
+    expiration_time = models.DateTimeField(
+        _('套餐到期时间'),
+        null=True
     )
 
     class Meta:
         verbose_name = '用户和套餐包的关系表'
         verbose_name_plural = verbose_name
         db_table = 'UserPackageRelation'
+        unique_together = ('uid', 'package')
