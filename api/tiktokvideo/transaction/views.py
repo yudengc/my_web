@@ -12,7 +12,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from transaction.serializers import PackageSerializer, PackageRecordSerializer, MyPackageSerializer
+from transaction.serializers import PackageSerializer, MyPackageSerializer, OrderInfoSerializer
 from transaction.tasks import update_order_status
 from transaction.models import OrderInfo, UserPackageRelation
 from libs.common.pay import WeChatPay
@@ -118,10 +118,12 @@ class MyPackageViewSet(viewsets.ModelViewSet):
         self.queryset = UserPackageRelation.objects.filter(uid=self.request.user).select_related('package')
         return super().get_queryset()
 
-    @action(methods=['get'], detail=False, serializer_class=PackageRecordSerializer)
-    def records(self, request, *args, **kwargs):
-        # 套餐购买记录
-        return super().list(request, *args, **kwargs)
 
+class OrderInfoViewSet(viewsets.ReadOnlyModelViewSet):
+    """我的购买记录"""
+    permission_classes = (ManagerPermission,)
+    serializer_class = OrderInfoSerializer
 
-
+    def get_queryset(self):
+        self.queryset = OrderInfo.objects.filter(uid=self.request.user, status=OrderInfo.SUCCESS)
+        return super().get_queryset()

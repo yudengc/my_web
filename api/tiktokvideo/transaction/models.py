@@ -189,9 +189,6 @@ class Package(BaseModel):
         decimal_places=2,
         default=0
     )
-    # package_content = RichTextField(
-    #     _('套餐包内容')
-    # )
     package_content = ImageField(
         verbose_name='套餐包内容图片',
         upload_to='package',
@@ -199,7 +196,7 @@ class Package(BaseModel):
         blank=True,
     )
     expiration = models.PositiveIntegerField(
-        _('套餐有限期(天)'),
+        _('套餐有效天数'),
         default=0
     )
 
@@ -233,3 +230,4 @@ class UserPackageRelation(BaseModel):
         verbose_name = '用户和套餐包的关系表'
         verbose_name_plural = verbose_name
         db_table = 'UserPackageRelation'
+        unique_together = ('uid', 'package')
