@@ -21,7 +21,6 @@ def save_invite_relation(code, phone):
     logger.info("======= Start Save Invite Relation =======")
     logger.info('打印icode')
     logger.info(code)
-
     inviter_user = Users.objects.filter(iCode=code).first()   # 邀请者
     inviter_identity = inviter_user.identity  # 邀请者的角色，0：业务员，1：商家
     invitee_user = Users.objects.filter(username=phone).first()   # 被邀请者
