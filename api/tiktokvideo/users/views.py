@@ -76,8 +76,9 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         if code:  # 存在注册码绑定邀请关系
             # save_invite_relation.delay(code, username)  # 绑定邀请关系
             logger.info('准备进入线程')
-            threading.Thread(target=save_invite_relation,
-                             args=(code, username)).start()  # 绑定邀请关系
+            # threading.Thread(target=save_invite_relation,
+            #                  args=(code, username)).start()  # 绑定邀请关系
+            save_invite_relation(code, username)
             logger.info('结束线程')
         logger.info('结束登陆')
         return Response(user_info, status=status.HTTP_200_OK)
