@@ -14,8 +14,8 @@ class BusinessInfoSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'date_created', 'bus_name', 'has_package')
 
     def get_bus_name(self, obj):
-        bus_obj = UserBusiness.objects.filter(uid=obj).first()
-        return bus_obj.bus_name if bus_obj else ''
+        # 改成微信昵称，返回字段不变
+        return obj.auth_base.nickname if obj.auth_base else ''
 
     def get_has_package(self, obj):
         return UserPackageRelation.objects.filter(uid=obj).exists()
@@ -76,10 +76,8 @@ class MyRecordsSerializer(serializers.ModelSerializer):
         fields = ('id', 'out_trade_no', 'date_payed', 'amount', 'bus_name', 'username', 'package_title')
 
     def get_bus_name(self, obj):
-        bus_obj = UserBusiness.objects.filter(uid=obj.uid).first()
-        if bus_obj:
-            return bus_obj.bus_name
-        return None
+        # 改成微信昵称，返回字段不变
+        return obj.uid.auth_base.nickname if obj.uid.auth_base else ''
 
     def get_username(self, obj):
         return obj.uid.username
