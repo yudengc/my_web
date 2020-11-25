@@ -64,8 +64,8 @@ def save_invite_relation(code, phone):
                 salesman=inviter_user,
                 superior=inviter_user.id
             ).save()
-            # print("======= END =======")
-            logger.info("======= END =======")
+        # print("======= END =======")
+        logger.info("======= END Save Invite Relation=======")
     except Exception as e:
         # print("Error: ", e)
         logger.info("Error: ", e)
