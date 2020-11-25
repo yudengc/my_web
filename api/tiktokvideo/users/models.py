@@ -363,7 +363,6 @@ class ScriptType(BaseModel):
 
 
 class Team(BaseModel):
-    pass
     """
     团队
     """

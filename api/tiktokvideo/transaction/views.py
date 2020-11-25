@@ -20,6 +20,7 @@ from libs.common.permission import ManagerPermission, AllowAny, SalesmanPermissi
 from libs.common.utils import get_ip
 from transaction.models import Package
 
+
 logger = logging.getLogger()
 
 
@@ -40,7 +41,6 @@ class WeChatPayViewSet(APIView):
             money = package_ps.first().package_amount
         else:
             return Response({"detail": 't_type错误'}, status=status.HTTP_400_BAD_REQUEST)
-
         order = OrderInfo.create_order(request.user, money, t_type, p_id)
         # 获取客户端ip
         client_ip = get_ip(request)

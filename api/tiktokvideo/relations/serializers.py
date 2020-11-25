@@ -37,28 +37,52 @@ class MyRelationSerializer(serializers.ModelSerializer):
         return data
 
 
+# class MyRecordsSerializer(serializers.ModelSerializer):
+#     """
+#     商家付费记录
+#     """
+#     invitee = serializers.SerializerMethodField()
+#
+#     class Meta:
+#         model = InviteRelationManager
+#         fields = ('invitee', )
+#
+#     def get_invitee(self, obj):
+#         lis = []
+#         invitee = obj.invitee
+#         for order in OrderInfo.objects.filter(uid=invitee, status=OrderInfo.SUCCESS, tran_type=OrderInfo.PACKAGE).all():
+#             lis.append({'out_trade_no': order.out_trade_no,
+#                         'date_payed': order.date_payed,
+#                         'amount': order.amount,
+#                         'bus_name': invitee.user_business.bus_name,
+#                         'username': invitee.username,
+#                         'package_title': Package.objects.get(id=order.parm_id).package_title})
+#         return lis
+#
+#     def to_representation(self, instance):
+#         return super(MyRecordsSerializer, self).to_representation(instance).get('invitee')
+
+
 class MyRecordsSerializer(serializers.ModelSerializer):
     """
     商家付费记录
     """
-    invitee = serializers.SerializerMethodField()
+    bus_name = serializers.SerializerMethodField()
+    username = serializers.SerializerMethodField()
+    package_title = serializers.SerializerMethodField()
 
     class Meta:
-        model = InviteRelationManager
-        fields = ('invitee', )
+        model = OrderInfo
+        fields = ('id', 'out_trade_no', 'date_payed', 'amount', 'bus_name', 'username', 'package_title')
 
-    def get_invitee(self, obj):
-        lis = []
-        invitee = obj.invitee
-        for order in OrderInfo.objects.filter(uid=invitee, status=OrderInfo.SUCCESS, tran_type=OrderInfo.PACKAGE).all():
-            lis.append({'out_trade_no': order.out_trade_no,
-                        'date_payed': order.date_payed,
-                        'amount': order.amount,
-                        'bus_name': invitee.user_business.bus_name,
-                        'username': invitee.username,
-                        'package_title':  Package.objects.get(id=order.parm_id).package_title})
-        return lis
+    def get_bus_name(self, obj):
+        bus_obj = UserBusiness.objects.filter(uid=obj.uid).first()
+        if bus_obj:
+            return bus_obj.bus_name
+        return None
 
-    def to_representation(self, instance):
-        return super(MyRecordsSerializer, self).to_representation(instance).get('invitee')
+    def get_username(self, obj):
+        return obj.uid.username
 
+    def get_package_title(self, obj):
+        return Package.objects.get(id=obj.parm_id).package_title
