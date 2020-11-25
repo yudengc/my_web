@@ -113,9 +113,10 @@ class BaseParser(object):
             self._init(data)
             for e in self.args:
                 has_key, value = self._get(e.name)
-                if clear and has_key is False and e.required is False:
+                e_value = e.parse(has_key, value, rst)
+                if clear and has_key is False and not e.required:
                     continue
-                rst[e.name] = e.parse(has_key, value, rst)
+                rst[e.name] = e_value
         except ParseError as err:
             return None, err.message
         return rst, None
