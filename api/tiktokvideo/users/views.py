@@ -120,6 +120,8 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
     def save_user_and_openid(self, username, openid, user_info=None):
         """保存用户信息以及openid"""
+        if not username:
+            raise exceptions.ParseError('username不能为空')
         user_qs = Users.objects.filter(username=username)
         if not user_qs.exists():
             user = Users.objects.create(
