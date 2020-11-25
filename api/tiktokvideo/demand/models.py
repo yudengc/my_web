@@ -11,6 +11,17 @@ class VideoNeeded(models.Model):
         on_delete=models.CASCADE,
         related_name='video_needed'
     )
+    TO_PUBLISH, TO_CHECK, ON_GOING, DONE, EXCEPTION = range(5)
+    status = models.PositiveSmallIntegerField(
+        default=0,
+        choices=(
+            (TO_PUBLISH, '未发布'),
+            (TO_CHECK, '待审核'),
+            (ON_GOING, '进行中'),
+            (DONE, '已完成'),
+            (EXCEPTION, '异常'),
+        )
+    )
     title = models.CharField(
         verbose_name='标题',
         max_length=128,
