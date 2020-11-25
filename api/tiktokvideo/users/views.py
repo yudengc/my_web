@@ -1,3 +1,4 @@
+import logging
 import threading
 
 from django.contrib.auth.hashers import check_password
@@ -24,6 +25,7 @@ from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializ
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls
 
 redis_conn = get_redis_connection('default')  # type: StrictRedis
+logger = logging.getLogger()
 
 
 class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -66,8 +68,10 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         user_info = JwtServers(user=user_instance).get_token_and_user_info()
         if code:  # 存在注册码绑定邀请关系
             # save_invite_relation.delay(code, username)  # 绑定邀请关系
+            logger.info('准备进入线程')
             threading.Thread(target=save_invite_relation,
                              args=(code, username)).start()  # 绑定邀请关系
+            logger.info('结束线程')
         return Response(user_info, status=status.HTTP_200_OK)
 
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
