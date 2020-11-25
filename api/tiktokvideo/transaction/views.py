@@ -30,7 +30,7 @@ class WeChatPayViewSet(APIView):
 
     def post(self, request):
         if request.user.status == Users.FROZEN:
-            return Response({'detail': '账户被冻结，请联系管理员', 'code': 444}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': '账户被冻结，请联系客服处理', 'code': 444}, status=status.HTTP_400_BAD_REQUEST)
         request_data = request.data
         t_type = request_data.get('type', '0')  # 0:购买套餐
         p_id = request_data.get('p_id', None)   # 购买的商品对应的id
