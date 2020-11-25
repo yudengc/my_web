@@ -58,14 +58,18 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
     def auth(self, request):
         """微信授权登录"""
+        logger.info('开始登陆')
         openid = request.data.get('openid', None)
         username = request.data.get('username', None)
         user_info = request.data.get('userInfo', None)
         code = request.data.get('iCode', None)
         if not openid and not username:
             return Response({"detail": "缺少参数!"}, status=status.HTTP_400_BAD_REQUEST)
+        logger.info('1111111')
         user_instance = self.save_user_and_openid(username, openid, user_info)
+        logger.info('222222')
         user_info = JwtServers(user=user_instance).get_token_and_user_info()
+        logger.info('3333333')
         if code:  # 存在注册码绑定邀请关系
             # save_invite_relation.delay(code, username)  # 绑定邀请关系
             logger.info('准备进入线程')
