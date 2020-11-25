@@ -70,6 +70,9 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         if not openid and not username:
             return Response({"detail": "缺少参数!"}, status=status.HTTP_400_BAD_REQUEST)
         user_instance = self.save_user_and_openid(username, openid, user_info)
+
+        if user_instance.status == Users.FROZEN:
+            return Response({'detail': '账户被冻结，请联系管理员', 'code': 444}, status=status.HTTP_200_OK)
         user_info = JwtServers(user=user_instance).get_token_and_user_info()
         if code:  # 存在注册码绑定邀请关系
             # save_invite_relation.delay(code, username)  # 绑定邀请关系
@@ -139,8 +142,6 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 user_base.avatars = user_info.get('avatarUrl')
                 user_base.save()
 
-        if user.status == Users.FROZEN:
-            raise exceptions.ParseError('用户已被冻结，请联系管理员')
         # 是否换微信登录
         if user.openid != openid:
             user_qs.update(openid=openid)
