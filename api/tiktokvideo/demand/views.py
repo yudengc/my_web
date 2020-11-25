@@ -45,7 +45,7 @@ class ManageVideoNeededViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return VideoNeeded.objects.all()
 
-    @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
+    @action(methods=['post', ], detail=True, permission_classes=[AdminPermission])
     def check(self, request, **kwargs):
         form, error = JsonParser(
             Argument('action', filter=lambda x: x in ['pass', 'reject'], help="请输入action(操作) e.pass/reject"),
