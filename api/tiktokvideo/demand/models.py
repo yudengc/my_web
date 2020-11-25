@@ -37,8 +37,6 @@ class VideoNeeded(models.Model):
     industries = models.CharField(
         verbose_name='行业',
         max_length=64,
-        blank=True,
-        null=True
     )
     category = models.CharField(
         verbose_name='商品品类',
@@ -172,17 +170,17 @@ class VideoNeeded(models.Model):
         blank=True
     )
     example1 = models.TextField(
-        verbose_name='同行视频1',
+        verbose_name='参考视频1',
         null=True,
         blank=True
     )
     example2 = models.TextField(
-        verbose_name='同行视频2',
+        verbose_name='参考视频2',
         null=True,
         blank=True
     )
     example3 = models.TextField(
-        verbose_name='同行视频3',
+        verbose_name='参考视频3',
         null=True,
         blank=True
     )
@@ -203,7 +201,7 @@ class VideoNeeded(models.Model):
         null=True
     )
     publish_time = models.DateTimeField(
-        verbose_name='最近一次的发布时间',
+        verbose_name='最近一次的发布审核时间',
         null=True
     )
     non_publish_time = models.DateTimeField(

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from config.models import CustomerService
+from config.models import CustomerService, GoodsCategory
 
 
 class CustomerServiceSerializer(serializers.ModelSerializer):
@@ -10,3 +10,7 @@ class CustomerServiceSerializer(serializers.ModelSerializer):
         exclude = ('date_created', 'date_updated')
 
 
+class GoodsCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GoodsCategory
+        fields = '__all__'

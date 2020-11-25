@@ -35,3 +35,17 @@ class CustomerService(BaseModel):
         verbose_name = "客服联系"
         verbose_name_plural = verbose_name
         db_table = 'CustomerService'
+
+
+class GoodsCategory(BaseModel):
+    """
+    商品品类
+    """
+    title = models.CharField(
+        max_length=100
+    )
+
+    class Meta:
+        verbose_name = '商品品类'
+        verbose_name_plural = verbose_name
+        db_table = 'GoodsCategory'
