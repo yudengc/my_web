@@ -1,6 +1,8 @@
 # Copyright: (c) OpenSpug Organization. https://github.com/openspug/spug
 # Copyright: (c) <spug.dev@gmail.com>
 # Released under the MIT License.
+
+from typing import Union, Callable
 import json
 
 
@@ -30,7 +32,7 @@ class Argument(object):
     :param bool required: is required
     """
 
-    def __init__(self, name, default=None, handler=None, required=True, type=str, filter=None, help=None,
+    def __init__(self, name, default=None, handler=None, required: Union[bool, Callable] = True, type=str, filter=None, help=None,
                  nullable=False):
         self.name = name
         self.default = default
@@ -45,8 +47,10 @@ class Argument(object):
         if filter and not callable(self.filter):
             raise TypeError('Argument filter is not callable')
 
-    def parse(self, has_key, value):
+    def parse(self, has_key, value, rst):
         if not has_key:
+            if callable(self.required):
+                self.required = self.required(rst)
             if self.required and self.default is None:
                 raise ParseError(
                     self.help or 'Required Error: %s is required' % self.name)
@@ -111,7 +115,7 @@ class BaseParser(object):
                 has_key, value = self._get(e.name)
                 if clear and has_key is False and e.required is False:
                     continue
-                rst[e.name] = e.parse(has_key, value)
+                rst[e.name] = e.parse(has_key, value, rst)
         except ParseError as err:
             return None, err.message
         return rst, None

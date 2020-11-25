@@ -68,13 +68,13 @@ class Users(AbstractUser):
         blank=True,
         null=True
     )
-    ADMIN, MANAGER, COMMON = range(3)
+    SUPER_ADMIN, ADMIN, COMMON = range(3)
     sys_role = models.PositiveSmallIntegerField(
         verbose_name="系统身份",
         default=COMMON,
         choices=(
-            (ADMIN, '超管'),
-            (MANAGER, '管理员'),
+            (SUPER_ADMIN, '超管'),
+            (ADMIN, '管理员'),
             (COMMON, '普通用户'),
         ),
     )
@@ -406,7 +406,7 @@ class Team(BaseModel):
     edit_audit_button.short_description = "操作"
 
 
-class Address(models.Model):
+class Address(BaseModel):
     uid = models.ForeignKey(
         "Users",
         to_field='uid',
@@ -448,4 +448,4 @@ class Address(models.Model):
     class Meta:
         verbose_name = '地址'
         verbose_name_plural = verbose_name
-        ordering = ['-create_time']
+        ordering = ['-date_created']

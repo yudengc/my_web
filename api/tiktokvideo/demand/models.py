@@ -1,6 +1,7 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
+
 # Create your models here.
 
 
@@ -22,6 +23,12 @@ class VideoNeeded(models.Model):
             (EXCEPTION, '异常'),
         )
     )
+    reject_reason = models.TextField(
+        verbose_name='拒绝原因',
+        null=True
+    )
+
+    # needed desc #
     title = models.CharField(
         verbose_name='标题',
         max_length=128,
@@ -54,7 +61,11 @@ class VideoNeeded(models.Model):
         verbose_name='剩余数',
         default=0
     )
-    video_num_split = ArrayField(
+    slice_num = models.PositiveSmallIntegerField(
+        verbose_name='视频订单分片数',
+        default=1
+    )
+    video_slice = ArrayField(
         models.PositiveIntegerField(
             verbose_name='视频数分片',
             null=True
@@ -65,6 +76,8 @@ class VideoNeeded(models.Model):
         verbose_name='是否返样',
         default=False
     )
+
+    # receiver desc
     receiver_name = models.CharField(
         verbose_name='返样收货人名字',
         null=True
@@ -92,6 +105,8 @@ class VideoNeeded(models.Model):
         verbose_name='返样具体地址',
         max_length=128,
     )
+
+    # video desc #
     video_size = models.PositiveSmallIntegerField(
         verbose_name='视频尺寸',
         default=0,
@@ -171,6 +186,8 @@ class VideoNeeded(models.Model):
         null=True,
         blank=True
     )
+
+    # time desc #
     create_time = models.DateTimeField(
         auto_now_add=True
     )
@@ -193,7 +210,6 @@ class VideoNeeded(models.Model):
         verbose_name='最近一次的下架时间',
         null=True
     )
-
 
     class Meta:
         verbose_name = '短视频需求单'
