@@ -65,7 +65,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         logger.info('打印username')
         logger.info(username)
         user_info = request.data.get('userInfo', None)
-        code = request.data.get('iCode', None)
+        code = request.data.get('iCode')
         if not openid and not username:
             return Response({"detail": "缺少参数!"}, status=status.HTTP_400_BAD_REQUEST)
         logger.info('1111111')
