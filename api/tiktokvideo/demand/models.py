@@ -171,6 +171,29 @@ class VideoNeeded(models.Model):
         null=True,
         blank=True
     )
+    create_time = models.DateTimeField(
+        auto_now_add=True
+    )
+    update_time = models.DateTimeField(
+        auto_now=True
+    )
+    check_time = models.DateTimeField(
+        verbose_name='审核时间',
+        null=True
+    )
+    done_time = models.DateTimeField(
+        verbose_name='完成时间',
+        null=True
+    )
+    publish_time = models.DateTimeField(
+        verbose_name='最近一次的发布时间',
+        null=True
+    )
+    non_publish_time = models.DateTimeField(
+        verbose_name='最近一次的下架时间',
+        null=True
+    )
+
 
     class Meta:
         verbose_name = '短视频需求单'
