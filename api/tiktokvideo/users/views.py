@@ -202,5 +202,5 @@ class AddressViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         self.queryset = Address.objects.filter(uid=self.request.user).extra(
-            select={'default': 'is_default=1'}).order_by('-create_time').order_by('-default')
+            select={'default': 'is_default=1'}).order_by('-date_created').order_by('-default')
         return super(AddressViewSet, self).get_queryset()

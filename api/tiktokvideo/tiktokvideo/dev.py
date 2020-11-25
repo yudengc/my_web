@@ -12,6 +12,8 @@ from datetime import timedelta
 
 # 创建log日志路径
 LOG_PATH = '/var/log/projects_logs/tiktokvideo/'
+if not os.path.exists(LOG_PATH):
+    os.makedirs(LOG_PATH)
 
 LOGGING = {
     'version': 1,  # 保留字
