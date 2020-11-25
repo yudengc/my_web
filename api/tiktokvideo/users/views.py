@@ -82,6 +82,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
     def get_phone(self, request):
         """获取手机号码"""
+        logger.info('get_phone111111111')
         if {'encrypted_data', 'iv', 'openid'}.issubset(set(request.data.keys())):
             openid = request.data.get('openid')
             session_key = redis_conn.get(openid)
@@ -104,6 +105,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
     def get_openid(self, request):
         """获取openid"""
+        logger.info('get_openid111111111')
         code = request.data.get('code', None)
         if code:
             openid, session_key = WeChatApi(APP_ID, SECRET).get_openid_and_session_key(code)
