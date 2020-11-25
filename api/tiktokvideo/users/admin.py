@@ -20,7 +20,7 @@ class UsersAdmin(admin.ModelAdmin):
         'username', 'nickname', 'avatars', 'status', 'salesman_username', 'salesman_name',
         'identity', 'package', 'expiration_time', 'date_created', )
     # 定义搜索框以哪些字段可以搜索
-    search_fields = ('username', 'salesman_name', 'auth_base__nickname', 'user_salesman__username')
+    search_fields = ('username', 'salesman_name', 'auth_base__nickname',)
     # 定义过滤器以哪些字段可以搜索
     list_filter = ('status', 'identity', 'date_created')
     # 详情页面展示的字段
