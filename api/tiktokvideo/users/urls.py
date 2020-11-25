@@ -8,6 +8,7 @@ login_router = DefaultRouter()
 login_router.register(r'login', LoginViewSet, basename='login')
 login_router.register(r'user-business', UserBusinessViewSet, basename='user_business')
 login_router.register(r'user-info', UserInfoViewSet, basename='user_info')
+login_router.register(r'address', UserInfoViewSet, basename='address')
 
 
 urlpatterns = [

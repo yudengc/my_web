@@ -404,3 +404,47 @@ class Team(BaseModel):
 
     edit_audit_button.short_description = "操作"
 
+
+class Address(models.Model):
+    uid = models.ForeignKey(
+        "Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+        related_name='address',
+    )
+    name = models.CharField(
+        _('收货人姓名'),
+        max_length=64
+    )
+    phone = models.CharField(
+        _('收货人电话'),
+        max_length=11
+    )
+    province = models.CharField(
+        _('所在地省'),
+        max_length=128,
+        null=True
+    )
+    city = models.CharField(
+        _('所在地市'),
+        max_length=128,
+        null=True
+    )
+    district = models.CharField(
+        _('所在地地区'),
+        max_length=128,
+        null=True
+    )
+    location = models.CharField(
+        _('具体地址'),
+        max_length=128,
+    )
+    is_default = models.BooleanField(
+        _('是否默认'),
+        default=False
+    )
+
+    class Meta:
+        verbose_name = '地址'
+        verbose_name_plural = verbose_name
+        ordering = ['-create_time']

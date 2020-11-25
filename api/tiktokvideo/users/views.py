@@ -16,10 +16,11 @@ from relations.tasks import save_invite_relation
 
 from tiktokvideo.base import APP_ID, SECRET
 from users.filter import TeamFilter
-from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle
+from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
-from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer
+from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer, \
+    AddressSerializer, AddressListSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls
 
@@ -187,3 +188,19 @@ class BusInfoOtherView(APIView):
         for obj in ScriptType.objects.all():
             script_lis.append(dict(id=obj.id, title=obj.title))
         return Response(dict(style=style_lis, script=script_lis))
+
+
+class AddressViewSet(viewsets.ModelViewSet):
+    """收货地址"""
+    permission_classes = ManagerPermission
+    serializer_class = AddressSerializer
+
+    def get_serializer_class(self):
+        if self.action in ['list', ]:
+            return AddressListSerializer
+        return super().get_serializer_class()
+
+    def get_queryset(self):
+        self.queryset = Address.objects.filter(uid=self.request.user).extra(
+            select={'default': 'is_default=1'}).order_by('-create_time').order_by('-default')
+        return super(AddressViewSet, self).get_queryset()
