@@ -71,7 +71,7 @@ class UsersAdmin(admin.ModelAdmin):
     def expiration_time(self, obj):
         qs = UserPackageRelation.objects.filter(uid=obj).first()
         if qs:
-            return qs.package.expiration_time
+            return qs.expiration_time
         return None
 
     nickname.short_description = '用户名称'
