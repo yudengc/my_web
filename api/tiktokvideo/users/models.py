@@ -78,11 +78,12 @@ class Users(AbstractUser):
             (COMMON, '普通用户'),
         ),
     )
-    SALESMAN, BUSINESS, SUPERVISOR = range(3)
+    SALESMAN, BUSINESS, SUPERVISOR, CREATOR = range(4)
     IDENTITY = (
         (SALESMAN, '业务员'),
         (BUSINESS, '商家'),
         (SUPERVISOR, '团队主管'),
+        (CREATOR, '视频创作者'),
     )
     identity = models.PositiveIntegerField(
         _('用户身份'),
