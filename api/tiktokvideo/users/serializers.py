@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from transaction.models import UserPackageRelation
-from users.models import Users, Team, UserBusiness
+from users.models import Users, Team, UserBusiness, Address
 
 
 class UsersLoginSerializer(serializers.ModelSerializer):
@@ -25,7 +25,7 @@ class TeamSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Team
-        exclude = ('date_updated', )
+        exclude = ('date_updated',)
 
 
 class UserBusinessSerializer(serializers.ModelSerializer):
@@ -76,3 +76,20 @@ class UserInfoSerializer(serializers.ModelSerializer):
             return dict(package_title=r_obj.package.package_title, expiration_time=r_obj.expiration_time)
         return None
 
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = '__all__'
+
+
+class AddressListSerializer(serializers.ModelSerializer):
+    address = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Address
+        fields = ('id', 'name', 'phone', 'is_default', 'address')
+
+    def get_address(self, obj):
+        _l = [obj.province, obj.city, obj.district, obj.location]
+        return ''.join([i for i in _l if i])
