@@ -62,6 +62,8 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         logger.info('开始登陆')
         openid = request.data.get('openid', None)
         username = request.data.get('username', None)
+        logger.info('打印username')
+        logger.info(username)
         user_info = request.data.get('userInfo', None)
         code = request.data.get('iCode', None)
         if not openid and not username:
@@ -77,6 +79,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             threading.Thread(target=save_invite_relation,
                              args=(code, username)).start()  # 绑定邀请关系
             logger.info('结束线程')
+        logger.info('结束登陆')
         return Response(user_info, status=status.HTTP_200_OK)
 
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
