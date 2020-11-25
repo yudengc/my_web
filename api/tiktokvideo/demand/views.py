@@ -141,13 +141,14 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             instance.status = VideoNeeded.TO_CHECK
             instance.publish_time = datetime.datetime.now()
             instance.save()
+            return Response({"detail": "以发布, 待审核中"}, status=status.HTTP_200_OK)
         else:
             if instance.status not in [VideoNeeded.TO_CHECK, VideoNeeded.ON_GOING]:
                 return Response({"detail": "不需要下架的订单"}, status=status.HTTP_400_BAD_REQUEST)
             instance.status = VideoNeeded.TO_PUBLISH
             instance.non_publish_time = datetime.datetime.now()
             instance.save()
-        return Response({"detail": "以发布, 待审核中"}, status=status.HTTP_200_OK)
+            return Response({"detail": "已经下架"}, status=status.HTTP_200_OK)
 
 
 class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
