@@ -12,7 +12,7 @@ import requests
 import logging
 
 from libs.common import utils
-from tiktokvideo.settings import APP_ID
+from tiktokvideo.base import APP_ID, MCH_ID, MCH_KEY, PAY_NOTIFY_URL
 
 logger = logging.getLogger()
 
@@ -58,7 +58,6 @@ class WeChatPay(Payment):
                                  headers={'Content-Type': 'text/xml;charset=utf-8'})
         # 返回数据为xml,将其转为字典
         content = utils.xml_to_dict(response.content)
-        print(content)
         logger.info(f'微信支付接口返回数据{content}')
         if content["return_code"] == 'SUCCESS':
             # 获取预支付交易会话标识
@@ -157,5 +156,4 @@ class GenerateSign:
         dict_data = {**kwargs, **params, **extra_dict}
         sign = self.pay_sign(dict_data)
         dict_data['sign'] = sign
-        print(dict_data)
         return utils.dict_to_xml(dict_data)

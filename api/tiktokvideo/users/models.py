@@ -8,8 +8,6 @@ from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 from safedelete.models import SafeDeleteModel
 
-from libs.common.utils import get_iCode
-
 
 class BaseModel(models.Model):
     date_created = models.DateTimeField(
@@ -70,22 +68,22 @@ class Users(AbstractUser):
         blank=True,
         null=True
     )
-
-    ADMIN, MANAGER, COMMON = range(3)
+    SUPER_ADMIN, ADMIN, COMMON = range(3)
     sys_role = models.PositiveSmallIntegerField(
         verbose_name="系统身份",
         default=COMMON,
         choices=(
-            (ADMIN, '超管'),
-            (MANAGER, '管理员'),
+            (SUPER_ADMIN, '超管'),
+            (ADMIN, '管理员'),
             (COMMON, '普通用户'),
         ),
     )
-
-    SALESMAN, BUSINESS = range(2)
+    SALESMAN, BUSINESS, SUPERVISOR, CREATOR = range(4)
     IDENTITY = (
         (SALESMAN, '业务员'),
         (BUSINESS, '商家'),
+        (SUPERVISOR, '团队主管'),
+        (CREATOR, '视频创作者'),
     )
     identity = models.PositiveIntegerField(
         _('用户身份'),
@@ -103,6 +101,7 @@ class Users(AbstractUser):
         _('注册码'),
         max_length=100,
         unique=True,  # 改成跟id有映射关系的了，不要乱改邀请码
+        null=True,
     )
     team = models.ForeignKey(
         # 所属团队
@@ -272,9 +271,10 @@ class UserBusiness(BaseModel):
         max_length=50,
         null=True,
     )
-    desc = models.TextField(
-        _('详细说明'),
+    selling_point = models.TextField(
+        verbose_name='商品卖点',
         null=True,
+        blank=True
     )
 
     A, B, C, D, E, F = range(6)
@@ -364,7 +364,6 @@ class ScriptType(BaseModel):
 
 
 class Team(BaseModel):
-    pass
     """
     团队
     """
@@ -406,3 +405,47 @@ class Team(BaseModel):
 
     edit_audit_button.short_description = "操作"
 
+
+class Address(BaseModel):
+    uid = models.ForeignKey(
+        "Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+        related_name='address',
+    )
+    name = models.CharField(
+        _('收货人姓名'),
+        max_length=64
+    )
+    phone = models.CharField(
+        _('收货人电话'),
+        max_length=11
+    )
+    province = models.CharField(
+        _('所在地省'),
+        max_length=128,
+        null=True
+    )
+    city = models.CharField(
+        _('所在地市'),
+        max_length=128,
+        null=True
+    )
+    district = models.CharField(
+        _('所在地地区'),
+        max_length=128,
+        null=True
+    )
+    location = models.CharField(
+        _('具体地址'),
+        max_length=128,
+    )
+    is_default = models.BooleanField(
+        _('是否默认'),
+        default=False
+    )
+
+    class Meta:
+        verbose_name = '地址'
+        verbose_name_plural = verbose_name
+        ordering = ['-date_created']

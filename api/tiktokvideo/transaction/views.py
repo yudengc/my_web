@@ -2,7 +2,9 @@ import logging
 import threading
 import xml.etree.ElementTree as et
 from datetime import datetime
+from decimal import Decimal
 
+from django.db.transaction import atomic
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets, filters
@@ -10,13 +12,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from transaction.serializers import PackageSerializer, PackageRecordSerializer, MyPackageSerializer
+from transaction.serializers import PackageSerializer, MyPackageSerializer, OrderInfoSerializer
 from transaction.tasks import update_order_status
 from transaction.models import OrderInfo, UserPackageRelation
 from libs.common.pay import WeChatPay
 from libs.common.permission import ManagerPermission, AllowAny, SalesmanPermission
 from libs.common.utils import get_ip
 from transaction.models import Package
+from users.models import Users
 
 logger = logging.getLogger()
 
@@ -26,28 +29,31 @@ class WeChatPayViewSet(APIView):
     permission_classes = (ManagerPermission,)
 
     def post(self, request):
+        if request.user.status == Users.FROZEN:
+            return Response({'detail': '账户被冻结，请联系客服处理', 'code': 444}, status=status.HTTP_400_BAD_REQUEST)
         request_data = request.data
         t_type = request_data.get('type', '0')  # 0:购买套餐
         p_id = request_data.get('p_id', None)   # 购买的商品对应的id
         if not p_id:
             return Response({"detail": "缺少参数配置ID"}, status=status.HTTP_400_BAD_REQUEST)
-        if t_type == '0':
+        if t_type in ['0', 0]:
             package_ps = Package.objects.filter(id=p_id)
             if not package_ps.exists():
                 return Response({"detail": '该套餐不存在'}, status=status.HTTP_400_BAD_REQUEST)
             money = package_ps.first().package_amount
         else:
             return Response({"detail": 't_type错误'}, status=status.HTTP_400_BAD_REQUEST)
-
         order = OrderInfo.create_order(request.user, money, t_type, p_id)
         # 获取客户端ip
         client_ip = get_ip(request)
         attach = str(request.user.uid) + '_' + str(p_id)  # 自定义参数，回调要用
+
+        money = int(money * Decimal('100'))  # 微信单位是分(int)
         data = WeChatPay().pay(money, client_ip, order.out_trade_no, request.user.openid, attach)
         # print(data)
         if data:
             return Response(data, status=status.HTTP_200_OK)
-        return Response("请求支付失败")
+        return Response({"detail": "请求支付失败"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class WeChatPayBackViewSet(APIView):
@@ -95,8 +101,14 @@ class PayCancelViewSet(APIView):
 class PackageViewSet(viewsets.ReadOnlyModelViewSet):
     """套餐客户端"""
     permission_classes = (ManagerPermission,)
-    queryset = Package.objects.filter(status=Package.PUBLISHED, expiration_time__gte=datetime.now())
+    queryset = Package.objects.filter(status=Package.PUBLISHED)
     serializer_class = PackageSerializer
+
+    def list(self, request, *args, **kwargs):
+        # 不需要分页
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class MyPackageViewSet(viewsets.ModelViewSet):
@@ -108,10 +120,12 @@ class MyPackageViewSet(viewsets.ModelViewSet):
         self.queryset = UserPackageRelation.objects.filter(uid=self.request.user).select_related('package')
         return super().get_queryset()
 
-    @action(methods=['get'], detail=False, serializer_class=PackageRecordSerializer)
-    def records(self, request, *args, **kwargs):
-        # 套餐购买记录
-        return super().list(request, *args, **kwargs)
 
+class OrderInfoViewSet(viewsets.ReadOnlyModelViewSet):
+    """我的购买记录"""
+    permission_classes = (ManagerPermission,)
+    serializer_class = OrderInfoSerializer
 
-
+    def get_queryset(self):
+        self.queryset = OrderInfo.objects.filter(uid=self.request.user, status=OrderInfo.SUCCESS)
+        return super().get_queryset()

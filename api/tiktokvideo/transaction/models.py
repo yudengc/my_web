@@ -1,5 +1,6 @@
 from ckeditor.fields import RichTextField
 from django.db import models
+from django.db.models import ImageField
 from django.utils.translation import ugettext_lazy as _
 from users.models import BaseModel
 from libs.common.utils import get_out_trade_no
@@ -179,7 +180,7 @@ class Package(BaseModel):
         related_name='user_package',
     )
     package_title = models.CharField(
-        _('套餐包名称'),
+        _('套餐名称'),
         max_length=512,
     )
     package_amount = models.DecimalField(
@@ -188,17 +189,20 @@ class Package(BaseModel):
         decimal_places=2,
         default=0
     )
-    package_content = RichTextField(
-        _('套餐包内容')
+    package_content = ImageField(
+        verbose_name='套餐包内容图片',
+        upload_to='package',
+        null=True,
+        blank=True,
     )
-    expiration_time = models.DateTimeField(
-        _('套餐到期时间'),
-        null=True
+    expiration = models.PositiveIntegerField(
+        _('套餐有效天数'),
+        default=0
     )
 
     class Meta:
         db_table = 'Package'
-        verbose_name = '用户购买套餐信息'
+        verbose_name = '商家套餐'
         verbose_name_plural = verbose_name
         ordering = ('-date_created', )
 
@@ -213,12 +217,17 @@ class UserPackageRelation(BaseModel):
         "Package",
         on_delete=models.DO_NOTHING,
     )
-    order = models.OneToOneField(
-        'OrderInfo',
-        on_delete=models.DO_NOTHING,
+    # order = models.OneToOneField(
+    #     'OrderInfo',
+    #     on_delete=models.DO_NOTHING,
+    # )
+    expiration_time = models.DateTimeField(
+        _('套餐到期时间'),
+        null=True
     )
 
     class Meta:
         verbose_name = '用户和套餐包的关系表'
         verbose_name_plural = verbose_name
         db_table = 'UserPackageRelation'
+        unique_together = ('uid', 'package')

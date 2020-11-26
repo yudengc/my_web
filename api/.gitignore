@@ -31,3 +31,6 @@ nohup.out
 /tiktokvideo/tiktokvideo/collectedstatic/
 /tiktokvideo/tiktokvideo/static/
 /tiktokvideo/tiktokvideo/collectstatic/
+/tiktokvideo/static_files/
+/tiktokvideo/media/
+/tiktokvideo/tiktokvideo/media/

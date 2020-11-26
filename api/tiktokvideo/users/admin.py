@@ -8,7 +8,8 @@ from django.utils.html import format_html
 
 from relations.models import InviteRelationManager
 from transaction.models import UserPackageRelation
-from users.models import Users, UserBase, UserBusiness, Team, UserExtra
+from users.models import Users, UserBase, UserBusiness, Team, UserExtra, CelebrityStyle, ScriptType
+from users.services import InviteCls
 
 
 @admin.register(Users)
@@ -19,7 +20,7 @@ class UsersAdmin(admin.ModelAdmin):
         'username', 'nickname', 'avatars', 'status', 'salesman_username', 'salesman_name',
         'identity', 'package', 'expiration_time', 'date_created', )
     # 定义搜索框以哪些字段可以搜索
-    search_fields = ('username', 'salesman_name', 'auth_base__nickname', 'user_salesman__username')
+    search_fields = ('username', 'salesman_name', 'auth_base__nickname',)
     # 定义过滤器以哪些字段可以搜索
     list_filter = ('status', 'identity', 'date_created')
     # 详情页面展示的字段
@@ -43,16 +44,22 @@ class UsersAdmin(admin.ModelAdmin):
         return obj.auth_base.nickname
 
     def avatars(self, obj):
-        return format_html(
-            '<img src="{}" width="50px"/>',
-            obj.auth_base.avatars,
-        )
+        avatars = obj.auth_base.avatars
+        if avatars:
+            return format_html(
+                '<img src="{}" width="50px"/>',
+                avatars,
+            )
+        return None
 
     def salesman_username(self, obj):
         # 所属业务员账号
         qs = InviteRelationManager.objects.filter(invitee=obj).first()
         if qs:
-            return qs.salesman.username
+            salesman = qs.salesman
+            if salesman:
+                return qs.salesman.username
+            return None
         return None
 
     def package(self, obj):
@@ -64,7 +71,7 @@ class UsersAdmin(admin.ModelAdmin):
     def expiration_time(self, obj):
         qs = UserPackageRelation.objects.filter(uid=obj).first()
         if qs:
-            return qs.package.expiration_time
+            return qs.expiration_time
         return None
 
     nickname.short_description = '用户名称'
@@ -79,7 +86,7 @@ class UserBusinessAdmin(admin.ModelAdmin):
     """商家信息"""
     # 定义admin总览里每行的显示信息
     list_display = (
-        'username', 'nickname', 'contact', 'bus_name', 'name_abb', 'industry', 'category', 'desc', 'date_created', )
+        'username', 'nickname', 'contact', 'bus_name', 'name_abb', 'industry', 'category', 'selling_point', 'date_created', )
     # 定义搜索框以哪些字段可以搜索
     search_fields = ('uid__username', 'uid__auth_base__nickname', 'contact')
     # 定义过滤器以哪些字段可以搜索
@@ -97,15 +104,6 @@ class UserBusinessAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
-
-    def get_actions(self, request):
-        # 在actions中去掉‘删除'操作
-        actions = super(UserBusinessAdmin, self).get_actions(request)
-        # if request.user.username[0].upper() != 'J':
-        #     if 'delete_selected' in actions:
-        #         del actions['delete_selected']
-        print(actions)
-        return actions
 
     def username(self, obj):
         return obj.uid.username
@@ -154,7 +152,7 @@ class TeamAdmin(admin.ModelAdmin):
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         # create或update时，外键leader 需要过滤
-        context['adminform'].form.fields['leader'].queryset = Users.objects.filter(identity=Users.SALESMAN)
+        context['adminform'].form.fields['leader'].queryset = Users.objects.filter(identity=Users.SUPERVISOR)
         return super(TeamAdmin, self).render_change_form(request, context, add, change, form_url, obj)
 
     leader_username.short_description = '账号'
@@ -197,6 +195,8 @@ class TeamUsersAdmin(admin.ModelAdmin):
     # readonly_fields = ('username', 'password',)
     # 详情页面展示的字段
     fields = ('username', 'password', 'salesman_name', 'team', )
+    # 禁用编辑链接
+    list_display_links = None
     form = UsersForm
 
     def get_queryset(self, request):
@@ -224,13 +224,105 @@ class TeamUsersAdmin(admin.ModelAdmin):
                 user = form.save()
                 user.identity = Users.SALESMAN
                 user.set_password(form.data.get('password'))
+                user.iCode = InviteCls.encode_invite_code(user.id)
                 user.save()
                 UserExtra.objects.create(uid=user)
                 UserBase.objects.create(
                     uid=user,
                     phone=user.username
                 )
+                leader = Team.objects.get(id=form.data.get('team')).leader
+                InviteRelationManager.objects.create(inviter=leader, invitee=user, level=1)
+        super().save_model(request, obj, form, change)
 
     leader_username.short_description = '所属团队账号'
     team_name.short_description = '所属团队名称'
     salesman_username.short_description = '业务员账号'
+
+
+class TeamLeader(Users):
+    class Meta:
+        verbose_name = '团队成员'
+        verbose_name_plural = verbose_name
+        proxy = True
+
+
+@admin.register(TeamLeader)
+class TeamUsersAdmin(admin.ModelAdmin):
+    """团队leader"""
+    # 定义admin总览里每行的显示信息
+    list_display = ('leader_username', 'leader_salesman_name', 'date_created')
+    # 定义搜索框以哪些字段可以搜索
+    search_fields = ('leader_username', 'leader_salesman_name')
+    # 定义过滤器以哪些字段可以搜索
+    list_filter = ('date_created',)
+    # 列表页每页展示的条数
+    list_per_page = 20
+    # 详情页面展示的字段
+    fields = ('username', 'password', 'salesman_name', )
+    # 禁用编辑链接
+    list_display_links = None
+    form = UsersForm
+
+    def get_queryset(self, request):
+        queryset = self.model.objects.filter(identity=Users.SUPERVISOR)
+        return queryset
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def leader_username(self, obj):
+        return obj.username
+
+    def leader_salesman_name(self, obj):
+        return obj.salesman_name
+
+    leader_username.short_description = '业务员主管账号'
+    leader_salesman_name.short_description = '业务员名称'
+
+    def save_model(self, request, obj, form, change):
+        """
+        Given a model instance save it to the database.
+        """
+        if not change:
+            if form.is_valid():
+                user = form.save()
+                user.identity = Users.SUPERVISOR
+                user.set_password(form.data.get('password'))
+                user.iCode = InviteCls.encode_invite_code(user.id)
+                user.save()
+                UserExtra.objects.create(uid=user)
+                UserBase.objects.create(
+                    uid=user,
+                    phone=user.username
+                )
+        else:
+            super().save_model(request, obj, form, change)
+
+
+@admin.register(CelebrityStyle)
+class CelebrityStyleAdmin(admin.ModelAdmin):
+    """商家信息风格标题"""
+    # 定义admin总览里每行的显示信息
+    list_display = ('id', 'title', 'date_created')
+    # 定义搜索框以哪些字段可以搜索
+    search_fields = ('title',)
+    # 详情页面展示的字段
+    fields = ('title', )
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ScriptType)
+class CelebrityStyleAdmin(admin.ModelAdmin):
+    """商家信息脚本类别"""
+    # 定义admin总览里每行的显示信息
+    list_display = ('id', 'title', 'date_created')
+    # 定义搜索框以哪些字段可以搜索
+    search_fields = ('title',)
+    # 详情页面展示的字段
+    fields = ('title',)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
