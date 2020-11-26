@@ -49,7 +49,7 @@ class CreatorBill(models.Model):
         _('更新时间'),
         auto_now=True
     )
-    # Todo  跟订单关联
+    # Todo  记得跟订单关联
 
     class Meta:
         db_table = 'CreatorAccount'
