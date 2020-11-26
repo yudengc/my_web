@@ -82,7 +82,7 @@ class VideoNeeded(models.Model):
     # order desc
     order_slice_num = models.PositiveSmallIntegerField(
         verbose_name='订单分片数',
-        default=1
+        default=0
     )
     order_video_slice = ArrayField(
         JSONField(
@@ -148,7 +148,7 @@ class VideoNeeded(models.Model):
         verbose_name='模特需求类型',
         default=0,
         choices=(
-            (0, '否'),
+            (0, '无要求'),
             (1, '男模特'),
             (2, '女模特'),
             (3, '男+女模特'),
@@ -158,7 +158,7 @@ class VideoNeeded(models.Model):
         verbose_name='模特出场率',
         default=0,
         choices=(
-            (0, '未选择'),
+            (0, '无要求'),
             (1, '>10%'),
             (2, '>20%'),
             (3, '>30%'),
@@ -169,7 +169,7 @@ class VideoNeeded(models.Model):
         verbose_name='模特年龄范围',
         default=0,
         choices=(
-            (0, '未选择'),
+            (0, '无要求'),
             (1, '婴幼儿'),
             (2, '儿童/少年'),
             (3, '18-35岁'),
@@ -180,7 +180,7 @@ class VideoNeeded(models.Model):
         verbose_name='模特身材',
         default=0,
         choices=(
-            (0, '未选择'),
+            (0, '无要求'),
             (1, '偏瘦'),
             (2, '中等'),
             (3, '偏肥/大码'),
