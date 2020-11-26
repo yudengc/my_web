@@ -6,7 +6,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
-from safedelete.models import SafeDeleteModel
 
 
 class BaseModel(models.Model):
@@ -335,6 +334,38 @@ class UserBusiness(BaseModel):
         verbose_name = '商家信息'
         verbose_name_plural = verbose_name
         db_table = 'UserBusiness'
+
+
+class UserCreator(BaseModel):
+    """
+    创作者信息
+    """
+    uid = models.OneToOneField(
+        "Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+        related_name='user_creator',
+    )
+    NOT_CERTIFIED, PENDING, APPROVED, REJECTED = range(4)
+    status = models.PositiveSmallIntegerField(
+        default=NOT_CERTIFIED,
+        choices=(
+            (NOT_CERTIFIED, '未认证'),
+            (PENDING, '待审核'),
+            (APPROVED, '已认证'),
+            (REJECTED, '审核不通过'),
+        )
+    )
+    video = models.URLField(
+        verbose_name="介绍视频",
+        max_length=1000,
+    )
+    team_introduction = models.TextField(
+        verbose_name="团队介绍",
+    )
+    capability_introduction = models.TextField(
+        verbose_name="能力介绍",
+    )
 
 
 class CelebrityStyle(BaseModel):

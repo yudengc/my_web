@@ -12,12 +12,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
+from account.models import CreatorAccount
 from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermission
 from relations.tasks import save_invite_relation
 
 from tiktokvideo.base import APP_ID, SECRET
 from users.filter import TeamFilter
-from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address
+from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address, \
+    UserCreator
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer, \
@@ -134,6 +136,9 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 nickname=user_info.get('nickName'),
                 avatars=user_info.get('avatarUrl')
             )
+            # if select_identity == Users.CREATOR:
+            #     UserCreator.objects.create(uid=user)
+            #     CreatorAccount.objects.create(uid=user)
         else:
             # 如果后台创建的用户要补充微信信息
             user = user_qs.first()
