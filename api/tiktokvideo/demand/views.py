@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 from config.models import GoodsCategory
 from demand.models import VideoNeeded
 from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer
+from flow_limiter.services import FlowLimiter
 from libs.common.permission import ManagerPermission, AdminPermission, AllowAny
 from libs.pagination import StandardResultsSetPagination
 from libs.parser import JsonParser, Argument
@@ -258,16 +259,17 @@ class ClientVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         self.queryset = self.queryset.order_by('-create_time')
         recommend = self.request.query_params.get('recommend', None)
-        # if str(recommend) == '1':
-        #     self.queryset = VideoNeeded.objects.annotate(
-        #         remained_order=F('slice_num')-F('applied_num')
-        #     ).filter(rema)
+        if str(recommend) == '1':
+            self.queryset = self.queryset.filter(order_num_remained__gt=0).order_by(
+                '-create_time', 'recommend'
+            )
         return self.queryset
 
 
 class test(APIView):
     permission_classes = [AllowAny]
 
+    @FlowLimiter.limited_decorator(limited="100/day;")
     def post(self, request):
         data = check_link_and_get_data(request.data.get('goods_link').strip())
         return Response(data, status=status.HTTP_200_OK)
