@@ -11,6 +11,7 @@ import demjson
 import requests
 from django.conf import settings
 
+from demand.models import VideoNeeded
 from libs.decorator import try_decorator
 from libs.tbk import GetTBKCouponInfo
 
@@ -267,7 +268,7 @@ def check_link_and_get_data(goods_link):
             logger.info(e)
             raise CheckLinkRequestError('调用获取商品detail报错, 请联系技术人员处理!')
         data = goods_data.get('data')[0]
-        data['chanel'] = 'tb'  # 淘宝
+        data['chanel'] = VideoNeeded.TB  # 淘宝
         return data
     elif oXiaoDianPattern.search(goods_link) or oXiaoDianShortPattern.search(goods_link):
         data = XDSpiderService(goods_link).get_goods_detail()
@@ -280,7 +281,7 @@ def check_link_and_get_data(goods_link):
                     dic = dict(tkrates=goods_data.get('cos_radio'), itemid=goods_data.get('goods_id'),
                                itemtitle=goods_data.get('title'),
                                itempic=goods_data.get('cover_url'), itemsale=goods_data.get('sales'),
-                               chanel='dy',
+                               chanel=VideoNeeded.DY,
                                itemprice=Decimal(str(goods_data.get('price'))) * Decimal(str(0.01)), )
                     return dic
                 else:

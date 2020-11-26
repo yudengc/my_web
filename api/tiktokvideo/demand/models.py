@@ -1,4 +1,4 @@
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 
 
@@ -35,9 +35,10 @@ class VideoNeeded(models.Model):
         verbose_name='行业',
         max_length=64,
     )
-    category = models.CharField(
-        verbose_name='商品品类',
-        max_length=64
+    category = models.ForeignKey(
+        'config.GoodsCategory',
+        on_delete=models.DO_NOTHING,
+        related_name='video_needed'
     )
     goods_link = models.URLField(
         verbose_name='商品链接',
@@ -47,33 +48,51 @@ class VideoNeeded(models.Model):
         verbose_name='商品主图',  # 来自于goods_link解析
         max_length=3000,
     )
+    TB, JD, KL, DY = range(4)
+    CHANEL = (
+        (TB, "淘宝"),
+        (JD, "京东"),
+        (KL, "网易考拉"),
+        (DY, "抖音小店"),
+    )
+    goods_channel = models.PositiveSmallIntegerField(
+        verbose_name='商品来源',
+        default=TB
+    )
     attraction = models.TextField(
         verbose_name='商品卖点',
         blank=True,
         null=True
     )
-    num_needed = models.PositiveIntegerField(
+    video_num_needed = models.PositiveIntegerField(
         verbose_name='拍摄视频数',
         default=0
     )
-    num_remained = models.PositiveIntegerField(
-        verbose_name='剩余数',
-        default=0
-    )
-    slice_num = models.PositiveSmallIntegerField(
-        verbose_name='视频订单分片数',
-        default=1
-    )
-    video_slice = ArrayField(
-        models.PositiveIntegerField(
-            verbose_name='视频数分片',
-            null=True
-        ),
-        default=list
+    video_num_remained = models.PositiveIntegerField(
+        verbose_name='剩余数(视频数)',
+        default=0,
+        db_index=True
     )
     is_return = models.BooleanField(
         verbose_name='是否返样',
         default=False
+    )
+
+    # 需要在订单流程中维护这几个字段
+    # order desc
+    order_slice_num = models.PositiveSmallIntegerField(
+        verbose_name='订单分片数',
+        default=1
+    )
+    order_video_slice = ArrayField(
+        JSONField(
+            verbose_name='订单的视频数分片',
+        ),
+        default=list
+    )
+    order_num_remained = models.PositiveSmallIntegerField(
+        verbose_name='剩余申请数(订单数)',
+        default=0
     )
 
     # receiver desc
