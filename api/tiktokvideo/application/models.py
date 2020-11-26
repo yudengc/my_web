@@ -37,10 +37,12 @@ class VideoOrder(BaseModel):
     # receiver desc
     receiver_name = models.CharField(
         verbose_name='寄样收货人名字',
+        max_length=64,
         null=True
     )
     receiver_phone = models.CharField(
         verbose_name='寄样收货人电话',
+        max_length=64,
         null=True
     )
     receiver_province = models.CharField(

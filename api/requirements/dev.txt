@@ -47,3 +47,5 @@ django-ckeditor
 simpleui
 
 Pillow
+
+demjson

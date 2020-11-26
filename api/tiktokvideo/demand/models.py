@@ -39,9 +39,13 @@ class VideoNeeded(models.Model):
         verbose_name='商品品类',
         max_length=64
     )
-    goods_link = models.UUIDField(
+    goods_link = models.URLField(
         verbose_name='商品链接',
         max_length=3000
+    )
+    goods_images = models.URLField(
+        verbose_name='商品主图',  # 来自于goods_link解析
+        max_length=3000,
     )
     attraction = models.TextField(
         verbose_name='商品卖点',
@@ -75,10 +79,12 @@ class VideoNeeded(models.Model):
     # receiver desc
     receiver_name = models.CharField(
         verbose_name='返样收货人名字',
+        max_length=64,
         null=True
     )
     receiver_phone = models.CharField(
         verbose_name='返样收货人电话',
+        max_length=64,
         null=True
     )
     receiver_province = models.CharField(
