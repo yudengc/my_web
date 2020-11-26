@@ -329,6 +329,10 @@ class UserBusiness(BaseModel):
         null=True,
         blank=True
     )
+    remain_video_num = models.PositiveIntegerField(
+        _('剩余视频数'),
+        default=0
+    )
 
     class Meta:
         verbose_name = '商家信息'

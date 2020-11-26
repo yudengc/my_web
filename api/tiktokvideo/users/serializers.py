@@ -8,6 +8,7 @@ class UsersLoginSerializer(serializers.ModelSerializer):
     """
     登陆
     """
+    remain_video_num = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Users
@@ -15,6 +16,12 @@ class UsersLoginSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
+
+    def get_remain_video_num(self, obj):
+        try:
+            return obj.user_business.remain_video_num
+        except UserBusiness.DoesNotExist:
+            return 0
 
 
 class TeamSerializer(serializers.ModelSerializer):

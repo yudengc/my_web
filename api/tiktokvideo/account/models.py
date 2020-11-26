@@ -1,7 +1,7 @@
 from django.db import models
 
 from users.models import BaseModel
-
+from django.utils.translation import ugettext_lazy as _
 
 class CreatorAccount(BaseModel):
     """创作者账户"""
