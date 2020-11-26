@@ -1,21 +1,30 @@
 import datetime
+import logging
+import traceback
 
 from django.shortcuts import render
 from django_filters import rest_framework
+from django_redis import get_redis_connection
+from redis import StrictRedis
 
 from rest_framework import viewsets, status, filters
 
 # Create your views here.
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from config.models import GoodsCategory
 from demand.models import VideoNeeded
 from demand.serializers import VideoNeededSerializer
-from libs.common.permission import ManagerPermission, AdminPermission
+from libs.common.permission import ManagerPermission, AdminPermission, AllowAny
 from libs.pagination import StandardResultsSetPagination
 from libs.parser import JsonParser, Argument
+from libs.services import check_link_and_get_data, CheckLinkError, CheckLinkRequestError
 from users.models import Address
+
+logger = logging.getLogger()
+conn = get_redis_connection('default')  # type: StrictRedis
 
 
 class VideoNeededViewSet(viewsets.ModelViewSet):
@@ -72,7 +81,6 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         form, error = JsonParser(
             Argument('title', help='请输入 title(标题)'),
             Argument('industries', help='请输入 industries(行业)'),
-            Argument('goods_link', help='请输入 goods_link(商品链接)'),
             Argument('attraction', help='请输入 attraction(商品卖点)'),
             Argument('num_needed', help='请输入 num_needed(拍摄视频数)'),
             Argument('is_return', type=bool, help='请输入 is_return(是否返样)'),
@@ -86,17 +94,23 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             Argument('example1', type=str, required=False, help='请输入 example1(参考视频1)'),
             Argument('example2', type=str, required=False, help='请输入 example2(参考视频2)'),
             Argument('example3', type=str, required=False, help='请输入 example3(参考视频3)'),
+            Argument('goods_images', help='请输入 goods_images(商品商品主图)'),
             Argument('action', type=int, help='请输入 action(发布操作 0/1)'),
+            Argument('goods_link', help='请输入 goods_link(商品链接)', handler=lambda x: x.strip()),
             Argument('category', help='请输入 category(商品品类id)', type=int,
                      filter=lambda x: GoodsCategory.objects.filter(id=x).exists(),
                      handler=lambda x: GoodsCategory.objects.get(id=x).title),
             Argument('address', type=int, help='请输入 address(收货地址)',
-                     required=lambda x: x.get('is_return'),
+                     required=lambda x: x.get('is_return') is True,
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
                      handler=lambda x: Address.objects.get(id=x)),
         ).parse(request.data, clear=True)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+
+        link_key = f'check_link_{form.goods_link.__hash__()}'
+        if not conn.exists(link_key):
+            return Response({"detail": "该商品链接没有经过校验, 请先校验！"}, status=status.HTTP_400_BAD_REQUEST)
 
         if 'address' in form:
             form['receiver_name'] = form.address.name
@@ -112,6 +126,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             form['status'] = VideoNeeded.TO_CHECK
             form['publish_time'] = datetime.datetime.now()
         form.pop('action')
+        conn.delete(link_key)
         instance = VideoNeeded.objects.create(**form)
         serializer = self.get_serializer(instance)
         headers = self.get_success_headers(serializer.data)
@@ -132,7 +147,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             return Response({"detail": "找不到这个订单"}, status=status.HTTP_400_BAD_REQUEST)
         form, error = JsonParser(
             Argument('action', type=int, filter=lambda x: x in [0, 1], help="action: 发布0/下架1")
-        )
+        ).parse(request.data)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
         if form.action == 0:
@@ -141,13 +156,34 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             instance.status = VideoNeeded.TO_CHECK
             instance.publish_time = datetime.datetime.now()
             instance.save()
+            return Response({"detail": "以发布, 待审核中"}, status=status.HTTP_200_OK)
         else:
             if instance.status not in [VideoNeeded.TO_CHECK, VideoNeeded.ON_GOING]:
                 return Response({"detail": "不需要下架的订单"}, status=status.HTTP_400_BAD_REQUEST)
             instance.status = VideoNeeded.TO_PUBLISH
             instance.non_publish_time = datetime.datetime.now()
             instance.save()
-        return Response({"detail": "以发布, 待审核中"}, status=status.HTTP_200_OK)
+            return Response({"detail": "已经下架"}, status=status.HTTP_200_OK)
+
+    @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
+    def check_link(self, request, **kwargs):
+        form, error = JsonParser(
+            Argument('goods_link', help='请输入 goods_link(商品链接)', handler=lambda x: x.strip()),
+        )
+        try:
+            data = check_link_and_get_data(form.goods_link)
+            if data == 444:
+                return Response({'detail': '抱歉，该商品不是淘宝联盟商品'}, status=status.HTTP_400_BAD_REQUEST)
+            link_key = f'check_link_{form.goods_link.__hash__()}'
+            conn.set(link_key, 'link_ok')
+            return Response(data, status=status.HTTP_200_OK)
+        except CheckLinkError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except CheckLinkRequestError as e:
+            return Response({'detail': str(e), 'code': 123}, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            logger.info(traceback.format_exc())
+            return Response({"detail": "校验接口报错了，请联系技术人员解决"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
@@ -190,3 +226,15 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             instance.slice_num = form.slice_num
             instance.save()
             return Response({"detail": "已审核通过, 需求将展示于可申请的需求列表中"}, status=status.HTTP_200_OK)
+
+
+class ClientVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = AdminPermission
+
+
+class test(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        data = check_link_and_get_data(request.data.get('goods_link').strip())
+        return Response(data, status=status.HTTP_200_OK)
