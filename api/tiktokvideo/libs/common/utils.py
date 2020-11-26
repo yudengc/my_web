@@ -46,6 +46,15 @@ def get_out_trade_no():
     return out_trade_no
 
 
+def get_application_order():
+    """
+    获取申请订单号
+    :return:
+    """
+    out_trade_no = datetime.now().__format__('%Y%m%d%H%M%S%f')
+    return 'ap' + out_trade_no
+
+
 def get_nonce_str():
     """
     随机字符串
