@@ -67,9 +67,10 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         user_info = request.data.get('userInfo', None)
         logger.info(user_info)
         code = request.data.get('iCode')
-        if not openid and not username:
+        identity = request.data.get('identity')
+        if not openid or not username or not identity:
             return Response({"detail": "缺少参数!"}, status=status.HTTP_400_BAD_REQUEST)
-        user_instance = self.save_user_and_openid(username, openid, user_info)
+        user_instance = self.save_user_and_openid(username, openid, identity, user_info)
 
         if user_instance.status == Users.FROZEN:
             return Response({'detail': '账户被冻结，请联系客服处理', 'code': 444}, status=status.HTTP_200_OK)
@@ -113,7 +114,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         else:
             return Response({'detail': 'code不能为空'}, status=status.HTTP_400_BAD_REQUEST)
 
-    def save_user_and_openid(self, username, openid, user_info=None):
+    def save_user_and_openid(self, username, openid, select_identity, user_info=None):
         """保存用户信息以及openid"""
         if not username:
             raise exceptions.ParseError('username不能为空')
@@ -122,6 +123,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             user = Users.objects.create(
                 username=username,
                 openid=openid,
+                # identity=select_identity
             )
             user.iCode = InviteCls.encode_invite_code(user.id)
             user.save()
@@ -135,12 +137,21 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         else:
             # 如果后台创建的用户要补充微信信息
             user = user_qs.first()
+            user_identity = user.identity
             user_base = UserBase.objects.filter(uid=user).first()
             if user_base:
                 user_base.phone = username
                 user_base.nickname = user_info.get('nickName')
                 user_base.avatars = user_info.get('avatarUrl')
                 user_base.save()
+            # if user_identity == Users.CREATOR:
+            #     if select_identity != Users.CREATOR:
+            #         raise exceptions.ParseError('请选择创作者角色登陆')
+            # elif user_identity in [Users.BUSINESS, Users.SALESMAN, Users.SUPERVISOR]:  # 商家，业务员，主管都用商家端
+            #     if select_identity != Users.BUSINESS:
+            #         raise exceptions.ParseError('请选择商家角色登陆')
+            # else:
+            #     raise exceptions.ParseError('角色错误')
 
         # 是否换微信登录
         if user.openid != openid:
