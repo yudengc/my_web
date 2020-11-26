@@ -200,6 +200,25 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             logger.info(traceback.format_exc())
             return Response({"detail": "校验接口报错了，请联系技术人员解决"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
+    def mine_needed(self, request, **kwargs):
+        data = [
+            {
+                'name': '待审核',
+                'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_CHECK).count()
+            },
+            {
+                'name': '已发布',
+                'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.ON_GOING).count()
+            },
+            {
+                'name': '未发布',
+                'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_PUBLISH).count()
+            },
+        ]
+
+        return Response(data, status=status.HTTP_200_OK)
+
 
 class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = AdminPermission
