@@ -2,9 +2,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
 
-# Create your models here.
-
-
 class VideoNeeded(models.Model):
     uid = models.ForeignKey(
         'users.Users',

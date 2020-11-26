@@ -1,3 +1,4 @@
+import logging
 import threading
 
 from django.contrib.auth.hashers import check_password
@@ -25,6 +26,7 @@ from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializ
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls
 
 redis_conn = get_redis_connection('default')  # type: StrictRedis
+logger = logging.getLogger()
 
 
 class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -57,13 +59,21 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
     def auth(self, request):
         """微信授权登录"""
+        logger.info('开始登陆')
         openid = request.data.get('openid', None)
         username = request.data.get('username', None)
+        logger.info('打印username')
+        logger.info(username)
         user_info = request.data.get('userInfo', None)
-        code = request.data.get('iCode', None)
-        if not openid and not username:
+        logger.info(user_info)
+        code = request.data.get('iCode')
+        identity = request.data.get('identity')
+        if not openid or not username or not identity:
             return Response({"detail": "缺少参数!"}, status=status.HTTP_400_BAD_REQUEST)
-        user_instance = self.save_user_and_openid(username, openid, user_info)
+        user_instance = self.save_user_and_openid(username, openid, identity, user_info)
+
+        if user_instance.status == Users.FROZEN:
+            return Response({'detail': '账户被冻结，请联系客服处理', 'code': 444}, status=status.HTTP_200_OK)
         user_info = JwtServers(user=user_instance).get_token_and_user_info()
         if code:  # 存在注册码绑定邀请关系
             # save_invite_relation.delay(code, username)  # 绑定邀请关系
@@ -104,13 +114,16 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         else:
             return Response({'detail': 'code不能为空'}, status=status.HTTP_400_BAD_REQUEST)
 
-    def save_user_and_openid(self, username, openid, user_info=None):
+    def save_user_and_openid(self, username, openid, select_identity, user_info=None):
         """保存用户信息以及openid"""
+        if not username:
+            raise exceptions.ParseError('username不能为空')
         user_qs = Users.objects.filter(username=username)
         if not user_qs.exists():
             user = Users.objects.create(
                 username=username,
                 openid=openid,
+                # identity=select_identity
             )
             user.iCode = InviteCls.encode_invite_code(user.id)
             user.save()
@@ -124,15 +137,22 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         else:
             # 如果后台创建的用户要补充微信信息
             user = user_qs.first()
+            user_identity = user.identity
             user_base = UserBase.objects.filter(uid=user).first()
             if user_base:
                 user_base.phone = username
                 user_base.nickname = user_info.get('nickName')
                 user_base.avatars = user_info.get('avatarUrl')
                 user_base.save()
+            # if user_identity == Users.CREATOR:
+            #     if select_identity != Users.CREATOR:
+            #         raise exceptions.ParseError('请选择创作者角色登陆')
+            # elif user_identity in [Users.BUSINESS, Users.SALESMAN, Users.SUPERVISOR]:  # 商家，业务员，主管都用商家端
+            #     if select_identity != Users.BUSINESS:
+            #         raise exceptions.ParseError('请选择商家角色登陆')
+            # else:
+            #     raise exceptions.ParseError('角色错误')
 
-        if user.status == Users.FROZEN:
-            raise exceptions.ParseError('用户已被冻结，请联系管理员')
         # 是否换微信登录
         if user.openid != openid:
             user_qs.update(openid=openid)

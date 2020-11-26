@@ -202,7 +202,7 @@ class Package(BaseModel):
 
     class Meta:
         db_table = 'Package'
-        verbose_name = '用户购买套餐信息'
+        verbose_name = '商家套餐'
         verbose_name_plural = verbose_name
         ordering = ('-date_created', )
 

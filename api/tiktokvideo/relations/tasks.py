@@ -19,6 +19,8 @@ def save_invite_relation(code, phone):
     """
     # print("======= Start Save Invite Relation =======")
     logger.info("======= Start Save Invite Relation =======")
+    logger.info('打印icode')
+    logger.info(code)
     inviter_user = Users.objects.filter(iCode=code).first()   # 邀请者
     inviter_identity = inviter_user.identity  # 邀请者的角色，0：业务员，1：商家
     invitee_user = Users.objects.filter(username=phone).first()   # 被邀请者
@@ -28,6 +30,9 @@ def save_invite_relation(code, phone):
         return
     if InviteRelationManager.objects.filter(invitee=invitee_user).exists():
         # 已被邀请过无需再保存
+        return
+    if invitee_user.identity in [Users.SUPERVISOR, Users.SALESMAN]:
+        logger.info('被邀请者为主管或业务员不记录邀请关系（主管邀请业务员在后台创建的时候记录）')
         return
 
     # 查询邀请者是否拥有上级
@@ -64,8 +69,8 @@ def save_invite_relation(code, phone):
                 salesman=inviter_user,
                 superior=inviter_user.id
             ).save()
-            # print("======= END =======")
-            logger.info("======= END =======")
+        # print("======= END =======")
+        logger.info("======= END Save Invite Relation=======")
     except Exception as e:
         # print("Error: ", e)
         logger.info("Error: ", e)
