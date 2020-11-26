@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 from config.models import GoodsCategory
 from demand.models import VideoNeeded
 from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer
+from flow_limiter.services import FlowLimiter
 from libs.common.permission import ManagerPermission, AdminPermission, AllowAny
 from libs.pagination import StandardResultsSetPagination
 from libs.parser import JsonParser, Argument
@@ -51,8 +52,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         form, error = JsonParser(
             Argument('category', help='请输入 category(商品品类id)', type=int,
                      required=False,
-                     filter=lambda x: GoodsCategory.objects.filter(id=x).exists(),
-                     handler=lambda x: GoodsCategory.objects.get(id=x).title),
+                     filter=lambda x: GoodsCategory.objects.filter(id=x).exists(),),
             Argument('address', type=int, help='请输入 address(收货地址)',
                      required=False,
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
@@ -61,8 +61,6 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         ).parse(request.data, clear=True)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-        if 'category' in form:
-            request.data['category'] = form.category
         if 'address' in form:
             request.data['receiver_name'] = form.address.name
             request.data['receiver_phone'] = form.address.phone
@@ -258,16 +256,17 @@ class ClientVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         self.queryset = self.queryset.order_by('-create_time')
         recommend = self.request.query_params.get('recommend', None)
-        # if str(recommend) == '1':
-        #     self.queryset = VideoNeeded.objects.annotate(
-        #         remained_order=F('slice_num')-F('applied_num')
-        #     ).filter(rema)
+        if str(recommend) == '1':
+            self.queryset = self.queryset.filter(order_num_remained__gt=0).order_by(
+                '-create_time', 'recommend'
+            )
         return self.queryset
 
 
 class test(APIView):
     permission_classes = [AllowAny]
 
+    @FlowLimiter.limited_decorator(limited="100/day;")
     def post(self, request):
         data = check_link_and_get_data(request.data.get('goods_link').strip())
         return Response(data, status=status.HTTP_200_OK)
