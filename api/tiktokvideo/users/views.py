@@ -131,6 +131,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             user.iCode = InviteCls.encode_invite_code(user.id)
             user.save()
             UserExtra.objects.create(uid=user)
+            UserBusiness.objects.create(uid=user)
             UserBase.objects.create(
                 uid=user,
                 phone=username,
