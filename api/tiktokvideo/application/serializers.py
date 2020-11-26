@@ -5,7 +5,6 @@ from demand.models import VideoNeeded
 
 
 class VideoApplicationCreateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = VideoOrder
         fields = (
@@ -43,8 +42,8 @@ class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
         model = VideoOrder
         fields = (
             'status', 'date_created', 'num_selected', 'receiver_name', 'receiver_phone', 'receiver_province',
-            'receiver_city', 'receiver_district', 'receiver_location', 'company', 'express',
-            'creator_remark', 'check_time', 'send_time', 'done_time', 'close_time', 'date_created', 'demand'
+            'receiver_city', 'receiver_district', 'receiver_location', 'company', 'express', 'creator_remark',
+            'check_time', 'send_time', 'done_time', 'close_time', 'date_created', 'demand', 'return_sample'
         )
 
     def get_return_sample(self, obj):
@@ -59,4 +58,12 @@ class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
                         return_company=obj.return_company,
                         return_express=obj.return_express)
         return None
+
+
+class BusVideoOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VideoOrder
+        fields = (
+
+        )
 

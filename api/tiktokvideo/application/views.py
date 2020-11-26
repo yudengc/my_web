@@ -2,16 +2,16 @@ import json
 import logging
 
 from django.db.models import Sum
-from rest_framework import viewsets, status, mixins
+from rest_framework import viewsets, status, mixins, filters
+from django_filters import rest_framework
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-
 from application.models import VideoOrder, Video
 from application.serializers import VideoApplicationCreateSerializer, VideoApplicationListSerializer, \
-    VideoApplicationRetrieveSerializer
+    VideoApplicationRetrieveSerializer, BusVideoOrderSerializer
 from demand.models import VideoNeeded
-from libs.common.permission import CreatorPermission
+from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission
 
 logger = logging.getLogger()
 
@@ -78,3 +78,18 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                     wait_check=order_qs.filter(status=VideoOrder.WAIT_CHECK).count,
                     wait_return=order_qs.filter(status=VideoOrder.WAIT_RETURN).count)
         return Response(data)
+
+
+class BusVideoOrderViewSet(viewsets.ModelViewSet):
+    permission_classes = [AdminPermission, BusinessPermission]
+    serializer_class = BusVideoOrderSerializer
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filters = ('status',)
+
+    def get_queryset(self):
+        return VideoOrder.objects.filter(demand__uid=self.request.user)
+
+    @action(methods=['post', ], detail=True, permission_classes=[AdminPermission])
+    def commit_express(self, request, **kwargs):
+        instance = self.get_object()
+

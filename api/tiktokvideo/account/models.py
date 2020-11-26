@@ -32,7 +32,7 @@ class CreatorBill(models.Model):
         "users.Users",
         to_field='uid',
         on_delete=models.DO_NOTHING,
-        related_name='creator_account',
+        related_name='creator_bill',
     )
     total = models.IntegerField(
         _('当月结算松子数量'),
@@ -52,7 +52,7 @@ class CreatorBill(models.Model):
     # Todo  记得跟订单关联
 
     class Meta:
-        db_table = 'CreatorAccount'
+        db_table = 'CreatorBill'
         verbose_name = '创作者每月账单'
         verbose_name_plural = verbose_name
         ordering = ('-date_created', )
