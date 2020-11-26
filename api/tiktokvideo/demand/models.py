@@ -57,7 +57,8 @@ class VideoNeeded(models.Model):
     )
     goods_channel = models.PositiveSmallIntegerField(
         verbose_name='商品来源',
-        default=TB
+        default=TB,
+        choices=CHANEL
     )
     attraction = models.TextField(
         verbose_name='商品卖点',

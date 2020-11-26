@@ -111,7 +111,7 @@ class VideoOrder(BaseModel):
     )
 
     # status
-    WAIT_SEND, WAIT_COMMIT, WAIT_CHECK, WAIT_RETURN, DONE, EXCEPTION = range(7)
+    WAIT_SEND, WAIT_COMMIT, WAIT_CHECK, WAIT_RETURN, DONE, EXCEPTION = range(6)
     status = models.PositiveSmallIntegerField(
         verbose_name="订单状态",
         default=WAIT_SEND,
