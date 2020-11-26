@@ -366,6 +366,10 @@ class UserCreator(BaseModel):
     capability_introduction = models.TextField(
         verbose_name="能力介绍",
     )
+    is_signed = models.BooleanField(
+        verbose_name="是否签约创作者",
+        default=False
+    )
 
 
 class CelebrityStyle(BaseModel):

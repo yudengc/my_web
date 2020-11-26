@@ -8,6 +8,7 @@ class VideoOrder(BaseModel):
     """短视频申请订单"""
     user = models.ForeignKey(
         'users.Users',
+        to_field='uid',
         related_name='apply_sample',
         on_delete=models.CASCADE,
         verbose_name='账号'
@@ -37,27 +38,27 @@ class VideoOrder(BaseModel):
 
     # receiver desc
     receiver_name = models.CharField(
-        verbose_name='寄样收货人名字',
+        verbose_name='收货人名字',
         max_length=64,
         null=True
     )
     receiver_phone = models.CharField(
-        verbose_name='寄样收货人电话',
+        verbose_name='收货人电话',
         max_length=64,
         null=True
     )
     receiver_province = models.CharField(
-        verbose_name='寄样所在地省',
+        verbose_name='所在地省',
         max_length=128,
         null=True
     )
     receiver_city = models.CharField(
-        verbose_name='寄样所在地市',
+        verbose_name='所在地市',
         max_length=128,
         null=True
     )
     receiver_district = models.CharField(
-        verbose_name='寄样所在地地区',
+        verbose_name='所在地地区',
         max_length=128,
         null=True
     )
@@ -96,7 +97,7 @@ class VideoOrder(BaseModel):
         blank=True
     )
 
-    kol_remark = models.CharField(
+    creator_remark = models.CharField(
         verbose_name="创作者备注",
         max_length=1024,
         null=True,
@@ -110,18 +111,18 @@ class VideoOrder(BaseModel):
     )
 
     # status
+    WAIT_SEND, WAIT_COMMIT, WAIT_CHECK, WAIT_RETURN, DONE, EXCEPTION = range(7)
     status = models.PositiveSmallIntegerField(
         verbose_name="订单状态",
-        default=0,
+        default=WAIT_SEND,
         choices=(
-            (0, '待发货'),
-            (1, '待提交'),
-            (3, '待验收'),
-            (4, '待反样'),
-            (5, '已完成'),
-            (6, '订单异常'),
+            (WAIT_SEND, '待发货'),
+            (WAIT_COMMIT, '待提交'),
+            (WAIT_CHECK, '待验收'),
+            (WAIT_RETURN, '待反样'),
+            (DONE, '已完成'),
+            (EXCEPTION, '订单异常'),
         ),
-
     )
 
     # time desc
