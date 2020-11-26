@@ -29,11 +29,9 @@ class VideoOrder(BaseModel):
         verbose_name='选择拍摄视频数',
         default=0
     )
-    video = models.URLField(
-        verbose_name="拍摄视频url",
-        max_length=1000,
-        null=True,
-        blank=True
+    sample_count = models.PositiveIntegerField(
+        verbose_name='样品数',
+        default=1
     )
 
     # receiver desc
@@ -81,6 +79,18 @@ class VideoOrder(BaseModel):
         null=True,
         blank=True,
     )
+    return_company = models.CharField(
+        verbose_name="反样物流公司",
+        max_length=128,
+        null=True,
+        # choices=COMPANY_CHOICES
+    )
+    return_express = models.CharField(
+        verbose_name="反样快递单号",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
 
     # remark
     reject_reason = models.CharField(
@@ -119,7 +129,7 @@ class VideoOrder(BaseModel):
             (WAIT_SEND, '待发货'),
             (WAIT_COMMIT, '待提交'),
             (WAIT_CHECK, '待验收'),
-            (WAIT_RETURN, '待反样'),
+            (WAIT_RETURN, '待返样'),
             (DONE, '已完成'),
             (EXCEPTION, '订单异常'),
         ),
@@ -138,9 +148,32 @@ class VideoOrder(BaseModel):
         null=True,
         verbose_name='订单完成时间'
     )
+    close_time = models.DateTimeField(
+        null=True,
+        verbose_name='关闭时间（审核不通过时的时间）'
+    )
 
     class Meta:
         verbose_name = '短视频申请订单'
         verbose_name_plural = verbose_name
         db_table = 'VideoOrder'
 
+
+class Video(models.Model):
+    video_url = models.URLField(
+        max_length=1000
+    )
+    order = models.ForeignKey(
+        'VideoOrder',
+        related_name='order_video',
+        on_delete=models.CASCADE
+    )
+    date_created = models.DateTimeField(
+        _('创建时间'),
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = '视频成品'
+        verbose_name_plural = verbose_name
+        db_table = 'Video'
