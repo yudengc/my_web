@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'a+42^l7a=^y=!b#kmcls)os2q5@36wz&)3-l%pwzi07h8s_ko2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -195,7 +195,7 @@ DEFAULT_TIMEOUT = 60
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"{REDIS_BACKEND}/0",
+        "LOCATION": f"{REDIS_BACKEND}/10",     # 这个项目用10以后的库，避免跟其他项目混淆使用！！！！！！！！！！！！！！！！！！！！！
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
