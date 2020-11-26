@@ -52,8 +52,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         form, error = JsonParser(
             Argument('category', help='请输入 category(商品品类id)', type=int,
                      required=False,
-                     filter=lambda x: GoodsCategory.objects.filter(id=x).exists(),
-                     handler=lambda x: GoodsCategory.objects.get(id=x).title),
+                     filter=lambda x: GoodsCategory.objects.filter(id=x).exists(),),
             Argument('address', type=int, help='请输入 address(收货地址)',
                      required=False,
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
@@ -62,8 +61,6 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         ).parse(request.data, clear=True)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-        if 'category' in form:
-            request.data['category'] = form.category
         if 'address' in form:
             request.data['receiver_name'] = form.address.name
             request.data['receiver_phone'] = form.address.phone
