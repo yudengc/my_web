@@ -189,6 +189,10 @@ class Package(BaseModel):
         decimal_places=2,
         default=0
     )
+    video_num = models.PositiveIntegerField(
+        verbose_name='赠送视频数',
+        default=0
+    )
     package_content = ImageField(
         verbose_name='套餐包内容图片',
         upload_to='package',
