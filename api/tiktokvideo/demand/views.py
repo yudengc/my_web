@@ -31,7 +31,7 @@ conn = get_redis_connection('default')  # type: StrictRedis
 
 
 class VideoNeededViewSet(viewsets.ModelViewSet):
-    permission_classes = ManagerPermission
+    permission_classes = [ManagerPermission]
     serializer_class = VideoNeededSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
@@ -82,7 +82,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             Argument('title', help='请输入 title(标题)'),
             Argument('industries', help='请输入 industries(行业)'),
             Argument('attraction', help='请输入 attraction(商品卖点)'),
-            Argument('num_needed', help='请输入 num_needed(拍摄视频数)'),
+            Argument('video_num_needed', type=int, help='请输入 video_num_needed(拍摄视频数)'),
             Argument('is_return', type=bool, help='请输入 is_return(是否返样)'),
             Argument('video_size', type=int, help='请输入 video_size(尺寸)'),
             Argument('clarity', type=int, help='请输入 clarity(清晰度'),
@@ -95,10 +95,11 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             Argument('example2', type=str, required=False, help='请输入 example2(参考视频2)'),
             Argument('example3', type=str, required=False, help='请输入 example3(参考视频3)'),
             # Argument('goods_images', help='请输入 goods_images(商品商品主图)'),
-            Argument('action', type=int, help='请输入 action(发布操作 0/1)'),
+            Argument('action', type=int, help='请输入 action(发布操作 0保存/1发布)'),
             Argument('goods_link', help='请输入 goods_link(商品链接)', handler=lambda x: x.strip()),
             Argument('category', help='请输入 category(商品品类id)', type=int,
-                     filter=lambda x: GoodsCategory.objects.filter(id=x).exists()),
+                     filter=lambda x: GoodsCategory.objects.filter(id=x).exists(),
+                     handler=lambda x:GoodsCategory.objects.get(id=x)),
             Argument('address', type=int, help='请输入 address(收货地址)',
                      required=lambda x: x.get('is_return') is True,
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
@@ -131,9 +132,9 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             form['status'] = VideoNeeded.TO_CHECK
             form['publish_time'] = datetime.datetime.now()
         form.pop('action')
-        form['num_remained'] = form.num_needed
+        form['video_num_remained'] = form.video_num_needed
         conn.delete(link_key)
-        instance = VideoNeeded.objects.create(**form)
+        instance = VideoNeeded.objects.create(uid=self.request.user, **form)
         serializer = self.get_serializer(instance)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -171,22 +172,23 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             instance.save()
             return Response({"detail": "已经下架"}, status=status.HTTP_200_OK)
 
-    @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
+    @action(methods=['post', ], detail=False, permission_classes=[ManagerPermission])
     def check_link(self, request, **kwargs):
         form, error = JsonParser(
             Argument('goods_link', help='请输入 goods_link(商品链接)', handler=lambda x: x.strip()),
-        )
+        ).parse(request.data)
         try:
             data = check_link_and_get_data(form.goods_link)
             if data == 444:
                 return Response({'detail': '抱歉，该商品不是淘宝联盟商品'}, status=status.HTTP_400_BAD_REQUEST)
             hash_key = form.goods_link.__hash__()
+            print(hash_key)
             link_key = f'check_link_{hash_key}'
             images_key = f'images_{hash_key}'
             channel_key = f'channel_{hash_key}'
-            channel_value = data.get('chanel', None)
+            channel_value = data.get('channel', None)
             images_value = data.get('itempic', None)
-            if not images_value or not channel_value:
+            if images_value is None or channel_value is None:
                 logger.info(data)
                 return Response({"detail": "抱歉, 无法获取该商品来源以及图片, 校验不通过"}, status=status.HTTP_400_BAD_REQUEST)
             conn.set(link_key, 'link_ok')
@@ -201,7 +203,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             logger.info(traceback.format_exc())
             return Response({"detail": "校验接口报错了，请联系技术人员解决"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
+    @action(methods=['post', ], detail=False, permission_classes=[ManagerPermission])
     def video_needed_status(self, request, **kwargs):
         data = [
             {
@@ -219,7 +221,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         ]
         return Response(data, status=status.HTTP_200_OK)
 
-    @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
+    @action(methods=['post', ], detail=False, permission_classes=[ManagerPermission])
     def video_order_status(self, request, **kwargs):
         data = [
             {
@@ -243,7 +245,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
 
 
 class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = AdminPermission
+    permission_classes = [AdminPermission]
     serializer_class = VideoNeededSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
@@ -286,7 +288,7 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ClientVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = AdminPermission
+    permission_classes = [ManagerPermission]
     serializer_class = ClientVideoNeededSerializer
     queryset = VideoNeeded.objects.filter(status=VideoNeeded.ON_GOING)
     pagination_class = StandardResultsSetPagination

@@ -4,7 +4,6 @@ from application.models import VideoOrder
 
 
 class VideoApplicationCreateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = VideoOrder
         fields = (
@@ -12,3 +11,10 @@ class VideoApplicationCreateSerializer(serializers.ModelSerializer):
             'receiver_district', 'receiver_location', 'creator_remark',
         )
 
+
+class BusVideoOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VideoOrder
+        fields = (
+
+        )
