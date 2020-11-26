@@ -9,3 +9,10 @@ class VideoNeededSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ManageVideoNeededSerializer(serializers.ModelSerializer):
+    username = serializers.SerializerMethodField(read_only=True)
+    goods_images = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = VideoNeeded
+        fields = '__all__'

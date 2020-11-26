@@ -43,12 +43,15 @@ INSTALLED_APPS = [
     'django_filters',
     'safedelete',
     'ckeditor',
+    'flow_limiter',
 
     # app
     'users',
     'transaction',
     'config',
     'relations',
+    'demand',
+    'application',
 ]
 
 MIDDLEWARE = [
@@ -57,8 +60,11 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'libs.middleware.FrozenCheckMiddleware',
+    'libs.middleware.FlowLimitMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'libs.middleware.ResponseMiddleware',
 ]
 
 ROOT_URLCONF = 'tiktokvideo.urls'
@@ -94,6 +100,16 @@ DATABASES = {
         'HOST': os.environ.get('DATABASE_HOST'),
         'PORT': os.environ.get('DATABASE_PORT'),
     }
+}
+
+
+# 限流器
+FLOW_LIMITER = {
+    'use_latest': bool(os.environ.get("USE_LATEST", 0)),
+    'global': {
+        'user': '1000/day;',
+        'nonuser': '100/day;',
+    },
 }
 
 
@@ -220,3 +236,16 @@ QINIU_SECRET_KEY = os.environ.get('QINIU_SECRET_KEY')
 QINIU_BUCKET_NAME = os.environ.get('QINIU_BUCKET_NAME')
 QINIU_BUCKET_DOMAIN = os.environ.get('QINIU_BUCKET_DOMAIN')
 IMG_QINIU_BUCKET_NAME = os.environ.get('IMG_QINIU_BUCKET_NAME')
+
+# 好单库配置(详情：https://www.haodanku.com/api/detail/show/19.html)
+HDK_API_KEY = os.environ.get('HDK_API_KEY')
+
+# ################### DouYin SETTINGS ##########################
+DY_CLIENT_KEY = os.environ.get('CLIENT_KEY')
+DY_CLIENT_SECRET = os.environ.get('CLIENT_SECRET')
+DY_CHECK_HOME_URL = 'http://120.78.203.56:10088/api/check/shop'
+DY_GET_USER_URL = 'http://120.78.203.56:10666/api/web/user'
+# DY_CHECK_HOME_URL = 'http://119.23.109.99:10088/api/check/shop',  # 备用的，用的测试服
+DY_CHECK_GOODS_URL = 'http://120.78.203.56:10088/api/check/commission'
+DY_CHECK_SHOP_URL = 'http://120.78.203.56:10088/api/check/xiaodian'
+DY_COUPON_MSG_URL = 'http://120.78.203.56:10088/api/query/shop_coupon'
