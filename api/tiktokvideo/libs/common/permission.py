@@ -63,3 +63,12 @@ class AdminPermission(permissions.BasePermission):
         print(">>>>>>>基本权限")
         return request.user.is_authenticated and isinstance(request.user, Users) \
             and request.user.sys_role in [Users.ADMIN, Users.MANAGER]
+
+
+class CreatorPermission(permissions.BasePermission):
+    """创作者基本权限"""
+
+    def has_permission(self, request, view):
+        print(">>>>>>>基本权限")
+        return request.user.is_authenticated and isinstance(request.user, Users) \
+            and request.user.identity == Users.CREATOR
