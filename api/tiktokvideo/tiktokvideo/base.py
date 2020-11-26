@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'relations',
     'demand',
     'application',
+    'account',
 ]
 
 MIDDLEWARE = [

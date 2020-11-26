@@ -15,6 +15,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from application.models import VideoOrder
 from config.models import GoodsCategory
 from demand.models import VideoNeeded
 from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer
@@ -199,6 +200,46 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         except:
             logger.info(traceback.format_exc())
             return Response({"detail": "校验接口报错了，请联系技术人员解决"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
+    def video_needed_status(self, request, **kwargs):
+        data = [
+            {
+                'name': '待审核',
+                'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_CHECK).count()
+            },
+            {
+                'name': '已发布',
+                'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.ON_GOING).count()
+            },
+            {
+                'name': '未发布',
+                'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_PUBLISH).count()
+            },
+        ]
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
+    def video_order_status(self, request, **kwargs):
+        data = [
+            {
+                'name': '待发货',
+                'num': VideoOrder.objects.filter(demand__uid=request.user, status=0).count()
+            },
+            {
+                'name': '待提交',
+                'num': VideoOrder.objects.filter(demand__uid=request.user, status=1).count()
+            },
+            {
+                'name': '待退样',
+                'num': VideoOrder.objects.filter(demand__uid=request.user, status=4).count()
+            },
+            {
+                'name': '已完成',
+                'num': VideoOrder.objects.filter(demand__uid=request.user, status=5).count()
+            },
+        ]
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
