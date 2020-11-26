@@ -9,7 +9,6 @@ from django_redis import get_redis_connection
 from redis import StrictRedis
 from rest_framework import status, exceptions
 from rest_framework.response import Response
-from tenant_schemas.middleware import BaseTenantMiddleware
 import logging
 
 from flow_limiter.services import FlowLimiter
