@@ -52,7 +52,7 @@ def get_application_order():
     :return:
     """
     out_trade_no = datetime.now().__format__('%Y%m%d%H%M%S%f')
-    return 'ap' + out_trade_no
+    return 'va' + out_trade_no
 
 
 def get_nonce_str():
