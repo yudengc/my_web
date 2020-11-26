@@ -13,4 +13,4 @@ class CustomerServiceSerializer(serializers.ModelSerializer):
 class GoodsCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = GoodsCategory
-        fields = '__all__'
+        exclude = ('date_created', 'date_updated')

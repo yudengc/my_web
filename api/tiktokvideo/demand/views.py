@@ -2,6 +2,7 @@ import datetime
 import logging
 import traceback
 
+from django.db.models import F
 from django.shortcuts import render
 from django_filters import rest_framework
 from django_redis import get_redis_connection
@@ -16,7 +17,7 @@ from rest_framework.views import APIView
 
 from config.models import GoodsCategory
 from demand.models import VideoNeeded
-from demand.serializers import VideoNeededSerializer
+from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer
 from libs.common.permission import ManagerPermission, AdminPermission, AllowAny
 from libs.pagination import StandardResultsSetPagination
 from libs.parser import JsonParser, Argument
@@ -94,12 +95,11 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             Argument('example1', type=str, required=False, help='请输入 example1(参考视频1)'),
             Argument('example2', type=str, required=False, help='请输入 example2(参考视频2)'),
             Argument('example3', type=str, required=False, help='请输入 example3(参考视频3)'),
-            Argument('goods_images', help='请输入 goods_images(商品商品主图)'),
+            # Argument('goods_images', help='请输入 goods_images(商品商品主图)'),
             Argument('action', type=int, help='请输入 action(发布操作 0/1)'),
             Argument('goods_link', help='请输入 goods_link(商品链接)', handler=lambda x: x.strip()),
             Argument('category', help='请输入 category(商品品类id)', type=int,
-                     filter=lambda x: GoodsCategory.objects.filter(id=x).exists(),
-                     handler=lambda x: GoodsCategory.objects.get(id=x).title),
+                     filter=lambda x: GoodsCategory.objects.filter(id=x).exists()),
             Argument('address', type=int, help='请输入 address(收货地址)',
                      required=lambda x: x.get('is_return') is True,
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
@@ -108,9 +108,15 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
 
-        link_key = f'check_link_{form.goods_link.__hash__()}'
+        hash_key = form.goods_link.__hash__()
+        link_key = f'check_link_{hash_key}'
         if not conn.exists(link_key):
             return Response({"detail": "该商品链接没有经过校验, 请先校验！"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            images_key = f'images_{hash_key}'
+            channel_key = f'channel_{hash_key}'
+            form['goods_images'] = conn.get(images_key).decode('utf-8')
+            form['goods_channel'] = conn.get(channel_key).decode('utf-8')
 
         if 'address' in form:
             form['receiver_name'] = form.address.name
@@ -126,6 +132,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             form['status'] = VideoNeeded.TO_CHECK
             form['publish_time'] = datetime.datetime.now()
         form.pop('action')
+        form['num_remained'] = form.num_needed
         conn.delete(link_key)
         instance = VideoNeeded.objects.create(**form)
         serializer = self.get_serializer(instance)
@@ -174,8 +181,18 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             data = check_link_and_get_data(form.goods_link)
             if data == 444:
                 return Response({'detail': '抱歉，该商品不是淘宝联盟商品'}, status=status.HTTP_400_BAD_REQUEST)
-            link_key = f'check_link_{form.goods_link.__hash__()}'
+            hash_key = form.goods_link.__hash__()
+            link_key = f'check_link_{hash_key}'
+            images_key = f'images_{hash_key}'
+            channel_key = f'channel_{hash_key}'
+            channel_value = data.get('chanel', None)
+            images_value = data.get('itempic', None)
+            if not images_value or not channel_value:
+                logger.info(data)
+                return Response({"detail": "抱歉, 无法获取该商品来源以及图片, 校验不通过"}, status=status.HTTP_400_BAD_REQUEST)
             conn.set(link_key, 'link_ok')
+            conn.set(images_key, images_value)
+            conn.set(channel_key, channel_value)
             return Response(data, status=status.HTTP_200_OK)
         except CheckLinkError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -201,7 +218,8 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     def check(self, request, **kwargs):
         form, error = JsonParser(
             Argument('action', filter=lambda x: x in ['pass', 'reject'], help="请输入action(操作) e.pass/reject"),
-            Argument('video_slice', type=list, handler=lambda x: [int(i) for i in x],
+            Argument('video_slice', type=list,
+                     handler=lambda x: sorted([{int(i): 1} for i in x], key=lambda i: list(i.keys())[0]),
                      required=lambda rst: rst.get('action') == 'pass', help="请输入slice(视频切片数组) e.[10, 10, 20]"),
             Argument('slice_num', type=int, required=lambda rst: rst.get('action') == 'pass',
                      help="请输入slice_num(切片数) e. 10"),
@@ -230,6 +248,21 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ClientVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = AdminPermission
+    serializer_class = ClientVideoNeededSerializer
+    queryset = VideoNeeded.objects.filter(status=VideoNeeded.ON_GOING)
+    pagination_class = StandardResultsSetPagination
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ('title',)
+    filter_fields = ('status', 'category', 'is_return',)
+
+    def get_queryset(self):
+        self.queryset = self.queryset.order_by('-create_time')
+        recommend = self.request.query_params.get('recommend', None)
+        # if str(recommend) == '1':
+        #     self.queryset = VideoNeeded.objects.annotate(
+        #         remained_order=F('slice_num')-F('applied_num')
+        #     ).filter(rema)
+        return self.queryset
 
 
 class test(APIView):

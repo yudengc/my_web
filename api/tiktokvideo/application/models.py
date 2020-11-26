@@ -16,6 +16,7 @@ class VideoOrder(BaseModel):
         'demand.VideoNeeded',
         related_name='video_orders',
         on_delete=models.CASCADE,
+        db_index=True
     )
     order_number = models.CharField(
         verbose_name="订单号",
