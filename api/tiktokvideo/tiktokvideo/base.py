@@ -179,7 +179,7 @@ DEFAULT_TIMEOUT = 60
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"{REDIS_BACKEND}/0",
+        "LOCATION": f"{REDIS_BACKEND}/10",     # 这个项目用10以后的库，避免跟其他项目混淆使用！！！！！！！！！！！！！！！！！！！！！
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
