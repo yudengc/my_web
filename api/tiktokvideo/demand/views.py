@@ -91,7 +91,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                      filter=lambda x: GoodsCategory.objects.filter(id=x).exists(),
                      handler=lambda x: GoodsCategory.objects.get(id=x).title),
             Argument('address', type=int, help='请输入 address(收货地址)',
-                     required=lambda x: x.get('is_return'),
+                     required=lambda x: x.get('is_return') is True,
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
                      handler=lambda x: Address.objects.get(id=x)),
         ).parse(request.data, clear=True)
