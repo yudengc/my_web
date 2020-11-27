@@ -2,9 +2,7 @@ import datetime
 import logging
 import traceback
 
-from django.db.models import F
 from django.db.transaction import atomic
-from django.shortcuts import render
 from django_filters import rest_framework
 from django_redis import get_redis_connection
 from redis import StrictRedis
@@ -16,8 +14,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from application.models import VideoOrder
 from config.models import GoodsCategory
+from demand.filters import ManageVideoNeededFilter
 from demand.models import VideoNeeded, HomePageVideo
 from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer, \
     HomePageVideoSerializer
@@ -195,7 +193,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             if form.action == 0:
                 if instance.status != VideoNeeded.TO_PUBLISH:
                     return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
-                if user_business.remain_video_num < form.video_num_needed:
+                if user_business.remain_video_num < instance.video_num_needed:
                     return Response({"detail": "您账户中可使用的剩余视频数不足"}, status=status.HTTP_400_BAD_REQUEST)
                 user_business.remain_video_num -= instance.video_num_remained
                 user_business.save()
@@ -224,7 +222,6 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             if data == 444:
                 return Response({'detail': '抱歉，该商品不是淘宝联盟商品'}, status=status.HTTP_400_BAD_REQUEST)
             hash_key = form.goods_link.__hash__()
-            print(hash_key)
             images_key = f'images_{hash_key}'
             channel_key = f'channel_{hash_key}'
             title_key = f'title_{hash_key}'
@@ -278,8 +275,9 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = VideoNeededSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    search_fields = ('uid__username',)
-    filter_fields = ('status',)
+    search_fields = ('=uid__username', 'title')
+    filter_class = ManageVideoNeededFilter
+    # filter_fields = ('status', 'is_return', )
 
     def get_queryset(self):
         return VideoNeeded.objects.all()
@@ -291,9 +289,9 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             Argument('order_video_slice', type=list,
                      filter=lambda x: len([i for i in x if int(i) > 0]) == len(x),
                      handler=lambda x: sorted([{'num': int(i), 'remain': 1} for i in x], key=lambda i: i.get('num')),
-                     required=lambda rst: rst.get('action') == 'pass', help="请输入slice(视频切片数组) e.[10, 10, 20]"),
+                     required=lambda rst: rst.get('action') == 'pass', help="请输入 order_video_slice(视频切片数组) e.[10, 10, 20]"),
             Argument('order_slice_num', type=int, required=lambda rst: rst.get('action') == 'pass',
-                     help="请输入slice_num(切片数) e. 10"),
+                     help="请输入 order_slice_num(切片数) e. 10"),
             Argument('reject_reason', required=lambda rst: rst.get('action') == 'reject', help="请输入拒绝理由"),
         ).parse(request.data)
         if error:
@@ -311,7 +309,7 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             instance.save()
             return Response({"detail": "已拒绝"}, status=status.HTTP_200_OK)
         else:
-            if len(form.order_video_slice) != form.slice_num:
+            if len(form.order_video_slice) != form.order_slice_num:
                 return Response({"detail": "视频分片个数和订单总分片数不一致"}, status=status.HTTP_400_BAD_REQUEST)
             original_slice = [int(i) for i in request.data.get("order_video_slice")]
             if sum(original_slice) > instance.video_num_remained:
@@ -375,7 +373,7 @@ class BusVideoHomePageViewSet(viewsets.ModelViewSet):
 class test(APIView):
     permission_classes = [AllowAny]
 
-    @FlowLimiter.limited_decorator(limited="100/day;")
+    @FlowLimiter.limited_decorator(limited="10/day;")
     def post(self, request):
         # data = check_link_and_get_data(request.data.get('goods_link').strip())
         return Response([{10: 1}, {20: 1}, {30: 0}], status=status.HTTP_200_OK)
