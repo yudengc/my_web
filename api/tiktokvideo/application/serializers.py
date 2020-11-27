@@ -41,15 +41,15 @@ class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoOrder
         fields = (
-            'status', 'date_created', 'num_selected', 'receiver_name', 'receiver_phone', 'receiver_province',
+            'id', 'status', 'date_created', 'num_selected', 'receiver_name', 'receiver_phone', 'receiver_province',
             'receiver_city', 'receiver_district', 'receiver_location', 'company', 'express', 'creator_remark',
-            'check_time', 'send_time', 'done_time', 'close_time', 'date_created', 'demand', 'return_sample'
+            'check_time', 'send_time', 'done_time', 'close_time', 'date_created', 'demand', 'return_sample',
         )
 
     def get_return_sample(self, obj):
         # 返样信息
         demand_obj = obj.demand
-        if demand_obj.is_return and obj.status == VideoOrder.WAIT_RETURN:
+        if obj.is_return and obj.status == VideoOrder.WAIT_RETURN:
             location = demand_obj.receiver_province + demand_obj.receiver_city + \
                        demand_obj.receiver_district + demand_obj.receiver_location
             return dict(receiver_name=demand_obj.receiver_name,
@@ -60,10 +60,13 @@ class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
         return None
 
 
-class BusVideoOrderSerializer(serializers.ModelSerializer):
+class BusApplicationSerializer(VideoApplicationRetrieveSerializer):
+    video_download = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = VideoOrder
-        fields = (
+        fields = '__all__'
 
-        )
+    def get_video_download(self, obj):
+        return obj.order_video.all()
 

@@ -60,7 +60,6 @@ class AdminPermission(permissions.BasePermission):
     """后台管理员权限"""
 
     def has_permission(self, request, view):
-        print(">>>>>>>基本权限")
         return request.user.is_authenticated and isinstance(request.user, Users) \
             and request.user.sys_role in [Users.ADMIN, Users.SUPER_ADMIN]
 
