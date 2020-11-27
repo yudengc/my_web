@@ -59,3 +59,14 @@ class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
                         return_express=obj.return_express)
         return None
 
+
+class BusApplicationSerializer(VideoApplicationRetrieveSerializer):
+    video_download = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = VideoOrder
+        fields = '__all__'
+
+    def get_video_download(self, obj):
+        return obj.order_video.all()
+
