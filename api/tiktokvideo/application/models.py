@@ -37,6 +37,11 @@ class VideoOrder(BaseModel):
         verbose_name='是否返样',
         default=False
     )
+    reward = models.PositiveIntegerField(
+        # 默认使用的是合同上的酬劳，但是后台可改每条订单的可得酬劳
+        verbose_name='单条视频的酬劳（松子）',
+        default=0
+    )
 
     # receiver desc
     receiver_name = models.CharField(
