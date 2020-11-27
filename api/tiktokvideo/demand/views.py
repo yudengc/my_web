@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from config.models import GoodsCategory
+from demand.filters import ManageVideoNeededFilter
 from demand.models import VideoNeeded, HomePageVideo
 from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer, \
     HomePageVideoSerializer
@@ -275,8 +276,9 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = VideoNeededSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    search_fields = ('uid__username',)
-    filter_fields = ('status',)
+    search_fields = ('=uid__username', 'title')
+    filter_class = ManageVideoNeededFilter
+    # filter_fields = ('status', 'is_return', )
 
     def get_queryset(self):
         return VideoNeeded.objects.all()
