@@ -9,7 +9,7 @@ class VideoApplicationCreateSerializer(serializers.ModelSerializer):
         model = VideoOrder
         fields = (
             'user', 'demand', 'num_selected', 'receiver_name', 'receiver_phone', 'receiver_province', 'receiver_city',
-            'receiver_district', 'receiver_location', 'creator_remark',
+            'receiver_district', 'receiver_location', 'creator_remark', 'reward'
         )
 
 

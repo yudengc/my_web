@@ -43,6 +43,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
     def create(self, request, *args, **kwargs):
         user = request.user
         request.data['user'] = user.uid
+        request.data['reward'] = user.user_creator.contract_reward   # 每条视频的酬劳
         if not user.user_creator.is_signed:  # 非签约团队有视频数限制（5个）
             video_sum = VideoOrder.objects.filter(user=user).exclude(status=VideoOrder.DONE).aggregate(
                 sum=Sum('num_selected'))['sum']  # 进行中的视频数

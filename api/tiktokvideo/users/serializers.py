@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from transaction.models import UserPackageRelation
-from users.models import Users, Team, UserBusiness, Address
+from users.models import Users, Team, UserBusiness, Address, UserCreator
 
 
 class UsersLoginSerializer(serializers.ModelSerializer):
@@ -61,7 +61,7 @@ class UserBusinessCreateSerializer(serializers.ModelSerializer):
 
 class UserInfoSerializer(serializers.ModelSerializer):
     """
-    用户页
+    商家，业务员用户页
     """
     user_business = serializers.SerializerMethodField()
     package_info = serializers.SerializerMethodField()
@@ -84,6 +84,25 @@ class UserInfoSerializer(serializers.ModelSerializer):
         return None
 
 
+class CreatorUserInfoSerializer(serializers.ModelSerializer):
+    """
+    创作者用户页
+    """
+    creator_id = serializers.IntegerField(source='user_creator.id')
+    status = serializers.IntegerField(source='user_creator.status')
+    remark = serializers.CharField(source='user_creator.remark')
+    nickname = serializers.CharField(source='auth_base.nickname')
+    avatars = serializers.CharField(source='auth_base.avatars')
+    creator_account = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Users
+        fields = ('creator_id', 'username', 'identity', 'status', 'remark', 'nickname', 'avatars', 'creator_account')
+
+    def get_creator_account(self, obj):
+        return dict(coin_balance=obj.creator_account.coin_balance, coin_freeze=obj.creator_account.coin_freeze)
+
+
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
@@ -100,3 +119,16 @@ class AddressListSerializer(serializers.ModelSerializer):
     def get_address(self, obj):
         _l = [obj.province, obj.city, obj.district, obj.location]
         return ''.join([i for i in _l if i])
+
+
+class UserCreatorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserCreator
+        fields = ('status', 'video', 'team_introduction', 'capability_introduction', 'remark')
+
+
+class UserCreatorPutSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = UserCreator
+        fields = ('video', 'team_introduction', 'capability_introduction', 'video')
