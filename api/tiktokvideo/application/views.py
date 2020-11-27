@@ -14,6 +14,7 @@ from application.serializers import VideoApplicationCreateSerializer, VideoAppli
 from demand.models import VideoNeeded
 from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission, ManagerPermission
 from libs.parser import Argument, JsonParser
+from users.models import Address
 
 logger = logging.getLogger()
 
@@ -37,7 +38,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
 
     def get_queryset(self):
         if self.action in ['list', 'retrieve']:
-            self.queryset = self.queryset.select_related('demand')
+            self.queryset = self.queryset.select_related('demand').filter(user=self.request.user)
         return super().get_queryset()
 
     def create(self, request, *args, **kwargs):
@@ -58,6 +59,18 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         request.data['is_return'] = need_obj.is_return
         request.data['user'] = user.uid
         request.data['reward'] = user.user_creator.contract_reward  # 每条视频的酬劳
+
+        try:
+            add_obj = Address.objects.get(id=request.data['address'])
+        except Address.DoesNotExist:
+            return Response({'detail': '所选地址不存在'}, status=status.HTTP_400_BAD_REQUEST)
+        request.data['receiver_name'] = add_obj.receiver_name
+        request.data['receiver_phone'] = add_obj.receiver_phone
+        request.data['receiver_province'] = add_obj.receiver_province
+        request.data['receiver_city'] = add_obj.receiver_city
+        request.data['receiver_district'] = add_obj.receiver_district
+        request.data['receiver_location'] = add_obj.receiver_location
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         # 判断可选的视频数是否被领了（怕在用户填信息时被其他用户领了）
