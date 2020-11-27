@@ -318,6 +318,8 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             new_order_video_slice.extend(form.order_video_slice)
             instance.order_video_slice = sorted(new_order_video_slice, key=lambda i: i.get('num'))
             instance.status = VideoNeeded.ON_GOING
+            instance.order_slice_num = len(new_order_video_slice)
+            instance.order_num_remained = len([i for i in new_order_video_slice if i.get('remain') == 1])
             instance.save()
             return Response({"detail": "已审核通过, 需求将展示于可申请的需求列表中"}, status=status.HTTP_200_OK)
 
