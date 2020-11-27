@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from demand.models import VideoNeeded
+from demand.models import VideoNeeded, HomePageVideo
 
 
 class VideoNeededSerializer(serializers.ModelSerializer):
@@ -97,3 +97,8 @@ class ClientVideoNeededDetailSerializer(serializers.ModelSerializer):
     def get_model_figure(self, obj):
         return obj.get_model_figure_display()
 
+
+class HomePageVideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomePageVideo
+        fields = '__all__'
