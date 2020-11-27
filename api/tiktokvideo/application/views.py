@@ -53,6 +53,12 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         need_obj = VideoNeeded.objects.get(id=request.data['demand'])
         order_video_slice = need_obj.order_video_slice
         # e. [{'num': 10, 'remain': 1}, {'num': 20, 'remain': 1}]
+        request.data['goods_link'] = need_obj.goods_link
+        request.data['goods_images'] = need_obj.goods_images
+        request.data['goods_channel'] = need_obj.goods_channel
+        request.data['is_return'] = need_obj.is_return
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         with atomic():
             try:
                 # 订单过程中需维护VideoNeeded的2个字段: order_video_slice, order_num_remained
@@ -63,7 +69,9 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
             except ValueError:
                 return Response({'detail': '哎呀，您选择的拍摄视频数已被选走，请重选选择'}, status=status.HTTP_400_BAD_REQUEST)
 
-            return super().create(request, *args, **kwargs)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @action(methods=['put'], detail=True)
     def upload_video(self, request):
@@ -88,18 +96,18 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
 
 class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AdminPermission, BusinessPermission]
-    serializer_class = BusVideoOrderSerializer
+    serializer_class = VideoApplicationRetrieveSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filters = ('status',)
 
     def get_queryset(self):
         return VideoOrder.objects.filter(demand__uid=self.request.user)
 
-    def get_serializer_class(self):
-        if self.action in ['retrieve', ]:
-            return VideoApplicationRetrieveSerializer
-
-        return super().get_serializer_class()
+    # def get_serializer_class(self):
+    #     if self.action in ['retrieve', ]:
+    #         return VideoApplicationRetrieveSerializer
+    #     else:
+    #         return BusVideoOrderSerializer
 
     @action(methods=['post', ], detail=True, permission_classes=[AdminPermission])
     def commit_express(self, request, **kwargs):
