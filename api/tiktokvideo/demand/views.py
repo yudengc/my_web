@@ -312,8 +312,8 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             if len(form.order_video_slice) != form.order_slice_num:
                 return Response({"detail": "视频分片个数和订单总分片数不一致"}, status=status.HTTP_400_BAD_REQUEST)
             original_slice = [int(i) for i in request.data.get("order_video_slice")]
-            if sum(original_slice) > instance.video_num_remained:
-                return Response({"detail": "视频总数大于需求的视频总数拉！"}, status=status.HTTP_400_BAD_REQUEST)
+            if sum(original_slice) != instance.video_num_remained:
+                return Response({"detail": "视频总数不等于需求的视频哦！"}, status=status.HTTP_400_BAD_REQUEST)
             new_order_video_slice = [i for i in instance.order_video_slice if i.get('remain') == 0]
             new_order_video_slice.extend(form.order_video_slice)
             instance.order_video_slice = sorted(new_order_video_slice, key=lambda i: i.get('num'))
