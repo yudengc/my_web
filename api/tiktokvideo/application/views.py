@@ -42,24 +42,25 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
 
     def create(self, request, *args, **kwargs):
         user = request.user
-        request.data['user'] = user.uid
-        request.data['reward'] = user.user_creator.contract_reward   # 每条视频的酬劳
         if not user.user_creator.is_signed:  # 非签约团队有视频数限制（5个）
             video_sum = VideoOrder.objects.filter(user=user).exclude(status=VideoOrder.DONE).aggregate(
                 sum=Sum('num_selected'))['sum']  # 进行中的视频数
             if request.data['num_selected'] > 5 - video_sum:
                 return Response({'detail': '可拍摄视频数不足'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 乐观🔒判断可选的视频数是否被领了（怕在用户填信息时被其他用户领了）
         need_obj = VideoNeeded.objects.get(id=request.data['demand'])
         order_video_slice = need_obj.order_video_slice
         # e. [{'num': 10, 'remain': 1}, {'num': 20, 'remain': 1}]
+        request.data['goods_title'] = need_obj.goods_title
         request.data['goods_link'] = need_obj.goods_link
         request.data['goods_images'] = need_obj.goods_images
         request.data['goods_channel'] = need_obj.goods_channel
         request.data['is_return'] = need_obj.is_return
+        request.data['user'] = user.uid
+        request.data['reward'] = user.user_creator.contract_reward  # 每条视频的酬劳
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        # 判断可选的视频数是否被领了（怕在用户填信息时被其他用户领了）
         with atomic():
             try:
                 # 订单过程中需维护VideoNeeded的3个字段: order_video_slice, order_num_remained, video_num_remained
