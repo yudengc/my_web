@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from application.models import VideoOrder, Video
 from application.serializers import VideoApplicationCreateSerializer, VideoApplicationListSerializer, \
-    VideoApplicationRetrieveSerializer, BusVideoOrderSerializer
+    VideoApplicationRetrieveSerializer, BusApplicationSerializer
 from demand.models import VideoNeeded
 from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission, ManagerPermission
 from libs.parser import Argument, JsonParser
@@ -97,7 +97,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
 
 class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AdminPermission, BusinessPermission]
-    serializer_class = VideoApplicationRetrieveSerializer
+    serializer_class = BusApplicationSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filters = ('status',)
 
