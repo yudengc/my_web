@@ -2,9 +2,7 @@ import datetime
 import logging
 import traceback
 
-from django.db.models import F
 from django.db.transaction import atomic
-from django.shortcuts import render
 from django_filters import rest_framework
 from django_redis import get_redis_connection
 from redis import StrictRedis
@@ -16,7 +14,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from application.models import VideoOrder
 from config.models import GoodsCategory
 from demand.models import VideoNeeded, HomePageVideo
 from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer, \
@@ -375,7 +372,7 @@ class BusVideoHomePageViewSet(viewsets.ModelViewSet):
 class test(APIView):
     permission_classes = [AllowAny]
 
-    @FlowLimiter.limited_decorator(limited="100/day;")
+    @FlowLimiter.limited_decorator(limited="10/day;")
     def post(self, request):
         # data = check_link_and_get_data(request.data.get('goods_link').strip())
         return Response([{10: 1}, {20: 1}, {30: 0}], status=status.HTTP_200_OK)
