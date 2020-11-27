@@ -3,6 +3,7 @@ import logging
 import traceback
 
 from django.db.models import F
+from django.db.transaction import atomic
 from django.shortcuts import render
 from django_filters import rest_framework
 from django_redis import get_redis_connection
@@ -58,7 +59,8 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                      required=False,
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
                      handler=lambda x: Address.objects.get(id=x)),
-            Argument('status', required=False, filter=lambda x: x is None, help="修改的时候不能改状态, 要调用接口")
+            Argument('status', required=False, filter=lambda x: x is None, help="修改的时候不能改状态, 要调用接口"),
+            Argument('video_num_remained', required=False, type=int, help="请输入 video_num_remained(整型)"),
         ).parse(request.data, clear=True)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
@@ -70,12 +72,19 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             request.data['receiver_district'] = form.address.district
             request.data['receiver_location'] = form.address.location
             request.data.pop('address')
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        if getattr(instance, '_prefetched_objects_cache', None):
-            instance._prefetched_objects_cache = {}
-        return Response(serializer.data)
+        with atomic():
+            if 'video_num_remained' in form:
+                reduce = instance.video_num_remained - form.video_num_needed
+                if reduce < 0:
+                    return Response({"detail": "修改剩余数不能大于现在的哦"}, status=status.HTTP_400_BAD_REQUEST)
+                instance.video_num_needed -= reduce
+                instance.save()
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            if getattr(instance, '_prefetched_objects_cache', None):
+                instance._prefetched_objects_cache = {}
+            return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         form, error = JsonParser(
@@ -99,7 +108,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             Argument('goods_link', help='请输入 goods_link(商品链接)', handler=lambda x: x.strip()),
             Argument('category', help='请输入 category(商品品类id)', type=int,
                      filter=lambda x: GoodsCategory.objects.filter(id=x).exists(),
-                     handler=lambda x:GoodsCategory.objects.get(id=x)),
+                     handler=lambda x: GoodsCategory.objects.get(id=x)),
             Argument('address', type=int, help='请输入 address(收货地址)',
                      required=lambda x: x.get('is_return') is True,
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
@@ -134,18 +143,26 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         form.pop('action')
         form['video_num_remained'] = form.video_num_needed
         conn.delete(link_key)
-        instance = VideoNeeded.objects.create(uid=self.request.user, **form)
-        serializer = self.get_serializer(instance)
-        headers = self.get_success_headers(serializer.data)
+        with atomic():
+            if form.status == VideoNeeded.TO_CHECK:
+                user_business = self.request.user.user_business
+                if user_business.remain_video_num < form.video_num_needed:
+                    return Response({"detail": "您账户中可使用的剩余视频数不足"}, status=status.HTTP_400_BAD_REQUEST)
+                user_business.remain_video_num -= form.video_num_needed
+                user_business.save()
+            instance = VideoNeeded.objects.create(uid=self.request.user, **form)
+            serializer = self.get_serializer(instance)
+            headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.uid != self.request.user:
-            return Response({"detail": "找不到这个订单"}, status=status.HTTP_400_BAD_REQUEST)
-        if instance.status != VideoNeeded.TO_PUBLISH:
-            return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
-        return super().destroy(request, *args, **kwargs)
+        return Response({"detail": "不能删除"}, status=status.HTTP_400_BAD_REQUEST)
+        # instance = self.get_object()
+        # if instance.uid != self.request.user:
+        #     return Response({"detail": "找不到这个订单"}, status=status.HTTP_400_BAD_REQUEST)
+        # if instance.status != VideoNeeded.TO_PUBLISH:
+        #     return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
+        # return super().destroy(request, *args, **kwargs)
 
     @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
     def publish(self, request, **kwargs):
@@ -157,20 +174,30 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         ).parse(request.data)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-        if form.action == 0:
-            if instance.status != VideoNeeded.TO_PUBLISH:
-                return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
-            instance.status = VideoNeeded.TO_CHECK
-            instance.publish_time = datetime.datetime.now()
-            instance.save()
-            return Response({"detail": "以发布, 待审核中"}, status=status.HTTP_200_OK)
-        else:
-            if instance.status not in [VideoNeeded.TO_CHECK, VideoNeeded.ON_GOING]:
-                return Response({"detail": "不需要下架的订单"}, status=status.HTTP_400_BAD_REQUEST)
-            instance.status = VideoNeeded.TO_PUBLISH
-            instance.non_publish_time = datetime.datetime.now()
-            instance.save()
-            return Response({"detail": "已经下架"}, status=status.HTTP_200_OK)
+
+        with atomic():
+            user_business = self.request.user.user_business
+            if form.action == 0:
+                if instance.status != VideoNeeded.TO_PUBLISH:
+                    return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
+                if user_business.remain_video_num < form.video_num_needed:
+                    return Response({"detail": "您账户中可使用的剩余视频数不足"}, status=status.HTTP_400_BAD_REQUEST)
+                user_business.remain_video_num -= instance.video_num_remained
+                user_business.save()
+                instance.status = VideoNeeded.TO_CHECK
+                instance.publish_time = datetime.datetime.now()
+                instance.save()
+                return Response({"detail": "以发布, 待审核中"}, status=status.HTTP_200_OK)
+            else:
+                if instance.status not in [VideoNeeded.TO_CHECK, VideoNeeded.ON_GOING]:
+                    return Response({"detail": "不需要下架的订单"}, status=status.HTTP_400_BAD_REQUEST)
+                # 余量补回, 剩余量可能会被商家更改过
+                user_business.remain_video_num += instance.video_num_remained
+                user_business.save()
+                instance.status = VideoNeeded.TO_PUBLISH
+                instance.non_publish_time = datetime.datetime.now()
+                instance.save()
+                return Response({"detail": "已经下架"}, status=status.HTTP_200_OK)
 
     @action(methods=['post', ], detail=False, permission_classes=[ManagerPermission])
     def check_link(self, request, **kwargs):
@@ -205,20 +232,28 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
 
     @action(methods=['post', ], detail=False, permission_classes=[ManagerPermission])
     def video_needed_status(self, request, **kwargs):
-        data = [
-            {
-                'name': '待审核',
-                'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_CHECK).count()
+        data = {
+            'video_remain_num': {
+                'name': "视频剩余数",
+                'num': self.request.user.user_business.remain_video_num
             },
-            {
-                'name': '已发布',
-                'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.ON_GOING).count()
-            },
-            {
-                'name': '未发布',
-                'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_PUBLISH).count()
-            },
-        ]
+            'order_status_num': [
+                {
+                    'name': '待审核',
+                    'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_CHECK).count()
+                },
+                {
+                    'name': '已发布',
+                    'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.ON_GOING).count()
+                },
+                {
+                    'name': '未发布',
+                    'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_PUBLISH).count()
+                },
+
+            ]
+        }
+
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -237,10 +272,11 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     def check(self, request, **kwargs):
         form, error = JsonParser(
             Argument('action', filter=lambda x: x in ['pass', 'reject'], help="请输入action(操作) e.pass/reject"),
-            Argument('video_slice', type=list,
+            Argument('order_video_slice', type=list,
+                     filter=lambda x: len([i for i in x if int(i) > 0]) == len(x),
                      handler=lambda x: sorted([{'num': int(i), 'remain': 1} for i in x], key=lambda i: i.get('num')),
                      required=lambda rst: rst.get('action') == 'pass', help="请输入slice(视频切片数组) e.[10, 10, 20]"),
-            Argument('slice_num', type=int, required=lambda rst: rst.get('action') == 'pass',
+            Argument('order_slice_num', type=int, required=lambda rst: rst.get('action') == 'pass',
                      help="请输入slice_num(切片数) e. 10"),
             Argument('reject_reason', required=lambda rst: rst.get('action') == 'reject', help="请输入拒绝理由"),
         ).parse(request.data)
@@ -253,14 +289,21 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             instance.status = VideoNeeded.TO_PUBLISH
             reject_reason = f"{form.reject_reason}\n需求已改成未发布, 可重新编辑发布,再次审核."
             instance.reject_reason = reject_reason
+            user_business = instance.uid.user_business
+            user_business.remain_video_num += instance.video_num_remained
+            user_business.save()
             instance.save()
             return Response({"detail": "已拒绝"}, status=status.HTTP_200_OK)
         else:
-            if len(form.video_slice) != form.slice_num:
+            if len(form.order_video_slice) != form.slice_num:
                 return Response({"detail": "视频分片个数和订单总分片数不一致"}, status=status.HTTP_400_BAD_REQUEST)
+            original_slice = [int(i) for i in request.data.get("order_video_slice")]
+            if sum(original_slice) > instance.video_num_remained:
+                return Response({"detail": "视频总数大于需求的视频总数拉！"}, status=status.HTTP_400_BAD_REQUEST)
+            new_order_video_slice = [i for i in instance.order_video_slice if i.get('remain') == 0]
+            new_order_video_slice.extend(form.order_video_slice)
+            instance.order_video_slice = sorted(new_order_video_slice, key=lambda i: i.get('num'))
             instance.status = VideoNeeded.ON_GOING
-            instance.order_video_slice = form.video_slice
-            instance.order_slice_num = form.slice_num
             instance.save()
             return Response({"detail": "已审核通过, 需求将展示于可申请的需求列表中"}, status=status.HTTP_200_OK)
 
