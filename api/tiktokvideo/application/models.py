@@ -33,6 +33,10 @@ class VideoOrder(BaseModel):
         verbose_name='样品数',
         default=1
     )
+    is_return = models.BooleanField(
+        verbose_name='是否返样',
+        default=False
+    )
 
     # receiver desc
     receiver_name = models.CharField(
@@ -133,6 +137,28 @@ class VideoOrder(BaseModel):
             (DONE, '已完成'),
             (EXCEPTION, '订单异常'),
         ),
+    )
+
+    # goods desc
+    goods_link = models.URLField(
+        verbose_name='商品链接',
+        max_length=3000
+    )
+    goods_images = models.URLField(
+        verbose_name='商品主图',  # 来自于goods_link解析
+        max_length=3000,
+    )
+    TB, JD, KL, DY = range(4)
+    CHANEL = (
+        (TB, "淘宝"),
+        (JD, "京东"),
+        (KL, "网易考拉"),
+        (DY, "抖音小店"),
+    )
+    goods_channel = models.PositiveSmallIntegerField(
+        verbose_name='商品来源',
+        default=TB,
+        choices=CHANEL
     )
 
     # time desc
