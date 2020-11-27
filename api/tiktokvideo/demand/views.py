@@ -2,9 +2,7 @@ import datetime
 import logging
 import traceback
 
-from django.db.models import F
 from django.db.transaction import atomic
-from django.shortcuts import render
 from django_filters import rest_framework
 from django_redis import get_redis_connection
 from redis import StrictRedis
@@ -16,8 +14,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from application.models import VideoOrder
 from config.models import GoodsCategory
+from demand.filters import ManageVideoNeededFilter
 from demand.models import VideoNeeded, HomePageVideo
 from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer, \
     HomePageVideoSerializer
@@ -278,8 +276,9 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = VideoNeededSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    search_fields = ('uid__username',)
-    filter_fields = ('status',)
+    search_fields = ('=uid__username', 'title')
+    filter_class = ManageVideoNeededFilter
+    # filter_fields = ('status', 'is_return', )
 
     def get_queryset(self):
         return VideoNeeded.objects.all()
@@ -375,7 +374,7 @@ class BusVideoHomePageViewSet(viewsets.ModelViewSet):
 class test(APIView):
     permission_classes = [AllowAny]
 
-    @FlowLimiter.limited_decorator(limited="100/day;")
+    @FlowLimiter.limited_decorator(limited="10/day;")
     def post(self, request):
         # data = check_link_and_get_data(request.data.get('goods_link').strip())
         return Response([{10: 1}, {20: 1}, {30: 0}], status=status.HTTP_200_OK)
