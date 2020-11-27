@@ -18,8 +18,9 @@ from rest_framework.views import APIView
 
 from application.models import VideoOrder
 from config.models import GoodsCategory
-from demand.models import VideoNeeded
-from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer
+from demand.models import VideoNeeded, HomePageVideo
+from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer, \
+    HomePageVideoSerializer
 from flow_limiter.services import FlowLimiter
 from libs.common.permission import ManagerPermission, AdminPermission, AllowAny
 from libs.pagination import StandardResultsSetPagination
@@ -72,6 +73,19 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             request.data['receiver_district'] = form.address.district
             request.data['receiver_location'] = form.address.location
             request.data.pop('address')
+        if 'goods_link' in form:
+            hash_key = form.goods_link.__hash__()
+            images_key = f'images_{hash_key}'
+            channel_key = f'channel_{hash_key}'
+            title_key = f'title_{hash_key}'
+            if not conn.exists(title_key):
+                return Response({"detail": "该商品链接没有经过校验, 请先校验！"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                form['goods_images'] = conn.get(images_key).decode('utf-8')
+                form['goods_channel'] = conn.get(channel_key).decode('utf-8')
+                form['goods_title'] = conn.get(title_key).decode('utf-8')
+            conn.delete(title_key, channel_key, images_key)
+
         with atomic():
             if 'video_num_remained' in form:
                 reduce = instance.video_num_remained - form.video_num_needed
@@ -118,14 +132,15 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
 
         hash_key = form.goods_link.__hash__()
-        link_key = f'check_link_{hash_key}'
-        if not conn.exists(link_key):
+        images_key = f'images_{hash_key}'
+        channel_key = f'channel_{hash_key}'
+        title_key = f'title_{hash_key}'
+        if not conn.exists(title_key):
             return Response({"detail": "该商品链接没有经过校验, 请先校验！"}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            images_key = f'images_{hash_key}'
-            channel_key = f'channel_{hash_key}'
             form['goods_images'] = conn.get(images_key).decode('utf-8')
             form['goods_channel'] = conn.get(channel_key).decode('utf-8')
+            form['goods_title'] = conn.get(title_key).decode('utf-8')
 
         if 'address' in form:
             form['receiver_name'] = form.address.name
@@ -142,7 +157,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             form['publish_time'] = datetime.datetime.now()
         form.pop('action')
         form['video_num_remained'] = form.video_num_needed
-        conn.delete(link_key)
+        conn.delete(title_key, channel_key, images_key)
         with atomic():
             if form.status == VideoNeeded.TO_CHECK:
                 user_business = self.request.user.user_business
@@ -210,17 +225,18 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                 return Response({'detail': '抱歉，该商品不是淘宝联盟商品'}, status=status.HTTP_400_BAD_REQUEST)
             hash_key = form.goods_link.__hash__()
             print(hash_key)
-            link_key = f'check_link_{hash_key}'
             images_key = f'images_{hash_key}'
             channel_key = f'channel_{hash_key}'
+            title_key = f'title_{hash_key}'
             channel_value = data.get('channel', None)
             images_value = data.get('itempic', None)
-            if images_value is None or channel_value is None:
+            title_value = data.get('itemtitle', None)
+            if images_value is None or channel_value is None or title_value is None:
                 logger.info(data)
                 return Response({"detail": "抱歉, 无法获取该商品来源以及图片, 校验不通过"}, status=status.HTTP_400_BAD_REQUEST)
-            conn.set(link_key, 'link_ok')
-            conn.set(images_key, images_value)
-            conn.set(channel_key, channel_value)
+            conn.set(images_key, images_value, 3600)
+            conn.set(channel_key, channel_value, 3600)
+            conn.set(title_key, title_value, 3600)
             return Response(data, status=status.HTTP_200_OK)
         except CheckLinkError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -331,6 +347,29 @@ class ClientVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
                 '-create_time', 'recommend'
             )
         return self.queryset
+
+
+class ManageVideoHomePageViewSet(viewsets.ModelViewSet):
+    permission_classes = [AdminPermission]
+    serializer_class = HomePageVideoSerializer
+    queryset = HomePageVideo.objects.all()
+    pagination_class = StandardResultsSetPagination
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+
+    def create(self, request, *args, **kwargs):
+        self.request.data['creator'] = self.request.user
+        return super().create(request, *args, **kwargs)
+    # filter_fields = ('status', 'category', 'is_return',)
+
+
+class BusVideoHomePageViewSet(viewsets.ModelViewSet):
+    permission_classes = [ManagerPermission]
+    queryset = HomePageVideo.objects.filter(is_show=True)
+    pagination_class = StandardResultsSetPagination
+    serializer_class = HomePageVideoSerializer
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_fields = ('video_size', 'clarity', 'model_needed', 'model_occur_rate',
+                     'model_age_range', 'model_figure')
 
 
 class test(APIView):
