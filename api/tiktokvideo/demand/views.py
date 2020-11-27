@@ -18,8 +18,9 @@ from rest_framework.views import APIView
 
 from application.models import VideoOrder
 from config.models import GoodsCategory
-from demand.models import VideoNeeded
-from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer
+from demand.models import VideoNeeded, HomePageVideo
+from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer, \
+    HomePageVideoSerializer
 from flow_limiter.services import FlowLimiter
 from libs.common.permission import ManagerPermission, AdminPermission, AllowAny
 from libs.pagination import StandardResultsSetPagination
@@ -331,6 +332,29 @@ class ClientVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
                 '-create_time', 'recommend'
             )
         return self.queryset
+
+
+class ManageVideoHomePageViewSet(viewsets.ModelViewSet):
+    permission_classes = [AdminPermission]
+    serializer_class = HomePageVideoSerializer
+    queryset = HomePageVideo.objects.all()
+    pagination_class = StandardResultsSetPagination
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+
+    def create(self, request, *args, **kwargs):
+        self.request.data['creator'] = self.request.user
+        return super().create(request, *args, **kwargs)
+    # filter_fields = ('status', 'category', 'is_return',)
+
+
+class BusVideoHomePageViewSet(viewsets.ModelViewSet):
+    permission_classes = [ManagerPermission]
+    queryset = HomePageVideo.objects.filter(is_show=True)
+    pagination_class = StandardResultsSetPagination
+    serializer_class = HomePageVideoSerializer
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_fields = ('video_size', 'clarity', 'model_needed', 'model_occur_rate',
+                     'model_age_range', 'model_figure')
 
 
 class test(APIView):

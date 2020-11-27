@@ -236,3 +236,108 @@ class VideoNeeded(models.Model):
         verbose_name = '短视频需求单'
         verbose_name_plural = verbose_name
         db_table = 'VideoNeeded'
+
+
+class HomePageVideo(models.Model):
+    creator = models.ForeignKey(
+        'users.Users',
+        to_field='uid',
+        related_name='home_page_video',
+        on_delete=models.CASCADE,
+        verbose_name='创建者'
+    )
+
+    video_link = models.URLField(
+        verbose_name='视频链接',
+        max_length=3000
+    )
+    is_show = models.BooleanField(
+        verbose_name='是否展示',
+        default=True
+    )
+    like = models.PositiveIntegerField(
+        verbose_name='评论数',
+        default=0
+    )
+    comment = models.PositiveIntegerField(
+        verbose_name='评论数',
+        default=0
+    )
+    share_num = models.PositiveIntegerField(
+        verbose_name='分享数',
+        default=0
+    )
+
+    # video desc #
+    video_size = models.PositiveSmallIntegerField(
+        verbose_name='视频尺寸',
+        default=0,
+        choices=(
+            (0, '3: 4 【竖屏】'),
+            (1, '9: 16 【竖屏】'),
+            (2, '16: 9 【横屏】'),
+        )
+    )
+    clarity = models.PositiveSmallIntegerField(
+        verbose_name='视频清晰度',
+        default=0,
+        choices=(
+            (0, '720p标清及以上'),
+            (1, '1080p高清及以上'),
+        )
+    )
+    model_needed = models.PositiveSmallIntegerField(
+        verbose_name='模特需求类型',
+        default=0,
+        choices=(
+            (0, '无要求'),
+            (1, '男模特'),
+            (2, '女模特'),
+            (3, '男+女模特'),
+        )
+    )
+    model_occur_rate = models.PositiveSmallIntegerField(
+        verbose_name='模特出场率',
+        default=0,
+        choices=(
+            (0, '无要求'),
+            (1, '>10%'),
+            (2, '>20%'),
+            (3, '>30%'),
+            (4, '>50%'),
+        )
+    )
+    model_age_range = models.PositiveSmallIntegerField(
+        verbose_name='模特年龄范围',
+        default=0,
+        choices=(
+            (0, '无要求'),
+            (1, '婴幼儿'),
+            (2, '儿童/少年'),
+            (3, '18-35岁'),
+            (4, '35-55岁'),
+        )
+    )
+    model_figure = models.PositiveSmallIntegerField(
+        verbose_name='模特身材',
+        default=0,
+        choices=(
+            (0, '无要求'),
+            (1, '偏瘦'),
+            (2, '中等'),
+            (3, '偏肥/大码'),
+        )
+    )
+
+    # time desc
+    create_time = models.DateTimeField(
+        auto_now_add=True
+    )
+    update_time = models.DateTimeField(
+        auto_now=True
+    )
+
+    class Meta:
+        verbose_name = "首页展示视频"
+        verbose_name_plural = verbose_name
+        db_table = "HomePageVideo"
