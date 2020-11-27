@@ -34,7 +34,8 @@ class ClientVideoNeededSerializer(serializers.ModelSerializer):
             'id', 'title', 'is_return', 'video_num_at_least',
             'goods_channel', 'goods_link', 'goods_images',
             'video_size', 'clarity', 'model_needed',
-            'model_occur_rate', 'model_age_range', 'goods_channel'
+            'model_occur_rate', 'model_age_range', 'goods_channel',
+            'sold_out'
         )
 
     def get_video_num_at_least(self, obj):
@@ -56,7 +57,7 @@ class ClientVideoNeededSerializer(serializers.ModelSerializer):
         return obj.get_model_age_range()
 
     def get_sold_out(self, obj):
-        if obj.num_remained == 0:
+        if obj.order_num_remained == 0:
             return True
         return False
 
