@@ -110,7 +110,7 @@ class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
     #     else:
     #         return BusVideoOrderSerializer
 
-    @action(methods=['post', ], detail=True, permission_classes=[AdminPermission])
+    @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
     def commit_express(self, request, **kwargs):
         form, error = JsonParser(
             Argument('express', type=str, help="请输入 express(快递单号)"),
@@ -126,7 +126,7 @@ class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
         instance.save()
         return Response({"detail": "已提交成功"}, status=status.HTTP_200_OK)
 
-    @action(methods=['post', ], detail=False, permission_classes=[ManagerPermission])
+    @action(methods=['get', ], detail=False, permission_classes=[ManagerPermission])
     def video_order_status(self, request, **kwargs):
         data = dict(wait_send=VideoOrder.objects.filter(demand__uid=request.user, status=0).count(),
                     wait_commit=VideoOrder.objects.filter(demand__uid=request.user, status=1).count(),
