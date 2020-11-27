@@ -193,7 +193,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             if form.action == 0:
                 if instance.status != VideoNeeded.TO_PUBLISH:
                     return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
-                if user_business.remain_video_num < form.video_num_needed:
+                if user_business.remain_video_num < instance.video_num_needed:
                     return Response({"detail": "您账户中可使用的剩余视频数不足"}, status=status.HTTP_400_BAD_REQUEST)
                 user_business.remain_video_num -= instance.video_num_remained
                 user_business.save()
@@ -222,7 +222,6 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             if data == 444:
                 return Response({'detail': '抱歉，该商品不是淘宝联盟商品'}, status=status.HTTP_400_BAD_REQUEST)
             hash_key = form.goods_link.__hash__()
-            print(hash_key)
             images_key = f'images_{hash_key}'
             channel_key = f'channel_{hash_key}'
             title_key = f'title_{hash_key}'
@@ -290,9 +289,9 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             Argument('order_video_slice', type=list,
                      filter=lambda x: len([i for i in x if int(i) > 0]) == len(x),
                      handler=lambda x: sorted([{'num': int(i), 'remain': 1} for i in x], key=lambda i: i.get('num')),
-                     required=lambda rst: rst.get('action') == 'pass', help="请输入slice(视频切片数组) e.[10, 10, 20]"),
+                     required=lambda rst: rst.get('action') == 'pass', help="请输入 order_video_slice(视频切片数组) e.[10, 10, 20]"),
             Argument('order_slice_num', type=int, required=lambda rst: rst.get('action') == 'pass',
-                     help="请输入slice_num(切片数) e. 10"),
+                     help="请输入 order_slice_num(切片数) e. 10"),
             Argument('reject_reason', required=lambda rst: rst.get('action') == 'reject', help="请输入拒绝理由"),
         ).parse(request.data)
         if error:
@@ -310,7 +309,7 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             instance.save()
             return Response({"detail": "已拒绝"}, status=status.HTTP_200_OK)
         else:
-            if len(form.order_video_slice) != form.slice_num:
+            if len(form.order_video_slice) != form.order_slice_num:
                 return Response({"detail": "视频分片个数和订单总分片数不一致"}, status=status.HTTP_400_BAD_REQUEST)
             original_slice = [int(i) for i in request.data.get("order_video_slice")]
             if sum(original_slice) > instance.video_num_remained:
