@@ -360,6 +360,12 @@ class UserCreator(BaseModel):
             (REJECTED, '审核不通过'),
         )
     )
+    remark = models.CharField(
+        verbose_name='工作人员备注(异常备注)',
+        max_length=1024,
+        null=True,
+        blank=True
+    )
     video = models.URLField(
         verbose_name="介绍视频",
         max_length=1000,
@@ -373,6 +379,11 @@ class UserCreator(BaseModel):
     is_signed = models.BooleanField(
         verbose_name="是否签约创作者",
         default=False
+    )
+    contract_reward = models.IntegerField(
+        # 合同上签订的酬劳当默认配置，具体订单酬劳可在申请订单表reward字段修改
+        _('合同上签订的每条视频可得酬劳'),
+        default=0
     )
 
 

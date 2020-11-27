@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from account.models import CreatorAccount
-from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermission
+from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermission, CreatorPermission
 from relations.tasks import save_invite_relation
 
 from tiktokvideo.base import APP_ID, SECRET
@@ -23,7 +23,7 @@ from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptT
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer, \
-    AddressSerializer, AddressListSerializer
+    AddressSerializer, AddressListSerializer, CreatorUserInfoSerializer, UserCreatorSerializer, UserCreatorPutSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls
 
@@ -70,8 +70,8 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         logger.info(user_info)
         code = request.data.get('iCode')
         identity = request.data.get('identity')
-        # if not openid or not username or not identity:
-        if not openid or not username:
+        if not openid or not username or not identity:
+        # if not openid or not username:
             return Response({"detail": "缺少参数!"}, status=status.HTTP_400_BAD_REQUEST)
         user_instance = self.save_user_and_openid(username, openid, identity, user_info)
 
@@ -192,11 +192,22 @@ class UserBusinessViewSet(mixins.CreateModelMixin,
 class UserInfoViewSet(viewsets.ReadOnlyModelViewSet):
     """用户中心"""
     permission_classes = (ManagerPermission,)
-    serializer_class = UserInfoSerializer
 
     def get_queryset(self):
-        self.queryset = Users.objects.select_related('user_business').filter(uid=self.request.user.uid)
+        identity = self.request.user.identity
+        if identity == Users.CREATOR:
+            self.queryset = Users.objects.select_related('user_creator', 'auth_base').filter(uid=self.request.user.uid)
+        else:
+            self.queryset = Users.objects.select_related('user_business').filter(uid=self.request.user.uid)
         return super().get_queryset()
+
+    def get_serializer_class(self):
+        identity = self.request.user.identity
+        if identity == Users.CREATOR:
+            self.serializer_class = CreatorUserInfoSerializer
+        else:
+            self.serializer_class = UserInfoSerializer
+        return super().get_serializer_class()
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -219,7 +230,7 @@ class BusInfoOtherView(APIView):
 
 class AddressViewSet(viewsets.ModelViewSet):
     """收货地址"""
-    permission_classes = ManagerPermission
+    permission_classes = (ManagerPermission, )
     serializer_class = AddressSerializer
 
     def get_serializer_class(self):
@@ -231,3 +242,38 @@ class AddressViewSet(viewsets.ModelViewSet):
         self.queryset = Address.objects.filter(uid=self.request.user).extra(
             select={'default': 'is_default=1'}).order_by('-date_created', '-default')
         return super(AddressViewSet, self).get_queryset()
+
+
+class UserCreatorViewSet(mixins.ListModelMixin,
+                         mixins.UpdateModelMixin,
+                         GenericViewSet):
+    """创作者信息"""
+    permission_classes = (CreatorPermission, )
+    serializer_class = UserCreatorSerializer
+    queryset = UserCreator.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            self.serializer_class = UserCreatorPutSerializer
+        return super().get_serializer_class()
+
+    def get_queryset(self):
+        if self.action == 'list':
+            self.queryset = self.queryset.filter(uid=self.request.user)
+        return super(UserCreatorViewSet, self).get_queryset()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data[0] if serializer.data else {})
+
+    @action(methods=['put'], detail=False, serializer_class=UserCreatorPutSerializer)
+    def creator_info(self, request, *args, **kwargs):
+        try:
+            instance = UserCreator.objects.get(uid=request.user)
+        except UserCreator.DoesNotExist:
+            instance = UserCreator.objects.create(uid=request.user)
+        serializer = self.get_serializer(instance, data=request.data, partial=False)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
