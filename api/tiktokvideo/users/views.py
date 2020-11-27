@@ -78,7 +78,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         if user_instance.status == Users.FROZEN:
             return Response({'detail': '账户被冻结，请联系客服处理', 'code': 444}, status=status.HTTP_200_OK)
         user_info = JwtServers(user=user_instance).get_token_and_user_info()
-        if code:  # 存在注册码绑定邀请关系
+        if code and identity == Users.BUSINESS:  # 存在注册码绑定邀请关系
             # save_invite_relation.delay(code, username)  # 绑定邀请关系
             threading.Thread(target=save_invite_relation,
                              args=(code, username)).start()  # 绑定邀请关系
@@ -126,7 +126,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             user = Users.objects.create(
                 username=username,
                 openid=openid,
-                # identity=select_identity
+                identity=select_identity
             )
             user.iCode = InviteCls.encode_invite_code(user.id)
             user.save()
@@ -138,9 +138,9 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 nickname=user_info.get('nickName'),
                 avatars=user_info.get('avatarUrl')
             )
-            # if select_identity == Users.CREATOR:
-            #     UserCreator.objects.create(uid=user)
-            #     CreatorAccount.objects.create(uid=user)
+            if select_identity == Users.CREATOR:
+                UserCreator.objects.create(uid=user)
+                CreatorAccount.objects.create(uid=user)
         else:
             # 如果后台创建的用户要补充微信信息
             user = user_qs.first()
@@ -151,14 +151,14 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 user_base.nickname = user_info.get('nickName')
                 user_base.avatars = user_info.get('avatarUrl')
                 user_base.save()
-            # if user_identity == Users.CREATOR:
-            #     if select_identity != Users.CREATOR:
-            #         raise exceptions.ParseError('请选择创作者角色登陆')
-            # elif user_identity in [Users.BUSINESS, Users.SALESMAN, Users.SUPERVISOR]:  # 商家，业务员，主管都用商家端
-            #     if select_identity != Users.BUSINESS:
-            #         raise exceptions.ParseError('请选择商家角色登陆')
-            # else:
-            #     raise exceptions.ParseError('角色错误')
+            if user_identity == Users.CREATOR:
+                if select_identity != Users.CREATOR:
+                    raise exceptions.ParseError('请选择创作者角色登陆')
+            elif user_identity in [Users.BUSINESS, Users.SALESMAN, Users.SUPERVISOR]:  # 商家，业务员，主管都用商家端
+                if select_identity != Users.BUSINESS:
+                    raise exceptions.ParseError('请选择商家角色登陆')
+            else:
+                raise exceptions.ParseError('角色错误')
 
         # 是否换微信登录
         if user.openid != openid:
