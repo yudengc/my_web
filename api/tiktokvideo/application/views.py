@@ -2,6 +2,7 @@ import json
 import logging
 
 from django.db.models import Sum
+from django.db.transaction import atomic
 from rest_framework import viewsets, status, mixins, filters
 from django_filters import rest_framework
 from rest_framework.decorators import action
@@ -11,7 +12,8 @@ from application.models import VideoOrder, Video
 from application.serializers import VideoApplicationCreateSerializer, VideoApplicationListSerializer, \
     VideoApplicationRetrieveSerializer, BusVideoOrderSerializer
 from demand.models import VideoNeeded
-from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission
+from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission, ManagerPermission
+from libs.parser import Argument, JsonParser
 
 logger = logging.getLogger()
 
@@ -21,7 +23,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                               mixins.UpdateModelMixin,
                               mixins.ListModelMixin,
                               GenericViewSet):
-    permission_classes = (CreatorPermission, )
+    permission_classes = (CreatorPermission,)
     queryset = VideoOrder.objects.all()
 
     def get_serializer_class(self):
@@ -50,14 +52,18 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         # 乐观🔒判断可选的视频数是否被领了（怕在用户填信息时被其他用户领了）
         need_obj = VideoNeeded.objects.get(id=request.data['demand'])
         order_video_slice = need_obj.order_video_slice
-        for index, i in enumerate(need_obj.order_video_slice):
-            dic = json.loads(i)
-            if request.data['num_selected'] in dic and dic[request.data['num_selected']] != 0:
-                break
-            if index + 1 == len(order_video_slice):
+        # e. [{'num': 10, 'remain': 1}, {'num': 20, 'remain': 1}]
+        with atomic():
+            try:
+                # 订单过程中需维护VideoNeeded的2个字段: order_video_slice, order_num_remained
+                slice_idx = order_video_slice.index({'num': request.data['num_selected'], 'remain': 1})
+                need_obj.order_video_slice[slice_idx]['remain'] = 0
+                need_obj.order_num_remained -= 1
+                need_obj.save()
+            except ValueError:
                 return Response({'detail': '哎呀，您选择的拍摄视频数已被选走，请重选选择'}, status=status.HTTP_400_BAD_REQUEST)
 
-        return super().create(request, *args, **kwargs)
+            return super().create(request, *args, **kwargs)
 
     @action(methods=['put'], detail=True)
     def upload_video(self, request):
@@ -80,7 +86,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         return Response(data)
 
 
-class BusVideoOrderViewSet(viewsets.ModelViewSet):
+class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AdminPermission, BusinessPermission]
     serializer_class = BusVideoOrderSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
@@ -89,7 +95,32 @@ class BusVideoOrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return VideoOrder.objects.filter(demand__uid=self.request.user)
 
+    def get_serializer_class(self):
+        if self.action in ['retrieve', ]:
+            return VideoApplicationRetrieveSerializer
+
+        return super().get_serializer_class()
+
     @action(methods=['post', ], detail=True, permission_classes=[AdminPermission])
     def commit_express(self, request, **kwargs):
+        form, error = JsonParser(
+            Argument('express', type=str, help="请输入 express(快递单号)"),
+            Argument('company', type=str, help="请输入 company(物流公司)"),
+        ).parse(request.data)
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
         instance = self.get_object()
+        if instance.demand.uid != self.request.user:
+            return Response({"detail": "订单错误, 无法提交快递单号"}, status=status.HTTP_400_BAD_REQUEST)
+        instance.express = form.express
+        instance.company = form.company
+        instance.save()
+        return Response({"detail": "已提交成功"}, status=status.HTTP_200_OK)
 
+    @action(methods=['post', ], detail=False, permission_classes=[ManagerPermission])
+    def video_order_status(self, request, **kwargs):
+        data = dict(wait_send=VideoOrder.objects.filter(demand__uid=request.user, status=0).count(),
+                    wait_commit=VideoOrder.objects.filter(demand__uid=request.user, status=1).count(),
+                    wait_return=VideoOrder.objects.filter(demand__uid=request.user, status=4).count(),
+                    done=VideoOrder.objects.filter(demand__uid=request.user, status=5).count())
+        return Response(data, status=status.HTTP_200_OK)
