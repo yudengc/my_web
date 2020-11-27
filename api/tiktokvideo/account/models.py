@@ -3,6 +3,7 @@ from django.db import models
 from users.models import BaseModel
 from django.utils.translation import ugettext_lazy as _
 
+
 class CreatorAccount(BaseModel):
     """创作者账户"""
     uid = models.OneToOneField(
@@ -16,7 +17,12 @@ class CreatorAccount(BaseModel):
         default=0
     )
     coin_freeze = models.IntegerField(
-        _('待结算🌰'),
+        _('待结算松子'),
+        default=0
+    )
+    contract_reward = models.IntegerField(
+        # 合同上签订的酬劳当默认配置，具体订单酬劳可在申请订单表reward字段修改
+        _('合同上签订的每条视频可得酬劳'),
         default=0
     )
 
