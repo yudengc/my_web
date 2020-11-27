@@ -61,10 +61,11 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         serializer.is_valid(raise_exception=True)
         with atomic():
             try:
-                # 订单过程中需维护VideoNeeded的2个字段: order_video_slice, order_num_remained
+                # 订单过程中需维护VideoNeeded的3个字段: order_video_slice, order_num_remained, video_num_remained
                 slice_idx = order_video_slice.index({'num': request.data['num_selected'], 'remain': 1})
                 need_obj.order_video_slice[slice_idx]['remain'] = 0
                 need_obj.order_num_remained -= 1
+                need_obj.video_num_remained -= request.data['num_selected']
                 need_obj.save()
             except ValueError:
                 return Response({'detail': '哎呀，您选择的拍摄视频数已被选走，请重选选择'}, status=status.HTTP_400_BAD_REQUEST)
