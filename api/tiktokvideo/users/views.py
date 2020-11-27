@@ -244,8 +244,7 @@ class AddressViewSet(viewsets.ModelViewSet):
         return super(AddressViewSet, self).get_queryset()
 
 
-class UserCreatorViewSet(mixins.CreateModelMixin,
-                         mixins.RetrieveModelMixin,
+class UserCreatorViewSet(mixins.ListModelMixin,
                          mixins.UpdateModelMixin,
                          GenericViewSet):
     """创作者信息"""
@@ -257,3 +256,24 @@ class UserCreatorViewSet(mixins.CreateModelMixin,
         if self.action in ['update', 'partial_update']:
             self.serializer_class = UserCreatorPutSerializer
         return super().get_serializer_class()
+
+    def get_queryset(self):
+        if self.action == 'list':
+            self.queryset = self.queryset.filter(uid=self.request.user)
+        return super(UserCreatorViewSet, self).get_queryset()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data[0] if serializer.data else {})
+
+    @action(methods=['put'], detail=False, serializer_class=UserCreatorPutSerializer)
+    def creator_info(self, request, *args, **kwargs):
+        try:
+            instance = UserCreator.objects.get(uid=request.user)
+        except UserCreator.DoesNotExist:
+            instance = UserCreator.objects.create(uid=request.user)
+        serializer = self.get_serializer(instance, data=request.data, partial=False)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)

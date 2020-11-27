@@ -131,4 +131,4 @@ class UserCreatorPutSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserCreator
-        fields = ('video', 'team_introduction', 'capability_introduction', 'video')
+        fields = ('video', 'team_introduction', 'capability_introduction')

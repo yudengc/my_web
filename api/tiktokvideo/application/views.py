@@ -26,6 +26,8 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                               GenericViewSet):
     permission_classes = (CreatorPermission,)
     queryset = VideoOrder.objects.all()
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_fields = ('status',)
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -43,9 +45,15 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
 
     def create(self, request, *args, **kwargs):
         user = request.user
+        if not request.data['num_selected'] or not request.data['demand'] or not request.data['address']:
+            return Response({'detail': '参数缺失！'}, status=status.HTTP_400_BAD_REQUEST)
+        if VideoOrder.objects.filter(user=user, demand_id=request.data['demand']).exists():
+            return Response({'detail': '你已经领取过该需求了哦'}, status=status.HTTP_400_BAD_REQUEST)
         if not user.user_creator.is_signed:  # 非签约团队有视频数限制（5个）
             video_sum = VideoOrder.objects.filter(user=user).exclude(status=VideoOrder.DONE).aggregate(
                 sum=Sum('num_selected'))['sum']  # 进行中的视频数
+            if not video_sum:
+                video_sum = 0
             if request.data['num_selected'] > 5 - video_sum:
                 return Response({'detail': '可拍摄视频数不足'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -64,12 +72,12 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
             add_obj = Address.objects.get(id=request.data['address'])
         except Address.DoesNotExist:
             return Response({'detail': '所选地址不存在'}, status=status.HTTP_400_BAD_REQUEST)
-        request.data['receiver_name'] = add_obj.receiver_name
-        request.data['receiver_phone'] = add_obj.receiver_phone
-        request.data['receiver_province'] = add_obj.receiver_province
-        request.data['receiver_city'] = add_obj.receiver_city
-        request.data['receiver_district'] = add_obj.receiver_district
-        request.data['receiver_location'] = add_obj.receiver_location
+        request.data['receiver_name'] = add_obj.name
+        request.data['receiver_phone'] = add_obj.phone
+        request.data['receiver_province'] = add_obj.province
+        request.data['receiver_city'] = add_obj.city
+        request.data['receiver_district'] = add_obj.district
+        request.data['receiver_location'] = add_obj.location
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -83,7 +91,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                 need_obj.video_num_remained -= request.data['num_selected']
                 need_obj.save()
             except ValueError:
-                return Response({'detail': '哎呀，您选择的拍摄视频数已被选走，请重选选择'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': '哎呀呀，您选择的拍摄视频数已被选走，请重选选择'}, status=status.HTTP_400_BAD_REQUEST)
 
             self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
@@ -94,6 +102,8 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         """提交视频"""
         video_lis = request.data.get('video_lis')
         order_obj = self.get_object()
+        if order_obj.status != VideoOrder.WAIT_COMMIT:
+            return Response({'detail': '非待提交状态不能提交视频'}, status=status.HTTP_400_BAD_REQUEST)
         lis = []
         for video_url in video_lis:
             lis.append(Video(video_url=video_url, order=order_obj))
@@ -103,10 +113,10 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
     @action(methods=['get'], detail=False)
     def order_status_count(self, request):
         order_qs = VideoOrder.objects.filter(user=request.user)
-        data = dict(wait_send=order_qs.filter(status=VideoOrder.WAIT_SEND).count,
-                    wait_commit=order_qs.filter(status=VideoOrder.WAIT_COMMIT).count,
-                    wait_check=order_qs.filter(status=VideoOrder.WAIT_CHECK).count,
-                    wait_return=order_qs.filter(status=VideoOrder.WAIT_RETURN).count)
+        data = dict(wait_send=order_qs.filter(status=VideoOrder.WAIT_SEND).count(),
+                    wait_commit=order_qs.filter(status=VideoOrder.WAIT_COMMIT).count(),
+                    wait_check=order_qs.filter(status=VideoOrder.WAIT_CHECK).count(),
+                    wait_return=order_qs.filter(status=VideoOrder.WAIT_RETURN).count())
         return Response(data)
 
 
