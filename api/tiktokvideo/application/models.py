@@ -169,7 +169,7 @@ class Video(models.Model):
         on_delete=models.CASCADE
     )
     date_created = models.DateTimeField(
-        _('创建时间'),
+        verbose_name='创建时间',
         auto_now_add=True
     )
 
