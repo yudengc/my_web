@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from config.models import GoodsCategory
-from demand.filters import ManageVideoNeededFilter
+from demand.filters import ManageVideoNeededFilter, ManageHomePageVideoFilter
 from demand.models import VideoNeeded, HomePageVideo
 from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer, \
     HomePageVideoSerializer
@@ -362,6 +362,12 @@ class ManageVideoHomePageViewSet(viewsets.ModelViewSet):
     queryset = HomePageVideo.objects.all()
     pagination_class = StandardResultsSetPagination
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ('title', )
+    filter_class = ManageHomePageVideoFilter
+
+    def list(self, request, *args, **kwargs):
+
+        return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         self.request.data['creator'] = self.request.user.uid
