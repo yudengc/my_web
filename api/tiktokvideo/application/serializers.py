@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from application.models import VideoOrder
+from application.models import VideoOrder, VideoOrderDetail, Video
 from demand.models import VideoNeeded
 
 
@@ -8,10 +8,13 @@ class VideoApplicationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoOrder
         fields = (
-            'user', 'demand', 'num_selected', 'receiver_name', 'receiver_phone', 'receiver_province', 'receiver_city',
-            'receiver_district', 'receiver_location', 'creator_remark', 'reward', 'goods_title', 'goods_link',
-            'goods_images', 'goods_channel', 'is_return'
+            'id', 'user', 'demand', 'num_selected', 'creator_remark', 'reward', 'is_return'
         )
+        # fields = (
+        #     'user', 'demand', 'num_selected', 'receiver_name', 'receiver_phone', 'receiver_province', 'receiver_city',
+        #     'receiver_district', 'receiver_location', 'creator_remark', 'reward', 'goods_title', 'goods_link',
+        #     'goods_images', 'goods_channel', 'is_return'
+        # )
 
 
 class VNeededSerializer(serializers.ModelSerializer):
@@ -23,16 +26,27 @@ class VNeededSerializer(serializers.ModelSerializer):
         )
 
 
+class VideoApplicationDetailSerializer(serializers.ModelSerializer):
+    category = serializers.CharField(source='category.title')
+
+    class Meta:
+        model = VideoOrderDetail
+        fields = (
+            'goods_link', 'goods_images', 'goods_channel', 'goods_title', 'category'
+        )
+
+
 class VideoApplicationListSerializer(serializers.ModelSerializer):
     """我的订单"""
     demand = VNeededSerializer()
     total_reward = serializers.SerializerMethodField()
+    video_order_detail = VideoApplicationDetailSerializer()
 
     class Meta:
         model = VideoOrder
         fields = (
             'id', 'status', 'date_created', 'num_selected', 'sample_count', 'is_return',
-            'goods_link', 'goods_images', 'goods_channel', 'goods_title', 'total_reward', 'demand',
+            'total_reward', 'video_order_detail', 'demand',
         )
 
     def get_total_reward(self, obj):
@@ -40,33 +54,43 @@ class VideoApplicationListSerializer(serializers.ModelSerializer):
         return obj.reward * obj.num_selected
 
 
-class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
-    """我的订单详情"""
-    demand = VNeededSerializer()
-    return_sample = serializers.SerializerMethodField()
+class VideoApplicationDetailRetrieveSerializer(serializers.ModelSerializer):
+    category = serializers.CharField(source='category.title')
     location = serializers.SerializerMethodField()
 
     class Meta:
-        model = VideoOrder
+        model = VideoOrderDetail
         fields = (
-            'id', 'status', 'date_created', 'num_selected', 'is_return', 'goods_link', 'goods_images', 'goods_channel',
-            'goods_title', 'receiver_name', 'receiver_phone', 'location', 'company', 'express', 'creator_remark',
-            'check_time', 'send_time', 'done_time', 'close_time', 'date_created', 'demand', 'return_sample',
+            'goods_link', 'goods_images', 'goods_channel', 'goods_title', 'category', 'receiver_name', 'receiver_phone',
+            'location', 'company', 'express',
         )
 
     def get_location(self, obj):
         tmp = [obj.receiver_province, obj.receiver_city, obj.receiver_district, obj.receiver_location]
         return ''.join([i for i in tmp if i])
 
+
+class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
+    """我的订单详情"""
+    demand = VNeededSerializer()
+    return_sample = serializers.SerializerMethodField()
+    video_order_detail = VideoApplicationDetailRetrieveSerializer()
+
+    class Meta:
+        model = VideoOrder
+        fields = (
+            'id', 'status', 'date_created', 'num_selected', 'is_return', 'creator_remark', 'check_time', 'send_time',
+            'done_time', 'close_time', 'date_created', 'demand', 'video_order_detail', 'return_sample',
+        )
+
     def get_return_sample(self, obj):
         # 返样信息
-        demand_obj = obj.demand
         if obj.is_return and obj.status == VideoOrder.WAIT_RETURN:
-            location = demand_obj.receiver_province + demand_obj.receiver_city + \
-                       demand_obj.receiver_district + demand_obj.receiver_location
-            return dict(receiver_name=demand_obj.receiver_name,
-                        receiver_phone=demand_obj.receiver_phone,
-                        location=location,
+            location = obj.return_receiver_province + obj.return_receiver_city + \
+                       obj.return_receiver_district + obj.return_receiver_location
+            return dict(return_receiver_name=obj.return_receiver_name,
+                        return_receiver_phone=obj.return_receiver_phone,
+                        return_location=location,
                         return_company=obj.return_company,
                         return_express=obj.return_express)
         return None
@@ -83,7 +107,7 @@ class BusApplicationSerializer(VideoApplicationRetrieveSerializer):
         return obj.order_video.all()
 
 
-class VideoApplicationManagerListSerializer(VideoApplicationRetrieveSerializer):
+class VideoApplicationManagerListSerializer(serializers.ModelSerializer):
     title = serializers.CharField(source='demand.title', read_only=True)
     bus_username = serializers.CharField(source='demand.uid.username', read_only=True)
     bus_name = serializers.SerializerMethodField()
@@ -101,26 +125,53 @@ class VideoApplicationManagerListSerializer(VideoApplicationRetrieveSerializer):
         return user_business.bus_name if user_business else None
 
 
-class VideoApplicationManagerRetrieveSerializer(VideoApplicationRetrieveSerializer):
+class VideoOrderDetailManagerSerializer(serializers.ModelSerializer):
+    location = serializers.SerializerMethodField()
+    return_location = serializers.SerializerMethodField()
+    category = serializers.CharField(source='category.title')
+
+    class Meta:
+        model = VideoOrderDetail
+        fields = (
+            'receiver_name', 'receiver_phone', 'location', 'return_receiver_name', 'return_receiver_phone',
+            'return_location', 'goods_title', 'goods_link', 'goods_images', 'goods_channel', 'category', 'company',
+            'express'
+        )
+
+    def get_location(self, obj):
+        tmp = [obj.receiver_province, obj.receiver_city, obj.receiver_district, obj.receiver_location]
+        return ''.join([i for i in tmp if i])
+
+    def get_return_location(self, obj):
+        tmp = [obj.return_receiver_province, obj.return_receiver_city,
+               obj.return_receiver_district, obj.return_receiver_location]
+        return ''.join([i for i in tmp if i])
+
+
+class VideoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Video
+        fields = ('video_url', )
+
+
+class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
     title = serializers.CharField(source='demand.title', read_only=True)
     bus_username = serializers.CharField(source='demand.uid.username', read_only=True)
     bus_name = serializers.SerializerMethodField()
     creator_username = serializers.CharField(source='user.username')
     creator_nickname = serializers.CharField(source='user.auth_base.nickname')
     is_signed = serializers.BooleanField(source='user.user_creator.is_signed')
-    location = serializers.SerializerMethodField()
-    creator_receiver_name = serializers.CharField(source='demand.receiver_name')
+    video_order_detail = VideoOrderDetailManagerSerializer()
+    # order_video = VideoSerializer(many=True)
+    order_video = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
         model = VideoOrder
-        fields = ('id', 'title', 'bus_username', 'bus_name', 'num_selected', 'goods_title', 'goods_link',
-                  'goods_images', 'goods_channel', 'is_return', 'receiver_name', 'receiver_phone', 'location',
-                  'creator_nickname', 'creator_username', 'reward', 'is_signed',
-                  'creator_receiver_name',
-                  'date_created', 'done_time', 'status', )
-
-    def get_location(self, obj):
-        return obj.receiver_province + obj.receiver_city + obj.receiver_district + obj.receiver_location
+        fields = ('id', 'title', 'bus_username', 'bus_name', 'num_selected',
+                  'is_return', 'creator_nickname', 'creator_username', 'reward', 'is_signed',
+                  'status', 'creator_remark', 'system_remark', 'remark',
+                  'date_created', 'check_time', 'send_time', 'done_time', 'video_order_detail', 'order_video')
 
     def get_bus_name(self, obj):
         user_business = obj.demand.uid.user_business
