@@ -148,6 +148,7 @@ class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({"detail": "订单错误, 无法提交快递单号"}, status=status.HTTP_400_BAD_REQUEST)
         instance.express = form.express
         instance.company = form.company
+        instance.status = VideoOrder.WAIT_CHECK
         instance.save()
         return Response({"detail": "已提交成功"}, status=status.HTTP_200_OK)
 
