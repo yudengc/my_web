@@ -55,7 +55,8 @@ class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
         )
 
     def get_location(self, obj):
-        return obj.receiver_province + obj.receiver_city + obj.receiver_district + obj.receiver_location
+        tmp = [obj.receiver_province, obj.receiver_city, obj.receiver_district, obj.receiver_location]
+        return ''.join([i for i in tmp if i])
 
     def get_return_sample(self, obj):
         # 返样信息

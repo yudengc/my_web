@@ -250,7 +250,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             logger.info(traceback.format_exc())
             return Response({"detail": "校验接口报错了，请联系技术人员解决"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(methods=['post', ], detail=False, permission_classes=[ManagerPermission])
+    @action(methods=['get', ], detail=False, permission_classes=[ManagerPermission])
     def video_needed_status(self, request, **kwargs):
         data = {
             'video_remain_num': {
