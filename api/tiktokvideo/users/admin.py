@@ -207,10 +207,10 @@ class TeamUsersAdmin(admin.ModelAdmin):
         return False
 
     def team_name(self, obj):
-        return obj.team.name
+        return obj.team.name if obj.team else None
 
     def leader_username(self, obj):
-        return obj.team.leader.username
+        return obj.team.leader.username if obj.team else None
 
     def salesman_username(self, obj):
         return obj.username
