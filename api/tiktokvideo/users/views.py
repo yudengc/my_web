@@ -2,6 +2,7 @@ import logging
 import threading
 
 from django.contrib.auth.hashers import check_password
+from django.db.transaction import atomic
 from django_filters.rest_framework import DjangoFilterBackend
 from django_redis import get_redis_connection
 from redis import StrictRedis
@@ -219,7 +220,7 @@ class BusInfoOtherView(APIView):
 
 class AddressViewSet(viewsets.ModelViewSet):
     """收货地址"""
-    permission_classes = ManagerPermission
+    permission_classes = [ManagerPermission]
     serializer_class = AddressSerializer
 
     def get_serializer_class(self):
@@ -227,7 +228,13 @@ class AddressViewSet(viewsets.ModelViewSet):
             return AddressListSerializer
         return super().get_serializer_class()
 
+    def create(self, request, *args, **kwargs):
+        request.data['uid'] = self.request.user.uid
+        with atomic():
+            if request.data.get('is_default') is True:
+                Address.objects.filter(uid=request.user).update(is_default=False)
+            return super().create(request, *args, **kwargs)
+
     def get_queryset(self):
-        self.queryset = Address.objects.filter(uid=self.request.user).extra(
-            select={'default': 'is_default=1'}).order_by('-date_created', '-default')
+        self.queryset = Address.objects.filter(uid=self.request.user).order_by('-date_created', '-is_default')
         return super(AddressViewSet, self).get_queryset()
