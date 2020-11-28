@@ -12,7 +12,8 @@ from rest_framework.viewsets import GenericViewSet
 from application.filters import VideoApplicationManagerFilter
 from application.models import VideoOrder, Video
 from application.serializers import VideoApplicationCreateSerializer, VideoApplicationListSerializer, \
-    VideoApplicationRetrieveSerializer, BusApplicationSerializer
+    VideoApplicationRetrieveSerializer, BusApplicationSerializer, VideoApplicationManagerListSerializer, \
+    VideoApplicationManagerRetrieveSerializer
 from demand.models import VideoNeeded
 from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission, ManagerPermission
 from libs.parser import Argument, JsonParser
@@ -202,4 +203,17 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
     queryset = VideoOrder.objects.all()
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = VideoApplicationManagerFilter
-    search_fields = ('title', )
+    search_fields = ('demand__title', 'demand__uid__username', 'demand__uid__user_business__bus_name',
+                     'user__auth_base__nickname', 'user__username')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            self.serializer_class = VideoApplicationManagerListSerializer
+        elif self.action == 'retrieve':
+            self.serializer_class = VideoApplicationManagerRetrieveSerializer
+        return super().get_serializer_class()
+
+    def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            self.queryset = VideoOrder.objects.all()
+        return super().get_queryset()

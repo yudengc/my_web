@@ -81,3 +81,46 @@ class BusApplicationSerializer(VideoApplicationRetrieveSerializer):
     def get_video_download(self, obj):
         return obj.order_video.all()
 
+
+class VideoApplicationManagerListSerializer(VideoApplicationRetrieveSerializer):
+    title = serializers.CharField(source='demand.title', read_only=True)
+    bus_username = serializers.CharField(source='demand.uid.username', read_only=True)
+    bus_name = serializers.SerializerMethodField()
+    creator_username = serializers.CharField(source='user.username')
+    creator_nickname = serializers.CharField(source='user.auth_base.nickname')
+    is_signed = serializers.BooleanField(source='user.user_creator.is_signed')
+
+    class Meta:
+        model = VideoOrder
+        fields = ('id', 'title', 'bus_username', 'bus_name', 'status', 'creator_username', 'creator_nickname',
+                  'is_signed', 'reward', 'is_return', 'date_created', 'done_time')
+
+    def get_bus_name(self, obj):
+        user_business = obj.demand.uid.user_business
+        return user_business.bus_name if user_business else None
+
+
+class VideoApplicationManagerRetrieveSerializer(VideoApplicationRetrieveSerializer):
+    title = serializers.CharField(source='demand.title', read_only=True)
+    bus_username = serializers.CharField(source='demand.uid.username', read_only=True)
+    bus_name = serializers.SerializerMethodField()
+    creator_username = serializers.CharField(source='user.username')
+    creator_nickname = serializers.CharField(source='user.auth_base.nickname')
+    is_signed = serializers.BooleanField(source='user.user_creator.is_signed')
+    location = serializers.SerializerMethodField()
+    creator_receiver_name = serializers.CharField(source='demand.receiver_name')
+
+    class Meta:
+        model = VideoOrder
+        fields = ('id', 'title', 'bus_username', 'bus_name', 'num_selected', 'goods_title', 'goods_link',
+                  'goods_images', 'goods_channel', 'is_return', 'receiver_name', 'receiver_phone', 'location',
+                  'creator_nickname', 'creator_username', 'reward', 'is_signed',
+                  'creator_receiver_name',
+                  'date_created', 'done_time', 'status', )
+
+    def get_location(self, obj):
+        return obj.receiver_province + obj.receiver_city + obj.receiver_district + obj.receiver_location
+
+    def get_bus_name(self, obj):
+        user_business = obj.demand.uid.user_business
+        return user_business.bus_name if user_business else None

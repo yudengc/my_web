@@ -43,50 +43,36 @@ class VideoOrder(BaseModel):
         default=0
     )
 
-    # receiver desc
-    receiver_name = models.CharField(
-        verbose_name='收货人名字',
+    # 返样接收者（商家） desc
+    return_receiver_name = models.CharField(
+        verbose_name='返样收货人名字',
         max_length=64,
         null=True
     )
-    receiver_phone = models.CharField(
-        verbose_name='收货人电话',
+    return_receiver_phone = models.CharField(
+        verbose_name='返样收货人电话',
         max_length=64,
         null=True
     )
-    receiver_province = models.CharField(
-        verbose_name='所在地省',
+    return_receiver_province = models.CharField(
+        verbose_name='返样收货人所在地省',
         max_length=128,
         null=True
     )
-    receiver_city = models.CharField(
-        verbose_name='所在地市',
+    return_receiver_city = models.CharField(
+        verbose_name='返样收货人所在地市',
         max_length=128,
         null=True
     )
-    receiver_district = models.CharField(
-        verbose_name='所在地地区',
+    return_receiver_district = models.CharField(
+        verbose_name='返样收货人所在地地区',
         max_length=128,
         null=True
     )
-    receiver_location = models.CharField(
-        verbose_name='寄样具体地址',
-        max_length=128,
-    )
-
-    # logistics desc
-    company = models.CharField(
-        verbose_name="物流公司",
+    return_receiver_location = models.CharField(
+        verbose_name='返样收货人寄样具体地址',
         max_length=128,
         null=True,
-        # choices=COMPANY_CHOICES
-    )
-
-    express = models.CharField(
-        verbose_name="快递单号",
-        max_length=64,
-        null=True,
-        blank=True,
     )
     return_company = models.CharField(
         verbose_name="反样物流公司",
@@ -96,6 +82,50 @@ class VideoOrder(BaseModel):
     )
     return_express = models.CharField(
         verbose_name="反样快递单号",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+
+    # 样品接受者（创作者） desc
+    receiver_name = models.CharField(
+        verbose_name='样品收货人名字',
+        max_length=64,
+        null=True
+    )
+    receiver_phone = models.CharField(
+        verbose_name='样品收货人电话',
+        max_length=64,
+        null=True
+    )
+    receiver_province = models.CharField(
+        verbose_name='样品收货人所在地省',
+        max_length=128,
+        null=True
+    )
+    receiver_city = models.CharField(
+        verbose_name='样品收货人所在地市',
+        max_length=128,
+        null=True
+    )
+    receiver_district = models.CharField(
+        verbose_name='样品收货人所在地地区',
+        max_length=128,
+        null=True
+    )
+    receiver_location = models.CharField(
+        verbose_name='样品收货人寄样具体地址',
+        max_length=128,
+        null=True,
+    )
+    company = models.CharField(
+        verbose_name="物流公司",
+        max_length=128,
+        null=True,
+        # choices=COMPANY_CHOICES
+    )
+    express = models.CharField(
+        verbose_name="快递单号",
         max_length=64,
         null=True,
         blank=True,
