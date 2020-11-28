@@ -43,48 +43,110 @@ class VideoOrder(BaseModel):
         default=0
     )
 
-    # 返样接收者（商家） desc
-    return_receiver_name = models.CharField(
-        verbose_name='返样收货人名字',
-        max_length=64,
-        null=True
-    )
-    return_receiver_phone = models.CharField(
-        verbose_name='返样收货人电话',
-        max_length=64,
-        null=True
-    )
-    return_receiver_province = models.CharField(
-        verbose_name='返样收货人所在地省',
-        max_length=128,
-        null=True
-    )
-    return_receiver_city = models.CharField(
-        verbose_name='返样收货人所在地市',
-        max_length=128,
-        null=True
-    )
-    return_receiver_district = models.CharField(
-        verbose_name='返样收货人所在地地区',
-        max_length=128,
-        null=True
-    )
-    return_receiver_location = models.CharField(
-        verbose_name='返样收货人寄样具体地址',
-        max_length=128,
+    # remark
+    reject_reason = models.CharField(
+        verbose_name="拒绝理由",
+        max_length=1024,
         null=True,
+        blank=True
     )
-    return_company = models.CharField(
-        verbose_name="反样物流公司",
+
+    remark = models.CharField(
+        verbose_name="工作人员备注(异常备注)",
+        max_length=1024,
+        null=True,
+        blank=True
+    )
+    creator_remark = models.CharField(
+        verbose_name="创作者备注",
+        max_length=1024,
+        null=True,
+        blank=True
+    )
+    system_remark = models.CharField(
+        verbose_name="系统备注",
+        max_length=1024,
+        null=True
+    )
+
+    # status
+    WAIT_SEND, WAIT_COMMIT, WAIT_CHECK, WAIT_RETURN, DONE, EXCEPTION = range(6)
+    status = models.PositiveSmallIntegerField(
+        verbose_name="订单状态",
+        default=WAIT_SEND,
+        choices=(
+            (WAIT_SEND, '待发货'),
+            (WAIT_COMMIT, '待提交'),
+            (WAIT_CHECK, '待验收'),
+            (WAIT_RETURN, '待返样'),
+            (DONE, '已完成'),
+            (EXCEPTION, '订单异常'),
+        ),
+    )
+
+    # time desc
+    check_time = models.DateTimeField(
+        null=True,
+        verbose_name='审核时间'
+    )
+    send_time = models.DateTimeField(
+        null=True,
+        verbose_name='发货时间'
+    )
+    done_time = models.DateTimeField(
+        null=True,
+        verbose_name='订单完成时间'
+    )
+    close_time = models.DateTimeField(
+        null=True,
+        verbose_name='关闭时间（审核不通过时的时间）'
+    )
+
+    class Meta:
+        verbose_name = '短视频申请订单'
+        verbose_name_plural = verbose_name
+        db_table = 'VideoOrder'
+        ordering = ('-date_created',)
+
+
+class VideoOrderDetail(models.Model):
+    """VideoOrder分表"""
+    video_order = models.OneToOneField(
+        'VideoOrder',
+        related_name='video_order_detail',
+        on_delete=models.CASCADE,
+    )
+    # goods desc
+    goods_title = models.CharField(
+        verbose_name='标题',
         max_length=128,
-        null=True,
-        # choices=COMPANY_CHOICES
+        blank=True
     )
-    return_express = models.CharField(
-        verbose_name="反样快递单号",
-        max_length=64,
-        null=True,
-        blank=True,
+    goods_link = models.URLField(
+        verbose_name='商品链接',
+        max_length=3000,
+    )
+    goods_images = models.URLField(
+        verbose_name='商品主图',  # 来自于goods_link解析
+        max_length=3000,
+    )
+    TB, JD, KL, DY = range(4)
+    CHANEL = (
+        (TB, "淘宝"),
+        (JD, "京东"),
+        (KL, "网易考拉"),
+        (DY, "抖音小店"),
+    )
+    goods_channel = models.PositiveSmallIntegerField(
+        verbose_name='商品来源',
+        default=TB,
+        choices=CHANEL
+    )
+    category = models.ForeignKey(
+        'config.GoodsCategory',
+        on_delete=models.DO_NOTHING,
+        related_name='video_order_category',
+        null=True
     )
 
     # 样品接受者（创作者） desc
@@ -131,98 +193,54 @@ class VideoOrder(BaseModel):
         blank=True,
     )
 
-    # remark
-    reject_reason = models.CharField(
-        verbose_name="拒绝理由",
-        max_length=1024,
-        null=True,
-        blank=True
-    )
-
-    remark = models.CharField(
-        verbose_name="工作人员备注(异常备注)",
-        max_length=1024,
-        null=True,
-        blank=True
-    )
-
-    creator_remark = models.CharField(
-        verbose_name="创作者备注",
-        max_length=1024,
-        null=True,
-        blank=True
-    )
-
-    system_remark = models.CharField(
-        verbose_name="系统备注",
-        max_length=1024,
+    # 返样接收者（商家） desc
+    return_receiver_name = models.CharField(
+        verbose_name='返样收货人名字',
+        max_length=64,
         null=True
     )
-
-    # status
-    WAIT_SEND, WAIT_COMMIT, WAIT_CHECK, WAIT_RETURN, DONE, EXCEPTION = range(6)
-    status = models.PositiveSmallIntegerField(
-        verbose_name="订单状态",
-        default=WAIT_SEND,
-        choices=(
-            (WAIT_SEND, '待发货'),
-            (WAIT_COMMIT, '待提交'),
-            (WAIT_CHECK, '待验收'),
-            (WAIT_RETURN, '待返样'),
-            (DONE, '已完成'),
-            (EXCEPTION, '订单异常'),
-        ),
+    return_receiver_phone = models.CharField(
+        verbose_name='返样收货人电话',
+        max_length=64,
+        null=True
     )
-
-    # goods desc
-    goods_title = models.CharField(
-        verbose_name='标题',
+    return_receiver_province = models.CharField(
+        verbose_name='返样收货人所在地省',
         max_length=128,
-        blank=True
+        null=True
     )
-    goods_link = models.URLField(
-        verbose_name='商品链接',
-        max_length=3000
+    return_receiver_city = models.CharField(
+        verbose_name='返样收货人所在地市',
+        max_length=128,
+        null=True
     )
-    goods_images = models.URLField(
-        verbose_name='商品主图',  # 来自于goods_link解析
-        max_length=3000,
+    return_receiver_district = models.CharField(
+        verbose_name='返样收货人所在地地区',
+        max_length=128,
+        null=True
     )
-    TB, JD, KL, DY = range(4)
-    CHANEL = (
-        (TB, "淘宝"),
-        (JD, "京东"),
-        (KL, "网易考拉"),
-        (DY, "抖音小店"),
-    )
-    goods_channel = models.PositiveSmallIntegerField(
-        verbose_name='商品来源',
-        default=TB,
-        choices=CHANEL
-    )
-
-    # time desc
-    check_time = models.DateTimeField(
+    return_receiver_location = models.CharField(
+        verbose_name='返样收货人寄样具体地址',
+        max_length=128,
         null=True,
-        verbose_name='审核时间'
     )
-    send_time = models.DateTimeField(
+    return_company = models.CharField(
+        verbose_name="反样物流公司",
+        max_length=128,
         null=True,
-        verbose_name='发货时间'
+        # choices=COMPANY_CHOICES
     )
-    done_time = models.DateTimeField(
+    return_express = models.CharField(
+        verbose_name="反样快递单号",
+        max_length=64,
         null=True,
-        verbose_name='订单完成时间'
-    )
-    close_time = models.DateTimeField(
-        null=True,
-        verbose_name='关闭时间（审核不通过时的时间）'
+        blank=True,
     )
 
     class Meta:
-        verbose_name = '短视频申请订单'
+        verbose_name = '短视频申请订单表2'
         verbose_name_plural = verbose_name
-        db_table = 'VideoOrder'
+        db_table = 'VideoOrderDetail'
 
 
 class Video(models.Model):
@@ -243,3 +261,7 @@ class Video(models.Model):
         verbose_name = '视频成品'
         verbose_name_plural = verbose_name
         db_table = 'Video'
+        ordering = ('-date_created',)
+
+    def __str__(self):
+        return self.video_url
