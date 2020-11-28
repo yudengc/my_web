@@ -299,7 +299,7 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
                      required=lambda rst: rst.get('action') == 'pass', help="请输入 order_video_slice(视频切片数组) e.[10, 10, 20]"),
             Argument('order_slice_num', type=int, required=lambda rst: rst.get('action') == 'pass',
                      help="请输入 order_slice_num(切片数) e. 10"),
-            Argument('reject_reason', required=lambda rst: rst.get('action') == 'reject', help="请输入拒绝理由"),
+            Argument('reject_reason', required=lambda rst: rst.get('action') == 'reject', help="请输入拒绝理由reject_reason"),
         ).parse(request.data)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)

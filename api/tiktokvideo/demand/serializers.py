@@ -1,6 +1,8 @@
+from qiniu import Auth
 from rest_framework import serializers
 
 from demand.models import VideoNeeded, HomePageVideo
+from tiktokvideo.base import QINIU_SECRET_KEY, QINIU_ACCESS_KEY
 
 
 class VideoNeededSerializer(serializers.ModelSerializer):
@@ -104,6 +106,15 @@ class ClientVideoNeededDetailSerializer(serializers.ModelSerializer):
 
 
 class HomePageVideoSerializer(serializers.ModelSerializer):
+    video_download_link = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = HomePageVideo
         fields = '__all__'
+
+    def get_video_download_link(self, obj):
+        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+        try:
+            return auth.private_download_url(obj.video_link, expires=315360000) if obj.video else ''
+        except:
+            return ''
