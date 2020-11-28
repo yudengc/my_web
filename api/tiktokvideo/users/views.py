@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from account.models import CreatorAccount
-from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermission, CreatorPermission
+from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermission, CreatorPermission, AdminPermission
 from relations.tasks import save_invite_relation
 
 from tiktokvideo.base import APP_ID, SECRET
@@ -24,7 +24,8 @@ from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptT
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer, \
-    AddressSerializer, AddressListSerializer, CreatorUserInfoSerializer, UserCreatorSerializer, UserCreatorPutSerializer
+    AddressSerializer, AddressListSerializer, CreatorUserInfoSerializer, UserCreatorSerializer, \
+    UserCreatorPutSerializer, ManageAddressSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls
 
@@ -72,7 +73,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         code = request.data.get('iCode')
         identity = request.data.get('identity')
         if not openid or not username or not identity:
-        # if not openid or not username:
+            # if not openid or not username:
             return Response({"detail": "缺少参数!"}, status=status.HTTP_400_BAD_REQUEST)
         user_instance = self.save_user_and_openid(username, openid, identity, user_info)
 
@@ -231,7 +232,7 @@ class BusInfoOtherView(APIView):
 
 class AddressViewSet(viewsets.ModelViewSet):
     """收货地址"""
-    permission_classes = (ManagerPermission, )
+    permission_classes = (ManagerPermission,)
     serializer_class = AddressSerializer
 
     def get_serializer_class(self):
@@ -253,11 +254,20 @@ class AddressViewSet(viewsets.ModelViewSet):
         return super(AddressViewSet, self).get_queryset()
 
 
+class ManageAddressViewSet(viewsets.ModelViewSet):
+    permission_classes = [AdminPermission, ]
+    serializer_class = ManageAddressSerializer
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
+    search_fields = ('=uid__username', 'uid__auth_base__nickname, phone, name')
+    filter_fields = ('uid__identity',)
+    queryset = Address.objects.all()
+
+
 class UserCreatorViewSet(mixins.ListModelMixin,
                          mixins.UpdateModelMixin,
                          GenericViewSet):
     """创作者信息"""
-    permission_classes = (CreatorPermission, )
+    permission_classes = (CreatorPermission,)
     serializer_class = UserCreatorSerializer
     queryset = UserCreator.objects.all()
 

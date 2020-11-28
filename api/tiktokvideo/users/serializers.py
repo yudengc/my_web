@@ -1,13 +1,14 @@
 from rest_framework import serializers
 
 from transaction.models import UserPackageRelation
-from users.models import Users, Team, UserBusiness, Address, UserCreator
+from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase
 
 
 class UsersLoginSerializer(serializers.ModelSerializer):
     """
     登陆
     """
+
     # remain_video_num = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -128,7 +129,31 @@ class UserCreatorSerializer(serializers.ModelSerializer):
 
 
 class UserCreatorPutSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = UserCreator
         fields = ('video', 'team_introduction', 'capability_introduction')
+
+
+class ManageAddressSerializer(serializers.ModelSerializer):
+    nickname = serializers.SerializerMethodField(read_only=True)
+    role = serializers.SerializerMethodField(read_only=True)
+    username = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Address
+        fields = '__all__'
+
+    def get_role(self, obj):
+        user = obj.uid
+        return user.get_identity_display()
+
+    def get_nickname(self, obj):
+        user = obj.uid
+        try:
+            return user.auth_base.nickname
+        except UserBase.DoesNotExist:
+            return ''
+
+    def get_username(self, obj):
+        user = obj.uid
+        return user.username
