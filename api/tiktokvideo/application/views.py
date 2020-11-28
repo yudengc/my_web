@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 
@@ -27,7 +28,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                               mixins.UpdateModelMixin,
                               mixins.ListModelMixin,
                               GenericViewSet):
-    permission_classes = (CreatorPermission,)
+    permission_classes = (AdminPermission,)
     queryset = VideoOrder.objects.all()
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_fields = ('status',)
@@ -180,8 +181,12 @@ class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
         instance = self.get_object()
         if instance.demand.uid != self.request.user:
             return Response({"detail": "订单错误, 无法提交快递单号"}, status=status.HTTP_400_BAD_REQUEST)
+        if instance.status != VideoOrder.WAIT_SEND:
+            return Response({"detail": "订单不是待发货状态, 无法提交快递单号"}, status=status.HTTP_400_BAD_REQUEST)
         instance.express = form.express
         instance.company = form.company
+        instance.status = VideoOrder.WAIT_CHECK
+        instance.send_time = datetime.datetime.now()
         instance.save()
         return Response({"detail": "已提交成功"}, status=status.HTTP_200_OK)
 

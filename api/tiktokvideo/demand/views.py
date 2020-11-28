@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from config.models import GoodsCategory
-from demand.filters import ManageVideoNeededFilter
+from demand.filters import ManageVideoNeededFilter, ManageHomePageVideoFilter
 from demand.models import VideoNeeded, HomePageVideo
 from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer, \
     HomePageVideoSerializer
@@ -58,8 +58,15 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                      required=False,
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
                      handler=lambda x: Address.objects.get(id=x)),
-            Argument('status', required=False, filter=lambda x: x is None, help="修改的时候不能改状态, 要调用接口"),
             Argument('video_num_remained', required=False, type=int, help="请输入 video_num_remained(整型)"),
+            Argument('status', required=False, filter=lambda x: x is None, help="修改的时候不能改状态, 要调用接口"),
+            Argument('receiver_name', required=False, filter=lambda x: x is None, help="修改地址传address"),
+            Argument('receiver_phone', required=False, filter=lambda x: x is None, help="修改地址传address"),
+            Argument('receiver_province', required=False, filter=lambda x: x is None, help="修改地址传address"),
+            Argument('receiver_city', required=False, filter=lambda x: x is None, help="修改地址传address"),
+            Argument('receiver_district', required=False, filter=lambda x: x is None, help="修改地址传address"),
+            Argument('receiver_location', required=False, filter=lambda x: x is None, help="修改地址传address"),
+            Argument('video_num_needed', required=False, filter=lambda x: x is None, help="视频总数不能改"),
         ).parse(request.data, clear=True)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
@@ -243,7 +250,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             logger.info(traceback.format_exc())
             return Response({"detail": "校验接口报错了，请联系技术人员解决"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(methods=['post', ], detail=False, permission_classes=[ManagerPermission])
+    @action(methods=['get', ], detail=False, permission_classes=[ManagerPermission])
     def video_needed_status(self, request, **kwargs):
         data = {
             'video_remain_num': {
@@ -355,9 +362,15 @@ class ManageVideoHomePageViewSet(viewsets.ModelViewSet):
     queryset = HomePageVideo.objects.all()
     pagination_class = StandardResultsSetPagination
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ('title', )
+    filter_class = ManageHomePageVideoFilter
+
+    def list(self, request, *args, **kwargs):
+
+        return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        self.request.data['creator'] = self.request.user
+        self.request.data['creator'] = self.request.user.uid
         return super().create(request, *args, **kwargs)
     # filter_fields = ('status', 'category', 'is_return',)
 
