@@ -9,9 +9,12 @@ from django_filters import rest_framework
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+
+from application.filters import VideoApplicationManagerFilter
 from application.models import VideoOrder, Video
 from application.serializers import VideoApplicationCreateSerializer, VideoApplicationListSerializer, \
-    VideoApplicationRetrieveSerializer, BusApplicationSerializer
+    VideoApplicationRetrieveSerializer, BusApplicationSerializer, VideoApplicationManagerListSerializer, \
+    VideoApplicationManagerRetrieveSerializer
 from demand.models import VideoNeeded
 from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission, ManagerPermission
 from libs.parser import Argument, JsonParser
@@ -104,11 +107,42 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         video_lis = request.data.get('video_lis')
         order_obj = self.get_object()
         if order_obj.status != VideoOrder.WAIT_COMMIT:
+            logger.info(f'该订单状态不是待提交状态, 订单号:{order_obj.order_number}')
             return Response({'detail': '非待提交状态不能提交视频'}, status=status.HTTP_400_BAD_REQUEST)
         lis = []
         for video_url in video_lis:
             lis.append(Video(video_url=video_url, order=order_obj))
-        Video.objects.bulk_create(lis)
+        try:
+            with atomic():
+                Video.objects.bulk_create(lis)
+                order_obj.status = VideoOrder.WAIT_CHECK
+                order_obj.save()
+        except Exception as e:
+            logger.info(f'创作者提交视频失败！！！！！！！！！！！！！！！！！！ 订单号:{order_obj.order_number}')
+            logger.info(e)
+            return Response({'detail': '提交失败，请再次尝试或联系客服'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': '提交成功'})
+
+    @action(methods=['put'], detail=True)
+    def input_logistics_info(self, request):
+        """填写返样快递信息"""
+        order_obj = self.get_object()
+        return_company = request.data.get('return_company')
+        return_express = request.data.get('return_express')
+        if not return_company or not return_express:
+            return Response({'detail': '请填写完整的快递信息'}, status=status.HTTP_400_BAD_REQUEST)
+        if order_obj.status != VideoOrder.WAIT_RETURN:
+            logger.info(f'该订单状态不是待返样状态, 订单号:{order_obj.order_number}')
+            return Response({'detail': '该订单状态不是待返样状态'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            order_obj.return_company = return_company
+            order_obj.return_express = return_express
+            order_obj.status = VideoOrder.DONE
+            order_obj.save()
+        except Exception as e:
+            logger.info(f'创作者提交返样快递信息失败！！！！！！！！！！！！！！！！！！ 订单号:{order_obj.order_number}')
+            logger.info(e)
+            return Response({'detail': '提交失败，请再次尝试或联系客服。'}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'detail': '提交成功'})
 
     @action(methods=['get'], detail=False)
@@ -163,3 +197,28 @@ class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
                     wait_return=VideoOrder.objects.filter(demand__uid=request.user, status=4).count(),
                     done=VideoOrder.objects.filter(demand__uid=request.user, status=5).count())
         return Response(data, status=status.HTTP_200_OK)
+
+
+class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
+                                     mixins.RetrieveModelMixin,
+                                     mixins.UpdateModelMixin,
+                                     mixins.ListModelMixin,
+                                     GenericViewSet):
+    permission_classes = (AdminPermission,)
+    queryset = VideoOrder.objects.all()
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_class = VideoApplicationManagerFilter
+    search_fields = ('demand__title', 'demand__uid__username', 'demand__uid__user_business__bus_name',
+                     'user__auth_base__nickname', 'user__username')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            self.serializer_class = VideoApplicationManagerListSerializer
+        elif self.action == 'retrieve':
+            self.serializer_class = VideoApplicationManagerRetrieveSerializer
+        return super().get_serializer_class()
+
+    def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            self.queryset = VideoOrder.objects.all()
+        return super().get_queryset()
