@@ -1,6 +1,6 @@
 import django_filters
 
-from demand.models import VideoNeeded
+from demand.models import VideoNeeded, HomePageVideo
 
 
 class ManageVideoNeededFilter(django_filters.FilterSet):
@@ -20,5 +20,5 @@ class ManageHomePageVideoFilter(django_filters.FilterSet):
     category = django_filters.NumberFilter(field_name='category__id')
 
     class Meta:
-        model = VideoNeeded
+        model = HomePageVideo
         fields = ('start_time', 'end_time', 'is_show', 'category')
