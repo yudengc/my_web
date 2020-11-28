@@ -108,8 +108,8 @@ DATABASES = {
 FLOW_LIMITER = {
     'use_latest': bool(os.environ.get("USE_LATEST", 0)),
     'global': {
-        'user': '1000/day;',
-        'nonuser': '100/day;',
+        'user': '100000/day;',
+        'nonuser': '10000/day;',
     },
 }
 

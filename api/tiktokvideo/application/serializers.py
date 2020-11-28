@@ -9,7 +9,8 @@ class VideoApplicationCreateSerializer(serializers.ModelSerializer):
         model = VideoOrder
         fields = (
             'user', 'demand', 'num_selected', 'receiver_name', 'receiver_phone', 'receiver_province', 'receiver_city',
-            'receiver_district', 'receiver_location', 'creator_remark',
+            'receiver_district', 'receiver_location', 'creator_remark', 'reward', 'goods_title', 'goods_link',
+            'goods_images', 'goods_channel', 'is_return'
         )
 
 
@@ -17,34 +18,44 @@ class VNeededSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoNeeded
         fields = (
-            'id', 'title', 'goods_link', 'goods_images', 'goods_channel', 'is_return', 'video_size', 'clarity',
-            'model_needed', 'model_occur_rate', 'model_age_range', 'model_figure'
+            'id', 'title', 'video_size', 'clarity', 'model_needed', 'model_occur_rate',
+            'model_age_range', 'model_figure'
         )
 
 
 class VideoApplicationListSerializer(serializers.ModelSerializer):
     """我的订单"""
     demand = VNeededSerializer()
+    total_reward = serializers.SerializerMethodField()
 
     class Meta:
         model = VideoOrder
         fields = (
-            'id', 'status', 'date_created', 'num_selected', 'sample_count', 'demand'
+            'id', 'status', 'date_created', 'num_selected', 'sample_count', 'is_return',
+            'goods_link', 'goods_images', 'goods_channel', 'goods_title', 'total_reward', 'demand',
         )
+
+    def get_total_reward(self, obj):
+        # 订单可得松子
+        return obj.reward * obj.num_selected
 
 
 class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
     """我的订单详情"""
     demand = VNeededSerializer()
     return_sample = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
 
     class Meta:
         model = VideoOrder
         fields = (
-            'id', 'status', 'date_created', 'num_selected', 'receiver_name', 'receiver_phone', 'receiver_province',
-            'receiver_city', 'receiver_district', 'receiver_location', 'company', 'express', 'creator_remark',
+            'id', 'status', 'date_created', 'num_selected', 'is_return', 'goods_link', 'goods_images', 'goods_channel',
+            'goods_title', 'receiver_name', 'receiver_phone', 'location', 'company', 'express', 'creator_remark',
             'check_time', 'send_time', 'done_time', 'close_time', 'date_created', 'demand', 'return_sample',
         )
+
+    def get_location(self, obj):
+        return obj.receiver_province + obj.receiver_city + obj.receiver_district + obj.receiver_location
 
     def get_return_sample(self, obj):
         # 返样信息

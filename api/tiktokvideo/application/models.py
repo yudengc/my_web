@@ -145,6 +145,11 @@ class VideoOrder(BaseModel):
     )
 
     # goods desc
+    goods_title = models.CharField(
+        verbose_name='标题',
+        max_length=128,
+        blank=True
+    )
     goods_link = models.URLField(
         verbose_name='商品链接',
         max_length=3000
