@@ -13,10 +13,14 @@ class VideoNeededSerializer(serializers.ModelSerializer):
 
 class ManageVideoNeededSerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField(read_only=True)
+    bus_name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = VideoNeeded
         fields = '__all__'
+
+    def get_bus_name(self, obj):
+        return obj.uid.user_business.bus_name
 
     def get_username(self, obj):
         return obj.uid.username
