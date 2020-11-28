@@ -1,8 +1,14 @@
+import logging
+import traceback
+
+from qiniu import Auth
 from rest_framework import serializers
 
 from application.models import VideoOrder
 from demand.models import VideoNeeded
+from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
 
+logger = logging.getLogger()
 
 class VideoApplicationCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -80,7 +86,15 @@ class BusApplicationSerializer(VideoApplicationRetrieveSerializer):
         fields = '__all__'
 
     def get_video_download(self, obj):
-        return obj.order_video.all()
+        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+        tmp = obj.order_video.values_list('video_url', flat=True)
+        ok_lst = []
+        for i in tmp:
+            try:
+                ok_lst.append(auth.private_download_url(i, expires=315360000))
+            except:
+                logger.info(traceback.format_exc())
+        return ok_lst
 
 
 class VideoApplicationManagerListSerializer(VideoApplicationRetrieveSerializer):

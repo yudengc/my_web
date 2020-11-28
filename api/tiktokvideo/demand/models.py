@@ -241,6 +241,7 @@ class VideoNeeded(models.Model):
         verbose_name = '短视频需求单'
         verbose_name_plural = verbose_name
         db_table = 'VideoNeeded'
+        ordering = ('-create_time',)
 
 
 class HomePageVideo(models.Model):
