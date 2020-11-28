@@ -26,7 +26,7 @@ class UsersAdmin(admin.ModelAdmin):
     # 详情页面展示的字段
     fields = ('username', 'nickname', 'identity', 'salesman_name', 'status', 'reason')
     # 详情页的只读字段
-    readonly_fields = ('username', 'nickname')
+    readonly_fields = ('username', 'nickname', 'status')
     # 列表页每页展示的条数
     list_per_page = 20
 
