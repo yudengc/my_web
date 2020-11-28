@@ -256,6 +256,15 @@ class HomePageVideo(models.Model):
         verbose_name='视频链接',
         max_length=3000
     )
+    title = models.CharField(
+        verbose_name='标题',
+        max_length=128
+    )
+    category = models.ForeignKey(
+        'config.GoodsCategory',
+        on_delete=models.DO_NOTHING,
+        related_name='video_needed'
+    )
     is_show = models.BooleanField(
         verbose_name='是否展示',
         default=True
