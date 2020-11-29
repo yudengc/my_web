@@ -12,6 +12,8 @@ from rest_framework import exceptions, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from libs.common.utils import get_ip
+
 conn = get_redis_connection('default')  # type: StrictRedis
 
 
@@ -121,7 +123,7 @@ class FlowLimiter:
                 if not isinstance(request, Request):
                     raise exceptions.APIException(detail="请求错误, 无法获取request",
                                                   code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                action_key = f"{request.META.get('HTTP_HOST')}_{request.path}"
+                action_key = f"{get_ip(request)}_{request.path}"
                 trigger_return = FlowLimiter.trigger(limit_key, action_key, use_latest)
                 if isinstance(trigger_return, bool):
                     func_return = func(*args, **kwargs)

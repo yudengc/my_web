@@ -41,7 +41,7 @@ class ClientVideoNeededSerializer(serializers.ModelSerializer):
             'goods_channel', 'goods_link', 'goods_images',
             'video_size', 'clarity', 'model_needed',
             'model_occur_rate', 'model_age_range', 'goods_channel',
-            'sold_out'
+            'sold_out', 'goods_title'
         )
 
     def get_video_num_at_least(self, obj):

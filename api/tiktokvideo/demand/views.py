@@ -351,7 +351,7 @@ class ClientVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
         recommend = self.request.query_params.get('recommend', None)
         if str(recommend) == '1':
             self.queryset = self.queryset.filter(order_num_remained__gt=0).order_by(
-                '-create_time', 'recommend'
+                '-create_time', 'order_num_remained'
             )
         return self.queryset
 
