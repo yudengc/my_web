@@ -12,6 +12,7 @@ from rest_framework.response import Response
 import logging
 
 from flow_limiter.services import FlowLimiter
+from libs.common.utils import get_ip
 from users.models import Users
 
 logger = logging.getLogger()
@@ -79,7 +80,10 @@ class FlowLimitMiddleware(MiddlewareMixin):
         use_latest = settings.FLOW_LIMITER.get('use_latest', False)
         global_setting = settings.FLOW_LIMITER.get('global', None)
         if global_setting:
-            host = request.META.get("HTTP_HOST", None)
+            # print(request.META.get("HTTP_X_FORWARDED_FOR"))
+            # print(request.META.get("REMOTE_ADDR"))
+            host = get_ip(request)
+            print(host)
             if isinstance(request.user, AnonymousUser):
                 key = f"{host}_nonuser"
                 limiter_key = 'nonuser'
