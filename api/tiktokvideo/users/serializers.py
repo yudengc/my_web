@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from relations.models import InviteRelationManager
 from transaction.models import UserPackageRelation
 from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase
 
@@ -160,8 +161,71 @@ class ManageAddressSerializer(serializers.ModelSerializer):
 
 
 class UserInfoManagerSerializer(serializers.ModelSerializer):
+    """注册账户后台"""
     nickname = serializers.CharField(source='auth_base.nickname')
 
     class Meta:
         model = Users
         fields = ('id', 'username', 'nickname', 'identity', 'status', 'reason', 'date_created')
+
+
+class UserCreatorInfoManagerSerializer(serializers.ModelSerializer):
+    """创作者用户后台"""
+    username = serializers.CharField(source='uid.username')
+    nickname = serializers.CharField(source='uid.auth_base.nickname')
+    coin_balance = serializers.IntegerField(source='uid.creator_account.coin_balance')
+
+    class Meta:
+        model = UserCreator
+        fields = ('id', 'username', 'nickname', 'status', 'is_signed', 'coin_balance', 'contract_reward',
+                  'team_introduction', 'capability_introduction', 'video', 'remark', 'date_created')
+
+
+class UserCreatorInfoUpdateManagerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserCreator
+        fields = ('status', 'contract_reward', 'is_signed', 'remark')
+
+
+class UserBusinessInfoManagerSerializer(serializers.ModelSerializer):
+    """商家用户后台"""
+    nickname = serializers.CharField(source='auth_base.nickname')
+    avatar = serializers.CharField(source='auth_base.avatars')
+    package = serializers.SerializerMethodField()
+    salesman = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Users
+        fields = ('id', 'username', 'nickname', 'avatar', 'status', 'salesman', 'package', 'date_created')
+
+    def get_salesman(self, obj):
+        # 所属业务员账号
+        qs = InviteRelationManager.objects.filter(invitee=obj).first()
+        if qs:
+            salesman = qs.salesman
+            if salesman:
+                return {'salesman_username': qs.salesman.username, 'salesman_name': qs.salesman.salesman_name}
+            return {'salesman_username': None, 'salesman_name': None}
+        return {'salesman_username': None, 'salesman_name': None}
+
+    def get_package(self, obj):
+        qs = UserPackageRelation.objects.filter(uid=obj).first()
+        if qs:
+            return {'package_title': qs.package.package_title, 'expiration_time': qs.expiration_time}
+        return {'package_title': None, 'expiration_time': None}
+
+
+class UserBusinessInfoUpdateManagerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ('status', 'reason')
+
+
+class BusinessInfoManagerSerializer(serializers.ModelSerializer):
+    nickname = serializers.CharField(source='uid.auth_base.nickname')
+    username = serializers.CharField(source='uid.username')
+
+    class Meta:
+        model = UserBusiness
+        exclude = ('date_updated', 'uid', 'remain_video_num')
+
