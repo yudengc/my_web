@@ -1,8 +1,8 @@
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from relations.models import InviteRelationManager
 from transaction.models import UserPackageRelation
-from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase
+from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase, CelebrityStyle, ScriptType
 
 
 class UsersLoginSerializer(serializers.ModelSerializer):
@@ -229,3 +229,74 @@ class BusinessInfoManagerSerializer(serializers.ModelSerializer):
         model = UserBusiness
         exclude = ('date_updated', 'uid', 'remain_video_num')
 
+
+class TeamManagerSerializer(serializers.ModelSerializer):
+    leader_username = serializers.SerializerMethodField()
+    number = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Team
+        fields = ('id', 'name', 'leader_username', 'number', 'date_created')
+
+    def get_leader_username(self, obj):
+        return obj.leader.username
+
+    def get_number(self, obj):
+        return obj.team_user.count()
+
+
+class TeamManagerCreateUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Team
+        fields = ('name', 'leader')
+
+
+class TeamUserLeaderManagerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ('id', 'username', 'salesman_name')
+
+
+class TeamUserManagerSerializer(serializers.ModelSerializer):
+    team_name = serializers.CharField(source='team.name')
+    leader_username = serializers.CharField(source='team.leader.username')
+
+    class Meta:
+        model = Users
+        fields = ('id', 'username', 'salesman_name', 'team_name', 'leader_username', 'date_created')
+
+
+class TeamUserManagerUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Users
+        fields = ('salesman_name', 'team',)
+
+
+class TeamLeaderManagerSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Users
+        fields = ('id', 'username', 'salesman_name', 'date_created')
+
+
+class TeamLeaderManagerUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Users
+        fields = ('salesman_name',)
+
+
+class CelebrityStyleSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CelebrityStyle
+        exclude = ('date_updated',)
+
+
+class ScriptTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ScriptType
+        exclude = ('date_updated',)

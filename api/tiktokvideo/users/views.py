@@ -1,4 +1,5 @@
 import logging
+import re
 import threading
 
 from django.contrib.auth.hashers import check_password
@@ -15,20 +16,24 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from account.models import CreatorAccount
-from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermission, CreatorPermission, AdminPermission
+from libs.common.permission import AllowAny, ManagerPermission, CreatorPermission, AdminPermission
+from relations.models import InviteRelationManager
 from relations.tasks import save_invite_relation
 
 from tiktokvideo.base import APP_ID, SECRET
-from users.filter import TeamFilter, UserInfoManagerFilter, UserCreatorInfoManagerFilter, UserBusinessInfoManagerFilter
+from users.filter import TeamFilter, UserInfoManagerFilter, UserCreatorInfoManagerFilter, UserBusinessInfoManagerFilter, \
+    TeamUsersManagerTeamFilter
 from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address, \
     UserCreator
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
-from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer, \
+from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, UserInfoSerializer, \
     AddressSerializer, AddressListSerializer, CreatorUserInfoSerializer, UserCreatorSerializer, \
     UserCreatorPutSerializer, ManageAddressSerializer, UserInfoManagerSerializer, UserCreatorInfoManagerSerializer, \
     UserCreatorInfoUpdateManagerSerializer, UserBusinessInfoManagerSerializer, UserBusinessInfoUpdateManagerSerializer, \
-    BusinessInfoManagerSerializer
+    BusinessInfoManagerSerializer, TeamManagerSerializer, TeamManagerCreateUpdateSerializer, TeamUserManagerSerializer, \
+    TeamUserLeaderManagerSerializer, TeamUserManagerUpdateSerializer, TeamLeaderManagerSerializer, \
+    TeamLeaderManagerUpdateSerializer, CelebrityStyleSerializer, ScriptTypeSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls
 
@@ -169,15 +174,6 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         if user.openid != openid:
             user_qs.update(openid=openid)
         return user
-
-
-class TeamViewSet(viewsets.ModelViewSet):
-    permission_classes = (SalesmanPermission,)
-    queryset = Team.objects.all()
-    serializer_class = TeamSerializer
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
-    search_fields = ('name', 'leader__username')
-    filter_class = TeamFilter
 
 
 class UserBusinessViewSet(mixins.CreateModelMixin,
@@ -366,3 +362,165 @@ class BusinessInfoManagerViewSet(mixins.ListModelMixin,
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserInfoManagerFilter
     search_fields = ('uid__username', 'uid__auth_base__nickname', 'contact')
+
+
+class TeamManagerViewSet(mixins.ListModelMixin,
+                         mixins.RetrieveModelMixin,
+                         mixins.UpdateModelMixin,
+                         mixins.CreateModelMixin,
+                         GenericViewSet):
+    """团队管理"""
+    permission_classes = (AdminPermission,)
+    serializer_class = TeamManagerSerializer
+    queryset = Team.objects.all()
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_class = TeamFilter
+    search_fields = ('name', 'leader__username')
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update', 'create']:
+            self.serializer_class = TeamManagerCreateUpdateSerializer
+        return super().get_serializer_class()
+
+    @action(methods=['get'], detail=False)
+    def leader(self, request, *args, **kwargs):
+        """团队领导下拉框"""
+        lis = []
+        for user in Users.objects.filter(identity=Users.SUPERVISOR, user_team__isnull=True).order_by('-date_created'):
+            lis.append(dict(uid=user.uid, username=user.username, salesman_name=user.salesman_name))
+        return Response(lis)
+
+
+class TeamLeaderManagerViewSet(mixins.ListModelMixin,
+                               mixins.RetrieveModelMixin,
+                               mixins.UpdateModelMixin,
+                               mixins.CreateModelMixin,
+                               GenericViewSet):
+    """团队主管管理"""
+    permission_classes = (AdminPermission,)
+    serializer_class = TeamLeaderManagerSerializer
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_class = UserInfoManagerFilter
+    search_fields = ('username', 'salesman_name')
+
+    def get_queryset(self):
+        if self.action == 'list':
+            self.queryset = Users.objects.filter(identity=Users.SUPERVISOR).order_by('-date_created')
+        else:
+            self.queryset = Users.objects.all()
+        return super().get_queryset()
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            self.serializer_class = TeamLeaderManagerUpdateSerializer
+        return super().get_serializer_class()
+
+    def create(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        salesman_name = request.data.get('salesman_name')
+        if not username or not password or not salesman_name:
+            return Response({'detail': '参数缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        phone_re = re.match(r"^1[35678]\d{9}$", username)
+        if not phone_re:
+            return Response({'detail': '创建失败，用户账号请输入正确的手机号'}, status=status.HTTP_400_BAD_REQUEST)
+        if Users.objects.filter(username=username).exists():
+            return Response({'detail': '创建失败，该账号已存在'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            with atomic():
+                user = Users.objects.create(username=username, identity=Users.SUPERVISOR, salesman_name=salesman_name)
+                user.set_password(password)
+                user.iCode = InviteCls.encode_invite_code(user.id)
+                user.save()
+                UserExtra.objects.create(uid=user)
+                UserBase.objects.create(
+                    uid=user,
+                    phone=user.username
+                )
+        except Exception as e:
+            logger.info('后台创建团队主管失败')
+            logger.info(e)
+            return Response({'detail': '创建失败！'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': '创建成功'}, status=status.HTTP_201_CREATED)
+
+
+class TeamUsersManagerViewSet(mixins.ListModelMixin,
+                              mixins.RetrieveModelMixin,
+                              mixins.UpdateModelMixin,
+                              mixins.CreateModelMixin,
+                              GenericViewSet):
+    """团队成员管理"""
+    permission_classes = (AdminPermission,)
+    serializer_class = TeamUserManagerSerializer
+    queryset = Users.objects.all()
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_class = TeamUsersManagerTeamFilter
+    search_fields = ('username', 'salesman_name')
+
+    def get_queryset(self):
+        if self.action == 'list':  # 团队成员
+            self.queryset = Users.objects.filter(identity=Users.SALESMAN)
+        return super().get_queryset()
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            self.serializer_class = TeamUserManagerUpdateSerializer
+        return super().get_serializer_class()
+
+    def create(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        salesman_name = request.data.get('salesman_name')
+        team = request.data.get('team')
+        if not username or not password or not salesman_name or not team:
+            return Response({'detail': '参数缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        phone_re = re.match(r"^1[35678]\d{9}$", username)
+        if not phone_re:
+            return Response({'detail': '创建失败，用户账号请输入正确的手机号'}, status=status.HTTP_400_BAD_REQUEST)
+        if Users.objects.filter(username=username).exists():
+            return Response({'detail': '创建失败，该账号已存在'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            with atomic():
+                user = Users.objects.create(username=username, identity=Users.SALESMAN,
+                                            team_id=team, salesman_name=salesman_name)
+                user.set_password(password)
+                user.iCode = InviteCls.encode_invite_code(user.id)
+                user.save()
+                UserExtra.objects.create(uid=user)
+                UserBase.objects.create(
+                    uid=user,
+                    phone=user.username
+                )
+                leader = Team.objects.get(id=team).leader
+                InviteRelationManager.objects.create(inviter=leader, invitee=user, level=1)
+        except Exception as e:
+            logger.info('后台创建团队成员失败')
+            logger.info(e)
+            return Response({'detail': '创建失败！'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': '创建成功'}, status=status.HTTP_201_CREATED)
+
+
+class CelebrityStyleViewSet(mixins.ListModelMixin,
+                            mixins.RetrieveModelMixin,
+                            mixins.UpdateModelMixin,
+                            mixins.CreateModelMixin,
+                            GenericViewSet):
+    """达人风格后台配置"""
+    permission_classes = (AdminPermission,)
+    serializer_class = CelebrityStyleSerializer
+    queryset = CelebrityStyle.objects.order_by('-date_created')
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ('title', )
+
+
+class ScriptTypeViewSet(mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.UpdateModelMixin,
+                        mixins.CreateModelMixin,
+                        GenericViewSet):
+    """脚本类别后台配置"""
+    permission_classes = (AdminPermission,)
+    serializer_class = ScriptTypeSerializer
+    queryset = ScriptType.objects.order_by('-date_created')
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ('title', )

@@ -423,7 +423,6 @@ class Team(BaseModel):
         on_delete=models.DO_NOTHING,
         related_name='user_team',
         null=True,
-        unique=True,
         verbose_name='团队主管'
     )
     name = models.CharField(
