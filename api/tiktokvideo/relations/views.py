@@ -3,10 +3,10 @@ from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from libs.common.permission import ManagerPermission, SalesmanPermission
+from libs.common.permission import ManagerPermission, SalesmanPermission, AdminPermission
 from relations.filter import MyRelationInfoFilter
 from relations.models import InviteRelationManager
-from relations.serializers import MyRelationSerializer, MyRecordsSerializer
+from relations.serializers import MyRelationSerializer, MyRecordsSerializer, MyRelationInfoManagerSerializer
 from transaction.models import OrderInfo
 from users.models import Users
 
@@ -41,3 +41,15 @@ class MyRelationInfoViewSet(viewsets.ReadOnlyModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+
+class MyRelationInfoManagerViewSet(viewsets.ReadOnlyModelViewSet):
+    """邀请关系记录后台"""
+    queryset = InviteRelationManager.objects.select_related('invitee', 'inviter', 'salesman')
+    serializer_class = MyRelationInfoManagerSerializer
+    permission_classes = (AdminPermission,)
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ('invitee__username', 'invitee__auth_base__nickname',
+                     'inviter__username', 'inviter__auth_base__nickname', )
+
+

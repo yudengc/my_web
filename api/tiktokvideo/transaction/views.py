@@ -6,17 +6,21 @@ from decimal import Decimal
 
 from django.db.transaction import atomic
 from django.http import HttpResponse
+from django_filters import rest_framework
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets, filters
+from rest_framework import status, viewsets, filters, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 
-from transaction.serializers import PackageSerializer, MyPackageSerializer, OrderInfoSerializer
+from transaction.filter import UserPackageRelationManagerFilter
+from transaction.serializers import PackageSerializer, MyPackageSerializer, OrderInfoSerializer, \
+    PackageManagerSerializer, UserPackageRelationManagerSerializer, UserPackageRelationManagerUpdateSerializer
 from transaction.tasks import update_order_status
 from transaction.models import OrderInfo, UserPackageRelation
 from libs.common.pay import WeChatPay
-from libs.common.permission import ManagerPermission, AllowAny, SalesmanPermission
+from libs.common.permission import ManagerPermission, AllowAny, SalesmanPermission, AdminPermission
 from libs.common.utils import get_ip
 from transaction.models import Package
 from users.models import Users
@@ -129,3 +133,38 @@ class OrderInfoViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         self.queryset = OrderInfo.objects.filter(uid=self.request.user, status=OrderInfo.SUCCESS)
         return super().get_queryset()
+
+
+class PackageManagerViewSet(mixins.CreateModelMixin,
+                            mixins.RetrieveModelMixin,
+                            mixins.UpdateModelMixin,
+                            mixins.ListModelMixin,
+                            GenericViewSet):
+    """商家套餐后台"""
+    permission_classes = (AdminPermission,)
+    serializer_class = PackageManagerSerializer
+    queryset = Package.objects.all()
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_fields = ('status', )
+    search_fields = ('package_title',)
+
+
+class UserPackageRelationManagerViewSet(mixins.RetrieveModelMixin,
+                                        mixins.UpdateModelMixin,
+                                        mixins.ListModelMixin,
+                                        GenericViewSet):
+    """套餐购买记录后台"""
+    permission_classes = (AdminPermission,)
+    serializer_class = UserPackageRelationManagerSerializer
+    queryset = UserPackageRelation.objects.all()
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_class = UserPackageRelationManagerFilter
+    search_fields = ('uid__username', 'uid__auth_base__nickname', 'uid__user_salesman__username',
+                     'uid__user_salesman__salesman_name')
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            self.serializer_class = UserPackageRelationManagerUpdateSerializer
+        return super().get_serializer_class()
+
+

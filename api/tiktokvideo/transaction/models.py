@@ -221,13 +221,18 @@ class UserPackageRelation(BaseModel):
         "Package",
         on_delete=models.DO_NOTHING,
     )
-    # order = models.OneToOneField(
-    #     'OrderInfo',
-    #     on_delete=models.DO_NOTHING,
-    # )
     expiration_time = models.DateTimeField(
         _('套餐到期时间'),
         null=True
+    )
+    UNTREATED, PROCESSED = range(2)
+    status = models.PositiveSmallIntegerField(
+        _('状态'),
+        default=UNTREATED,
+        choices=(
+            (UNTREATED, '待跟进'),
+            (PROCESSED, '已跟进'),
+        )
     )
 
     class Meta:
