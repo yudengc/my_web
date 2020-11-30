@@ -18,7 +18,7 @@ from config.models import GoodsCategory
 from demand.filters import ManageVideoNeededFilter, ManageHomePageVideoFilter
 from demand.models import VideoNeeded, HomePageVideo
 from demand.serializers import VideoNeededSerializer, ClientVideoNeededSerializer, ClientVideoNeededDetailSerializer, \
-    HomePageVideoSerializer
+    HomePageVideoSerializer, ManageVideoNeededSerializer
 from flow_limiter.services import FlowLimiter
 from libs.common.permission import ManagerPermission, AdminPermission, AllowAny
 from libs.pagination import StandardResultsSetPagination
@@ -279,7 +279,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
 
 class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AdminPermission]
-    serializer_class = VideoNeededSerializer
+    serializer_class = ManageVideoNeededSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('=uid__username', 'title')
@@ -351,7 +351,7 @@ class ClientVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
         recommend = self.request.query_params.get('recommend', None)
         if str(recommend) == '1':
             self.queryset = self.queryset.filter(order_num_remained__gt=0).order_by(
-                '-create_time', 'recommend'
+                '-create_time', 'order_num_remained'
             )
         return self.queryset
 

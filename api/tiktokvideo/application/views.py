@@ -85,27 +85,27 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                 need_obj.video_num_remained -= request.data['num_selected']
                 need_obj.save()
 
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            VideoOrderDetail.objects.create(video_order_id=serializer.data['id'],
-                                            goods_title=need_obj.goods_title,
-                                            goods_link=need_obj.goods_link,
-                                            goods_channel=need_obj.goods_channel,
-                                            goods_images=need_obj.goods_images,
-                                            category=need_obj.category,
-                                            receiver_name=add_obj.name,
-                                            receiver_phone=add_obj.phone,
-                                            receiver_province=add_obj.province,
-                                            receiver_city=add_obj.city,
-                                            receiver_district=add_obj.district,
-                                            receiver_location=add_obj.location,
-                                            return_receiver_name=need_obj.receiver_name,
-                                            return_receiver_phone=need_obj.receiver_phone,
-                                            return_receiver_province=need_obj.receiver_province,
-                                            return_receiver_city=need_obj.receiver_city,
-                                            return_receiver_district=need_obj.receiver_district,
-                                            return_receiver_location=need_obj.receiver_location,
-                                            )
+                self.perform_create(serializer)
+                headers = self.get_success_headers(serializer.data)
+                VideoOrderDetail.objects.create(video_order_id=serializer.data['id'],
+                                                goods_title=need_obj.goods_title,
+                                                goods_link=need_obj.goods_link,
+                                                goods_channel=need_obj.goods_channel,
+                                                goods_images=need_obj.goods_images,
+                                                category=need_obj.category,
+                                                receiver_name=add_obj.name,
+                                                receiver_phone=add_obj.phone,
+                                                receiver_province=add_obj.province,
+                                                receiver_city=add_obj.city,
+                                                receiver_district=add_obj.district,
+                                                receiver_location=add_obj.location,
+                                                return_receiver_name=need_obj.receiver_name,
+                                                return_receiver_phone=need_obj.receiver_phone,
+                                                return_receiver_province=need_obj.receiver_province,
+                                                return_receiver_city=need_obj.receiver_city,
+                                                return_receiver_district=need_obj.receiver_district,
+                                                return_receiver_location=need_obj.receiver_location,
+                                                )
         except ValueError:
             return Response({'detail': '哎呀呀，您选择的拍摄视频数已被选走，请重选选择'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:

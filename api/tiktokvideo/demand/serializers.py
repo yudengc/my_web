@@ -1,6 +1,7 @@
 from qiniu import Auth
 from rest_framework import serializers
 
+from config.models import GoodsCategory
 from demand.models import VideoNeeded, HomePageVideo
 from tiktokvideo.base import QINIU_SECRET_KEY, QINIU_ACCESS_KEY
 
@@ -13,13 +14,21 @@ class VideoNeededSerializer(serializers.ModelSerializer):
 
 class ManageVideoNeededSerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField(read_only=True)
+    bus_name = serializers.SerializerMethodField(read_only=True)
+    category = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = VideoNeeded
         fields = '__all__'
 
+    def get_bus_name(self, obj):
+        return obj.uid.user_business.bus_name
+
     def get_username(self, obj):
         return obj.uid.username
+
+    def get_category(self, obj):
+        return obj.category.title if obj.category else '无'
 
 
 class ClientVideoNeededSerializer(serializers.ModelSerializer):
@@ -37,7 +46,7 @@ class ClientVideoNeededSerializer(serializers.ModelSerializer):
             'goods_channel', 'goods_link', 'goods_images',
             'video_size', 'clarity', 'model_needed',
             'model_occur_rate', 'model_age_range', 'goods_channel',
-            'sold_out'
+            'sold_out', 'goods_title'
         )
 
     def get_video_num_at_least(self, obj):
@@ -75,6 +84,7 @@ class ClientVideoNeededDetailSerializer(serializers.ModelSerializer):
     model_occur_rate = serializers.SerializerMethodField(read_only=True)
     model_age_range = serializers.SerializerMethodField(read_only=True)
     model_figure = serializers.SerializerMethodField(read_only=True)
+    category = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = VideoNeeded
@@ -83,7 +93,7 @@ class ClientVideoNeededDetailSerializer(serializers.ModelSerializer):
             'order_video_slice', 'video_size', 'clarity', 'model_needed',
             'model_occur_rate', 'model_age_range', 'model_figure', 'desc',
             'example1', 'example2', 'example3', 'goods_link', 'goods_images',
-            'goods_channel', 'attraction'
+            'goods_channel', 'attraction', 'goods_title', 'category'
         )
 
     def get_video_size(self, obj):
@@ -96,7 +106,7 @@ class ClientVideoNeededDetailSerializer(serializers.ModelSerializer):
         return obj.get_model_needed_display()
 
     def get_model_occur_rate(self, obj):
-        return obj.get_model_needed_display()
+        return obj.get_model_occur_rate_display()
 
     def get_model_age_range(self, obj):
         return obj.get_model_age_range_display()
@@ -104,13 +114,20 @@ class ClientVideoNeededDetailSerializer(serializers.ModelSerializer):
     def get_model_figure(self, obj):
         return obj.get_model_figure_display()
 
+    def get_category(self, obj):
+        return obj.category.title if obj.category else '无'
+
 
 class HomePageVideoSerializer(serializers.ModelSerializer):
     video_download_link = serializers.SerializerMethodField(read_only=True)
+    category = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = HomePageVideo
         fields = '__all__'
+
+    def get_category(self, obj):
+        return obj.category.title if obj.category else '无'
 
     def get_video_download_link(self, obj):
         auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
