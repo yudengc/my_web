@@ -1,8 +1,8 @@
 from rest_framework import viewsets
 
 from config.models import CustomerService, GoodsCategory
-from config.serializers import CustomerServiceSerializer, GoodsCategorySerializer
-from libs.common.permission import ManagerPermission, SalesmanPermission, AllowAny, AdminPermission
+from config.serializers import CustomerServiceSerializer, GoodsCategorySerializer, ManageGoodsCategorySerializer
+from libs.common.permission import ManagerPermission, SalesmanPermission, AllowAny, AdminPermission, is_admin
 
 
 class CustomerServiceViewSet(viewsets.ModelViewSet):
@@ -29,4 +29,11 @@ class GoodsCategoryViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             self.permission_classes = (ManagerPermission,)
         return super().get_permissions()
+
+    def get_serializer_class(self):
+        if is_admin(self.request):
+            return ManageGoodsCategorySerializer
+        return super().get_serializer_class()
+
+
 
