@@ -258,7 +258,7 @@ class ManageAddressViewSet(viewsets.ModelViewSet):
     permission_classes = [AdminPermission, ]
     serializer_class = ManageAddressSerializer
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
-    search_fields = ('=uid__username', 'uid__auth_base__nickname, phone, name')
+    search_fields = ('=uid__username', 'uid__auth_base__nickname', 'phone', 'name')
     filter_fields = ('uid__identity',)
     queryset = Address.objects.all()
 
