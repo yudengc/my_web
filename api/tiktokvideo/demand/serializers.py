@@ -93,7 +93,7 @@ class ClientVideoNeededDetailSerializer(serializers.ModelSerializer):
             'order_video_slice', 'video_size', 'clarity', 'model_needed',
             'model_occur_rate', 'model_age_range', 'model_figure', 'desc',
             'example1', 'example2', 'example3', 'goods_link', 'goods_images',
-            'goods_channel', 'attraction', 'goods_title', 'category'
+            'goods_channel', 'attraction', 'goods_title', 'category', 'platform_desc'
         )
 
     def get_video_size(self, obj):

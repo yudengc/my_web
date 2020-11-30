@@ -2,6 +2,7 @@
 
 
 from rest_framework import permissions
+from rest_framework.request import Request
 
 from users.models import Users
 
@@ -13,6 +14,11 @@ def is_user(request):
     :return:
     """
     return request.user.is_authenticated and isinstance(request.user, Users)
+
+
+def is_admin(request: Request) -> bool:
+    return request.user.is_authenticated and isinstance(request.user, Users) \
+           and request.user.sys_role in [Users.ADMIN, Users.SUPER_ADMIN]
 
 
 class DenyAnyManger(permissions.BasePermission):
@@ -44,7 +50,7 @@ class SalesmanPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         print(">>>>>>>基本权限")
         return request.user.is_authenticated and isinstance(request.user, Users) \
-            and request.user.identity in [Users.SALESMAN, Users.SUPERVISOR]
+               and request.user.identity in [Users.SALESMAN, Users.SUPERVISOR]
 
 
 class BusinessPermission(permissions.BasePermission):
@@ -53,7 +59,7 @@ class BusinessPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         print(">>>>>>>基本权限")
         return request.user.is_authenticated and isinstance(request.user, Users) \
-            and request.user.identity == Users.BUSINESS
+               and request.user.identity == Users.BUSINESS
 
 
 class AdminPermission(permissions.BasePermission):
@@ -61,7 +67,7 @@ class AdminPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and isinstance(request.user, Users) \
-            and request.user.sys_role in [Users.ADMIN, Users.SUPER_ADMIN]
+               and request.user.sys_role in [Users.ADMIN, Users.SUPER_ADMIN]
 
 
 class CreatorPermission(permissions.BasePermission):
@@ -70,4 +76,4 @@ class CreatorPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         print(">>>>>>>基本权限")
         return request.user.is_authenticated and isinstance(request.user, Users) \
-            and request.user.identity == Users.CREATOR
+               and request.user.identity == Users.CREATOR

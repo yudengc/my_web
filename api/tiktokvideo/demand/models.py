@@ -197,6 +197,12 @@ class VideoNeeded(models.Model):
         null=True,
         blank=True
     )
+    platform_desc = models.TextField(
+        verbose_name='平台说明',
+        null=True,
+        blank=True,
+        default=None
+    )
     example1 = models.TextField(
         verbose_name='参考视频1',
         null=True,
