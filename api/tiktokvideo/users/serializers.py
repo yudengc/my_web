@@ -157,3 +157,11 @@ class ManageAddressSerializer(serializers.ModelSerializer):
     def get_username(self, obj):
         user = obj.uid
         return user.username
+
+
+class UserInfoManagerSerializer(serializers.ModelSerializer):
+    nickname = serializers.CharField(source='auth_base.nickname')
+
+    class Meta:
+        model = Users
+        fields = ('id', 'username', 'nickname', 'identity', 'status', 'reason', 'date_created')

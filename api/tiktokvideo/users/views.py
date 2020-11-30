@@ -3,6 +3,7 @@ import threading
 
 from django.contrib.auth.hashers import check_password
 from django.db.transaction import atomic
+from django_filters import rest_framework
 from django_filters.rest_framework import DjangoFilterBackend
 from django_redis import get_redis_connection
 from redis import StrictRedis
@@ -18,14 +19,14 @@ from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermissi
 from relations.tasks import save_invite_relation
 
 from tiktokvideo.base import APP_ID, SECRET
-from users.filter import TeamFilter
+from users.filter import TeamFilter, UserInfoManagerFilter
 from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address, \
     UserCreator
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer, \
     AddressSerializer, AddressListSerializer, CreatorUserInfoSerializer, UserCreatorSerializer, \
-    UserCreatorPutSerializer, ManageAddressSerializer
+    UserCreatorPutSerializer, ManageAddressSerializer, UserInfoManagerSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls
 
@@ -296,3 +297,17 @@ class UserCreatorViewSet(mixins.ListModelMixin,
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+
+
+class UserInfoManagerViewSet(mixins.ListModelMixin,
+                             mixins.UpdateModelMixin,
+                             GenericViewSet):
+    """用户管理"""
+    permission_classes = (AdminPermission,)
+    serializer_class = UserInfoManagerSerializer
+    queryset = Users.objects.exclude(is_superuser=True).order_by('-date_created')
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_class = UserInfoManagerFilter
+    search_fields = ('username', 'auth_base__nickname')
+
+
