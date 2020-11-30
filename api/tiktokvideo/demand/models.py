@@ -358,3 +358,5 @@ class HomePageVideo(models.Model):
         verbose_name = "首页展示视频"
         verbose_name_plural = verbose_name
         db_table = "HomePageVideo"
+        ordering = ('-create_time',)
+
