@@ -7,8 +7,8 @@ from libs.common.permission import ManagerPermission, SalesmanPermission, AllowA
 
 class CustomerServiceViewSet(viewsets.ModelViewSet):
     """客服"""
-    permission_classes = (SalesmanPermission,)
-    queryset = CustomerService.objects.all()
+    permission_classes = (AdminPermission,)
+    queryset = CustomerService.objects.order_by('-date_created')
     serializer_class = CustomerServiceSerializer
 
     def get_permissions(self):

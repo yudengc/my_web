@@ -19,14 +19,16 @@ from libs.common.permission import AllowAny, SalesmanPermission, ManagerPermissi
 from relations.tasks import save_invite_relation
 
 from tiktokvideo.base import APP_ID, SECRET
-from users.filter import TeamFilter, UserInfoManagerFilter
+from users.filter import TeamFilter, UserInfoManagerFilter, UserCreatorInfoManagerFilter, UserBusinessInfoManagerFilter
 from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address, \
     UserCreator
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, TeamSerializer, UserInfoSerializer, \
     AddressSerializer, AddressListSerializer, CreatorUserInfoSerializer, UserCreatorSerializer, \
-    UserCreatorPutSerializer, ManageAddressSerializer, UserInfoManagerSerializer
+    UserCreatorPutSerializer, ManageAddressSerializer, UserInfoManagerSerializer, UserCreatorInfoManagerSerializer, \
+    UserCreatorInfoUpdateManagerSerializer, UserBusinessInfoManagerSerializer, UserBusinessInfoUpdateManagerSerializer, \
+    BusinessInfoManagerSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls
 
@@ -311,3 +313,56 @@ class UserInfoManagerViewSet(mixins.ListModelMixin,
     search_fields = ('username', 'auth_base__nickname')
 
 
+class UserCreatorInfoManagerViewSet(mixins.ListModelMixin,
+                                    mixins.RetrieveModelMixin,
+                                    mixins.UpdateModelMixin,
+                                    GenericViewSet):
+    """创作者用户管理"""
+    permission_classes = (AdminPermission,)
+    serializer_class = UserCreatorInfoManagerSerializer
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_class = UserCreatorInfoManagerFilter
+    search_fields = ('user_creator__username', 'user_creator__auth_base__nickname')
+
+    def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            self.queryset = UserCreator.objects.select_related('uid').order_by('-date_created')
+        elif self.action in ['update', 'partial_update']:
+            self.queryset = UserCreator.objects.all()
+        return super().get_queryset()
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            self.serializer_class = UserCreatorInfoUpdateManagerSerializer
+        return super().get_serializer_class()
+
+
+class UserBusinessInfoManagerViewSet(mixins.ListModelMixin,
+                                     mixins.RetrieveModelMixin,
+                                     mixins.UpdateModelMixin,
+                                     GenericViewSet):
+    """商家用户管理"""
+    permission_classes = (AdminPermission,)
+    serializer_class = UserBusinessInfoManagerSerializer
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    queryset = Users.objects.exclude(is_superuser=True).filter(identity=Users.BUSINESS, sys_role=Users.COMMON)
+    filter_class = UserBusinessInfoManagerFilter
+    search_fields = ('username', 'auth_base__nickname', 'user_salesman__username')
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            self.serializer_class = UserBusinessInfoUpdateManagerSerializer
+        return super().get_serializer_class()
+
+
+class BusinessInfoManagerViewSet(mixins.ListModelMixin,
+                                 mixins.RetrieveModelMixin,
+                                 # mixins.UpdateModelMixin,
+                                 GenericViewSet):
+    """商家信息后台"""
+    permission_classes = (AdminPermission,)
+    serializer_class = BusinessInfoManagerSerializer
+    queryset = UserBusiness.objects.all()
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_class = UserInfoManagerFilter
+    search_fields = ('uid__username', 'uid__auth_base__nickname', 'contact')

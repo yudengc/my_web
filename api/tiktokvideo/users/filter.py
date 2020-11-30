@@ -1,6 +1,7 @@
 import django_filters
 
-from users.models import Team, Users
+from transaction.models import UserPackageRelation
+from users.models import Team, Users, UserCreator
 
 
 class TeamFilter(django_filters.FilterSet):
@@ -19,3 +20,28 @@ class UserInfoManagerFilter(django_filters.FilterSet):
     class Meta:
         model = Users
         fields = ('status', 'identity', 'start_time', 'end_time')
+
+
+class UserCreatorInfoManagerFilter(django_filters.FilterSet):
+    start_time = django_filters.DateTimeFilter(field_name='date_created', lookup_expr='gte')
+    end_time = django_filters.DateTimeFilter(field_name='date_created', lookup_expr='lte')
+
+    class Meta:
+        model = UserCreator
+        fields = ('status', 'is_signed', 'start_time', 'end_time')
+
+
+class UserBusinessInfoManagerFilter(django_filters.FilterSet):
+    start_time = django_filters.DateTimeFilter(field_name='date_created', lookup_expr='gte')
+    end_time = django_filters.DateTimeFilter(field_name='date_created', lookup_expr='lte')
+    has_package = django_filters.BooleanFilter(method='get_has_package')  # 是否购买套餐
+
+    class Meta:
+        model = Users
+        fields = ('status', 'start_time', 'end_time', 'has_package')
+
+    def get_has_package(self, queryset, name, value):
+        for qs in queryset:
+            if UserPackageRelation.objects.filter(uid=qs).exists() != value:
+                queryset = queryset.exclude(id=qs.id)
+        return queryset

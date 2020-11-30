@@ -2,7 +2,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from users.views import LoginViewSet, UserBusinessViewSet, UserInfoViewSet, BusInfoOtherView, AddressViewSet, \
-    UserCreatorViewSet, ManageAddressViewSet, UserInfoManagerViewSet
+    UserCreatorViewSet, ManageAddressViewSet, UserInfoManagerViewSet, UserCreatorInfoManagerViewSet, \
+    UserBusinessInfoManagerViewSet, BusinessInfoManagerViewSet
 
 app_name = "users"
 login_router = DefaultRouter()
@@ -15,6 +16,10 @@ login_router.register(r'creator', UserCreatorViewSet, basename='user_creator')
 
 manager_router = DefaultRouter()
 manager_router.register(r'user-info', UserInfoManagerViewSet, basename='user_info_man')
+manager_router.register(r'user-creator', UserCreatorInfoManagerViewSet, basename='user_creator')
+manager_router.register(r'user-bus', UserBusinessInfoManagerViewSet, basename='user_bus')
+manager_router.register(r'bus-info', BusinessInfoManagerViewSet, basename='bus_info')
+
 
 urlpatterns = [
     path(r'', include(login_router.urls)),
