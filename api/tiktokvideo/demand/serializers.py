@@ -15,6 +15,7 @@ class VideoNeededSerializer(serializers.ModelSerializer):
 class ManageVideoNeededSerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField(read_only=True)
     bus_name = serializers.SerializerMethodField(read_only=True)
+    category = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = VideoNeeded
@@ -25,6 +26,9 @@ class ManageVideoNeededSerializer(serializers.ModelSerializer):
 
     def get_username(self, obj):
         return obj.uid.username
+
+    def get_category(self, obj):
+        return obj.category.title if obj.category else '无'
 
 
 class ClientVideoNeededSerializer(serializers.ModelSerializer):
