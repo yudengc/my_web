@@ -8,7 +8,7 @@
 import random
 import string
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def dict_to_xml(dict_data):
@@ -103,3 +103,11 @@ def get_iCode(n=4, alpha=False):
             num = random.choice([num, upper_alpha, lower_alpha])
         s = s + str(num)
     return s
+
+
+def get_last_year_month():
+    """获取上个月的年月"""
+    today = datetime.today().date()
+    first = today.replace(day=1)
+    last_date = first - timedelta(days=1)
+    return last_date.year, last_date.month
