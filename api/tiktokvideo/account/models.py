@@ -20,6 +20,10 @@ class CreatorAccount(BaseModel):
         _('待结算松子'),
         default=0
     )
+    coin_cash_out = models.IntegerField(
+        _('已提现的松子'),
+        default=0
+    )
 
     class Meta:
         db_table = 'CreatorAccount'
