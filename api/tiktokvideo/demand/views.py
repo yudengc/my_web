@@ -299,7 +299,7 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
                      required=lambda rst: rst.get('action') == 'pass', help="请输入 order_video_slice(视频切片数组) e.[10, 10, 20]"),
             Argument('order_slice_num', type=int, required=lambda rst: rst.get('action') == 'pass',
                      help="请输入 order_slice_num(切片数) e. 10"),
-            Argument('reject_reason', required=lambda rst: rst.get('action') == 'reject', help="请输入拒绝理由reject_reason"),
+            Argument('reject_reason', required=lambda rst: rst.get('action') == 'reject'),
         ).parse(request.data)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
@@ -313,6 +313,7 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             user_business = instance.uid.user_business
             user_business.remain_video_num += instance.video_num_remained
             user_business.save()
+            instance.check_time = datetime.datetime.now()
             instance.save()
             return Response({"detail": "已拒绝"}, status=status.HTTP_200_OK)
         else:
@@ -327,6 +328,7 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             instance.status = VideoNeeded.ON_GOING
             instance.order_slice_num = len(new_order_video_slice)
             instance.order_num_remained = len([i for i in new_order_video_slice if i.get('remain') == 1])
+            instance.check_time = datetime.datetime.now()
             instance.save()
             return Response({"detail": "已审核通过, 需求将展示于可申请的需求列表中"}, status=status.HTTP_200_OK)
 

@@ -14,3 +14,9 @@ class GoodsCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = GoodsCategory
         exclude = ('date_created', 'date_updated')
+
+
+class ManageGoodsCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GoodsCategory
+        fields = '__all__'

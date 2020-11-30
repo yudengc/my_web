@@ -45,7 +45,13 @@ class GoodsCategory(BaseModel):
         max_length=100
     )
 
+    is_recommend = models.BooleanField(
+        verbose_name="是否热门推荐",
+        default=False
+    )
+
     class Meta:
         verbose_name = '商品品类'
         verbose_name_plural = verbose_name
         db_table = 'GoodsCategory'
+        ordering = ('-date_created',)
