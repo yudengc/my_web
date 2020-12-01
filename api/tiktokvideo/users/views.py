@@ -331,7 +331,7 @@ class UserCreatorInfoManagerViewSet(mixins.ListModelMixin,
     serializer_class = UserCreatorInfoManagerSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserCreatorInfoManagerFilter
-    search_fields = ('user_creator__username', 'user_creator__auth_base__nickname')
+    search_fields = ('uid__username', 'uid__auth_base__nickname')
 
     def get_queryset(self):
         if self.action in ['list', 'retrieve']:
