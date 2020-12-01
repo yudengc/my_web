@@ -120,13 +120,13 @@ class ClientVideoNeededDetailSerializer(serializers.ModelSerializer):
 
 class HomePageVideoSerializer(serializers.ModelSerializer):
     video_download_link = serializers.SerializerMethodField(read_only=True)
-    category = serializers.SerializerMethodField(read_only=True)
+    category_display = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = HomePageVideo
         fields = '__all__'
 
-    def get_category(self, obj):
+    def get_category_display(self, obj):
         return obj.category.title if obj.category else '无'
 
     def get_video_download_link(self, obj):
