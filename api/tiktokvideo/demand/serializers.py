@@ -131,7 +131,4 @@ class HomePageVideoSerializer(serializers.ModelSerializer):
 
     def get_video_download_link(self, obj):
         auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
-        try:
-            return auth.private_download_url(obj.video_link, expires=315360000) if obj.video else ''
-        except:
-            return ''
+        return auth.private_download_url(obj.video_link, expires=315360000) if obj.video_link else ''
