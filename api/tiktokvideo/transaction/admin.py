@@ -31,8 +31,7 @@ class UserPackageRelationAdmin(admin.ModelAdmin):
         'username', 'nickname', 'salesman_username', 'salesman_name', 'package_title', 'package_amount', 'status',
         'date_created',)
     # 定义搜索框以哪些字段可以搜索
-    search_fields = ('uid__username', 'uid__auth_base__nickname', 'uid__user_salesman__salesman__username',
-                     'uid__user_salesman__salesman__salesman_name')
+    search_fields = ('uid__username', 'uid__auth_base__nickname')
     # 定义过滤器以哪些字段可以搜索
     list_filter = ('status', 'date_created')
     # 详情页面展示的字段
