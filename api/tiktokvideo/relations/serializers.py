@@ -29,12 +29,10 @@ class MyRelationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InviteRelationManager
-        fields = ('invitee', 'status')
+        fields = ('invitee',)
 
     def to_representation(self, instance):
-        data = super(MyRelationSerializer, self).to_representation(instance).get('invitee')
-        data['status'] = super(MyRelationSerializer, self).to_representation(instance).get('status')
-        return data
+        return super(MyRelationSerializer, self).to_representation(instance).get('invitee')
 
 
 # class MyRecordsSerializer(serializers.ModelSerializer):
