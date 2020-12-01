@@ -227,7 +227,7 @@ class UserPackageRelation(BaseModel):
     )
     UNTREATED, PROCESSED = range(2)
     status = models.PositiveSmallIntegerField(
-        _('状态'),
+        _('跟进状态'),
         default=UNTREATED,
         choices=(
             (UNTREATED, '待跟进'),
@@ -236,7 +236,7 @@ class UserPackageRelation(BaseModel):
     )
 
     class Meta:
-        verbose_name = '用户和套餐包的关系表'
+        verbose_name = '套餐购买记录'
         verbose_name_plural = verbose_name
         db_table = 'UserPackageRelation'
         unique_together = ('uid', 'package')
