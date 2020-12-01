@@ -10,10 +10,12 @@ from urllib import parse
 import demjson
 import requests
 from django.conf import settings
+from qiniu import Auth
 
 from demand.models import VideoNeeded
 from libs.decorator import try_decorator
 from libs.tbk import GetTBKCouponInfo
+from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY, IMG_QINIU_BUCKET_NAME, QINIU_BUCKET_NAME
 
 oTbPattern = re.compile('^https://(.*)[.|/]taobao.com')
 oJdPattern = re.compile('^https://(.*)[.|/]jd.com')
@@ -298,3 +300,12 @@ def check_link_and_get_data(goods_link):
             raise CheckLinkRequestError('获取商品信息失败，请重试')
     else:
         raise CheckLinkError('抱歉，非淘宝或抖音小店的商品暂时不能上架')
+
+
+def get_qi_niu_token():
+    """
+    获取七牛云Token(私有)
+    :return:
+    """
+    auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+    return auth.upload_token(QINIU_BUCKET_NAME)
