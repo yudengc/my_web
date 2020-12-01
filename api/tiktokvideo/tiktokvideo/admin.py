@@ -39,6 +39,12 @@ SIMPLEUI_CONFIG = \
                 },
                 {
                     'app': 'transaction',
+                    'name': '套餐购买记录',
+                    'icon': 'fa fa-users',
+                    'url': '/admin/transaction/userpackagerelation/',
+                },
+                {
+                    'app': 'transaction',
                     'name': '商家套餐',
                     'icon': 'fa fa-users',
                     'url': '/admin/transaction/package/',
