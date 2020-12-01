@@ -8,6 +8,7 @@ from rest_framework import viewsets, status, mixins, filters
 from django_filters import rest_framework
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from application.filters import VideoApplicationManagerFilter
@@ -324,3 +325,18 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
 
     def update(self, request, *args, **kwargs):
         return Response({'detail': '修改成功'})
+
+
+class VideoCountView(APIView):
+    """正在拍摄视频数和可拍摄视频数"""
+    permission_classes = (CreatorPermission,)
+
+    def get(self, request):
+        try:
+            obj = UserCreator.objects.get(uid=request.user)
+        except UserCreator.DoesNotExist:
+            obj = UserCreator.objects.create(uid=request.user)
+        total = VideoOrder.objects.exclude(status=VideoOrder.DONE).aggregate(sum=Sum('num_selected'))['sum']
+        if not total:
+            total = 0
+        return Response({'ongoing': total, 'Remaining': 5-total if not obj.is_signed else '不限制'})

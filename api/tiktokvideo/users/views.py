@@ -524,3 +524,4 @@ class ScriptTypeViewSet(mixins.ListModelMixin,
     queryset = ScriptType.objects.order_by('-date_created')
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('title', )
+

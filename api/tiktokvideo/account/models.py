@@ -32,7 +32,7 @@ class CreatorAccount(BaseModel):
 
 
 class CreatorBill(models.Model):
-    """创作者每月账单"""
+    """创作者每月账单(只记录已结算的，待结算的即时计算)"""
     uid = models.ForeignKey(
         "users.Users",
         to_field='uid',
@@ -43,8 +43,13 @@ class CreatorBill(models.Model):
         _('当月结算松子数量'),
         default=0
     )
-    bill_date = models.DateField(
-        _('本期账单年月'),
+    bill_year = models.PositiveSmallIntegerField(
+        _('本期账单年'),
+        null=True,
+    )
+    bill_month = models.PositiveSmallIntegerField(
+        _('本期账单月'),
+        null=True,
     )
     date_created = models.DateTimeField(
         _('账单记录时间'),
@@ -54,10 +59,10 @@ class CreatorBill(models.Model):
         _('更新时间'),
         auto_now=True
     )
-    # Todo  记得跟订单关联
 
     class Meta:
         db_table = 'CreatorBill'
         verbose_name = '创作者每月账单'
         verbose_name_plural = verbose_name
         ordering = ('-date_created', )
+        unique_together = ('uid', 'bill_year', 'bill_month')
