@@ -28,7 +28,7 @@ class UserPackageRelationAdmin(admin.ModelAdmin):
     """套餐购买记录"""
     # 定义admin总览里每行的显示信息
     list_display = (
-        'username', 'nickname', 'salesman_username', 'salesman_name', 'package_title', 'package_amount',
+        'username', 'nickname', 'salesman_username', 'salesman_name', 'package_title', 'package_amount', 'status',
         'date_created',)
     # 定义搜索框以哪些字段可以搜索
     search_fields = ('uid__username', 'uid__auth_base__nickname', 'uid__user_salesman__username',
