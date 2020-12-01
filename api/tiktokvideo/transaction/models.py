@@ -227,7 +227,7 @@ class UserPackageRelation(BaseModel):
     )
     UNTREATED, PROCESSED = range(2)
     status = models.PositiveSmallIntegerField(
-        _('状态'),
+        _('跟进状态'),
         default=UNTREATED,
         choices=(
             (UNTREATED, '待跟进'),
