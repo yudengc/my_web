@@ -8,10 +8,11 @@ from users.models import Users, UserBusiness
 class BusinessInfoSerializer(serializers.ModelSerializer):
     bus_name = serializers.SerializerMethodField()
     has_package = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Users
-        fields = ('id', 'username', 'date_created', 'bus_name', 'has_package')
+        fields = ('id', 'username', 'date_created', 'bus_name', 'has_package', 'status')
 
     def get_bus_name(self, obj):
         # 改成微信昵称，返回字段不变
@@ -19,6 +20,12 @@ class BusinessInfoSerializer(serializers.ModelSerializer):
 
     def get_has_package(self, obj):
         return UserPackageRelation.objects.filter(uid=obj).exists()
+
+    def get_status(self, obj):
+        if UserPackageRelation.objects.filter(uid=obj, status=UserPackageRelation.PROCESSED).exists():
+            return UserPackageRelation.PROCESSED
+        else:
+            return UserPackageRelation.UNTREATED
 
 
 class MyRelationSerializer(serializers.ModelSerializer):
@@ -29,12 +36,10 @@ class MyRelationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InviteRelationManager
-        fields = ('invitee', 'status')
+        fields = ('invitee',)
 
     def to_representation(self, instance):
-        data = super(MyRelationSerializer, self).to_representation(instance).get('invitee')
-        data['status'] = super(MyRelationSerializer, self).to_representation(instance).get('status')
-        return data
+        return super(MyRelationSerializer, self).to_representation(instance).get('invitee')
 
 
 # class MyRecordsSerializer(serializers.ModelSerializer):
