@@ -369,12 +369,15 @@ class UserCreator(BaseModel):
     video = models.URLField(
         verbose_name="介绍视频",
         max_length=1000,
+        null=True
     )
     team_introduction = models.TextField(
         verbose_name="团队介绍",
+        null=True
     )
     capability_introduction = models.TextField(
         verbose_name="能力介绍",
+        null=True
     )
     is_signed = models.BooleanField(
         verbose_name="是否签约创作者",

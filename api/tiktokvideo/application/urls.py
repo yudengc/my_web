@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from application.views import BusVideoOrderViewSet, VideoApplicationViewSet, VideoApplicationManagerViewSet
+from application.views import BusVideoOrderViewSet, VideoApplicationViewSet, VideoApplicationManagerViewSet, \
+    VideoCountView
 
 app_name = "application"
 
@@ -22,5 +23,6 @@ urlpatterns = [
     path(r'creator/', include(creator_router.urls)),
     path(r'bus/', include(bus_router.urls)),
     path(r'manager/', include(manager_router.urls)),
+    path(r'video-count/', VideoCountView.as_view()),
 
 ]

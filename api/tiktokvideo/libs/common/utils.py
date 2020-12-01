@@ -111,3 +111,9 @@ def get_last_year_month():
     first = today.replace(day=1)
     last_date = first - timedelta(days=1)
     return last_date.year, last_date.month
+
+
+def get_first_and_now():
+    """获取本月第一天和此刻时间"""
+    now = datetime.now()
+    return datetime(now.year, now.month, 1), now
