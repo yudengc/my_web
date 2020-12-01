@@ -17,6 +17,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from account.models import CreatorAccount
 from libs.common.permission import AllowAny, ManagerPermission, CreatorPermission, AdminPermission
+from libs.parser import JsonParser, Argument
 from relations.models import InviteRelationManager
 from relations.tasks import save_invite_relation
 
@@ -47,20 +48,22 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
     def admin(self, request):
         """
-        超管端登陆接口
+        后台管理员端登录接口
         username: 用户名/手机号
         password : 密码
         :param request:
         :return:
         """
-        username = request.data.get('username')
-        password = request.data.get('password')
-        if not username or not password:
-            return Response({"detail": '请输入账号/密码'}, status=status.HTTP_400_BAD_REQUEST)
-        user = Users.objects.filter(username=username, status=0, identity=Users.SALESMAN).last()
+        form, error = JsonParser(
+            Argument('username', help="请输入账号username!!"),
+            Argument('password', help="请输入密码password!!")
+        )
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+        user = Users.objects.filter(username=form.username, status=0, sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN]).last()
         if not user:
             return Response({"detail": "用户不存在"}, status=status.HTTP_400_BAD_REQUEST)
-        if not check_password(password, user.password):
+        if not check_password(form.password, user.password):
             return Response({"detail": '密码错误!'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
