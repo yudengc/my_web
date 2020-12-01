@@ -159,8 +159,8 @@ class UserPackageRelationManagerViewSet(mixins.RetrieveModelMixin,
     queryset = UserPackageRelation.objects.all()
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserPackageRelationManagerFilter
-    search_fields = ('uid__username', 'uid__auth_base__nickname', 'uid__user_salesman__username',
-                     'uid__user_salesman__salesman_name')
+    search_fields = ('uid__username', 'uid__auth_base__nickname', 'uid__user_salesman__salesman__username',
+                     'uid__user_salesman__salesman__salesman_name')
 
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update']:
