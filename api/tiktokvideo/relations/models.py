@@ -33,16 +33,16 @@ class InviteRelationManager(BaseModel):
         default='',
         max_length=200,
     )
-    UNTREATED, PROCESSED = range(2)
-    STATUS = (
-        (UNTREATED, '待跟进'),
-        (PROCESSED, '已跟进'),
-    )
-    status = models.PositiveSmallIntegerField(
-        _('状态'),
-        choices=STATUS,
-        default=UNTREATED
-    )
+    # UNTREATED, PROCESSED = range(2)
+    # STATUS = (
+    #     (UNTREATED, '待跟进'),
+    #     (PROCESSED, '已跟进'),
+    # )
+    # status = models.PositiveSmallIntegerField(
+    #     _('状态'),
+    #     choices=STATUS,
+    #     default=UNTREATED
+    # )
 
     class Meta:
         verbose_name = '邀请关系'
