@@ -75,3 +75,40 @@ class CreatorBill(models.Model):
         verbose_name_plural = verbose_name
         ordering = ('-date_created', )
         unique_together = ('uid', 'bill_year', 'bill_month')
+
+
+class BalanceRecord(models.Model):
+    """余额明细"""
+    uid = models.ForeignKey(
+        "users.Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+        related_name='balance_record',
+    )
+    SETTLEMENT, WITHDRAW = range(2)
+    operation_type = models.PositiveSmallIntegerField(
+        _('操作类型'),
+        default=SETTLEMENT,
+        choices=(
+            (SETTLEMENT, '结算'),
+            (WITHDRAW, '提现'),
+        )
+    )
+    amount = models.IntegerField(
+        _('操作金额'),
+        default=0
+    )
+    balance = models.IntegerField(
+        _('余额'),
+        default=0
+    )
+    date_created = models.DateTimeField(
+        _('记录时间'),
+        auto_now_add=True
+    )
+
+    class Meta:
+        db_table = 'BalanceRecord'
+        verbose_name = '余额明细'
+        verbose_name_plural = verbose_name
+        ordering = ('-date_created',)
