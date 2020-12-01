@@ -51,6 +51,15 @@ class CreatorBill(models.Model):
         _('本期账单月'),
         null=True,
     )
+    PENDING, DONE = range(2)
+    status = models.PositiveSmallIntegerField(
+        _('结算状态'),
+        default=PENDING,
+        choices=(
+            (PENDING, '待结算'),
+            (DONE, '已结算'),
+        )
+    )
     date_created = models.DateTimeField(
         _('账单记录时间'),
         auto_now_add=True
