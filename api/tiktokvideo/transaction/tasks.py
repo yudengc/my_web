@@ -25,7 +25,7 @@ def update_order_status(out_trade_no, gmt_payment, attach):
                 # logger.info('更新订单状态失败')
                 print('更新订单状态失败')
             else:
-                this_man = order.first.uid
+                this_man = order.first().uid
                 parm_lis = attach.split('_')
                 logger.info(parm_lis)
                 p_obj = Package.objects.get(id=parm_lis[1])
