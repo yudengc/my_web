@@ -75,7 +75,8 @@ class UserInfoSerializer(serializers.ModelSerializer):
     def get_user_business(self, obj):
         bus_obj = UserBusiness.objects.filter(uid=obj).first()
         if bus_obj:
-            return dict(id=bus_obj.id, bus_name=bus_obj.bus_name, name_abb=bus_obj.name_abb)
+            return dict(id=bus_obj.id, bus_name=bus_obj.bus_name, name_abb=bus_obj.name_abb,
+                        remain_video_num=bus_obj.remain_video_num)
         return None
 
     def get_package_info(self, obj):
