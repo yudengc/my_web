@@ -192,11 +192,11 @@ class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
 
     def get_order_video(self, obj):
         auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
-        tmp = obj.order_video.values_list('video_url', flat=True)
+        tmp = obj.order_video.values_list('video_url', 'id')
         ok_lst = []
         for i in tmp:
             try:
-                ok_lst.append(auth.private_download_url(i))
+                ok_lst.append({'id': i[1], 'video_url': auth.private_download_url(i[0])})
             except:
                 logger.info(traceback.format_exc())
         return ok_lst

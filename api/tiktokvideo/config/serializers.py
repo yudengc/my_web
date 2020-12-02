@@ -27,4 +27,4 @@ class VideoCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Video
-        fields = ('video_url', 'cover')
+        fields = ('video_url', 'id')
