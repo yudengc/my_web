@@ -1,1 +1,1 @@
-nohup celery -A tiktokcom worker -l info -B -c 1 &
+nohup celery -A tiktokvideo worker -l info -B -c 1 &
