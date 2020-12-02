@@ -4,7 +4,7 @@ import logging
 
 from django.db.models import Sum
 from django.db.transaction import atomic
-from rest_framework import viewsets, status, mixins, filters
+from rest_framework import viewsets, status, mixins, filters, exceptions
 from django_filters import rest_framework
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -15,7 +15,7 @@ from application.filters import VideoApplicationManagerFilter
 from application.models import VideoOrder, Video, VideoOrderDetail
 from application.serializers import VideoApplicationCreateSerializer, VideoApplicationListSerializer, \
     VideoApplicationRetrieveSerializer, BusApplicationSerializer, VideoApplicationManagerListSerializer, \
-    VideoApplicationManagerRetrieveSerializer
+    VideoApplicationManagerRetrieveSerializer, VideoOrderDetailSerializer
 from demand.models import VideoNeeded
 from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission, ManagerPermission
 from libs.parser import Argument, JsonParser
@@ -340,3 +340,25 @@ class VideoCountView(APIView):
         if not total:
             total = 0
         return Response({'ongoing': total, 'Remaining': 5-total if not obj.is_signed else '不限制'})
+
+
+class VideoOrderDetailViewSet(viewsets.ReadOnlyModelViewSet):
+    """客户端订单统计明细"""
+    permission_classes = [CreatorPermission]
+    serializer_class = VideoOrderDetailSerializer
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+
+    def get_queryset(self):
+        if self.action == 'list':
+            month = self.request.query_params.get('month')
+            year = self.request.query_params.get('year')
+            if not month:
+                raise exceptions.ParseError('缺少month')
+            if not year:
+                raise exceptions.ParseError('缺少year')
+            self.queryset = VideoOrder.objects.filter(user=self.request.user,
+                                                      done_time__month=month,
+                                                      done_time__year=year).order_by('-done_time')
+        else:
+            self.queryset = VideoOrder.objects.all()
+        return super().get_queryset()

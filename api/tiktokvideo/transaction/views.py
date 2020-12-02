@@ -83,9 +83,9 @@ class WeChatPayBackViewSet(APIView):
                 # 订单号 out_trade_no
                 out_trade_no = tree.find("out_trade_no").text
                 # 修改订单状态
-                # update_order_status.delay(out_trade_no, datetime.now(), attach)
-                threading.Thread(target=update_order_status,
-                                 args=(out_trade_no, datetime.now(), attach)).start()
+                update_order_status.delay(out_trade_no, datetime.now(), attach)
+                # threading.Thread(target=update_order_status,
+                #                  args=(out_trade_no, datetime.now(), attach)).start()
                 return HttpResponse(
                     '<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>')
         except Exception as e:
