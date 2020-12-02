@@ -29,17 +29,18 @@ def video_order_post_init(instance, **kwargs):
 @receiver(post_save, sender=VideoOrder, dispatch_uid='order_post_save')
 def video_order_post_save(instance, created, **kwargs):
     if not created and instance.status != instance.__original_status:
-        # 状态修改记录对应时间(不要用save，不然会重复调用signal)
+        # 状态修改记录对应时间(不要用save，不然会重复调用signal导致报错)
         status = instance.status
         now = datetime.now()
+        o_qs = VideoOrder.objects.filter(id=instance.id)
         if status == VideoOrder.WAIT_COMMIT:
-            instance.update(send_time=now)
+            o_qs.update(send_time=now)
         elif status == VideoOrder.WAIT_RETURN:
-            instance.update(check_time=now)
+            o_qs.update(check_time=now)
         elif status == VideoOrder.DONE:
-            instance.update(done_time=now)
+            o_qs.update(done_time=now)
             if not instance.is_return:
                 # 无需返样，后台审核后订单直接为完成
-                instance.update(check_time=now)
+                o_qs.update(check_time=now)
         elif status == VideoOrder.EXCEPTION:
-            instance.update(close_time=now)
+            o_qs.update(close_time=now)

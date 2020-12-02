@@ -124,12 +124,15 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         if order_obj.status != VideoOrder.WAIT_COMMIT:
             logger.info(f'该订单状态不是待提交状态, 订单号:{order_obj.order_number}')
             return Response({'detail': '非待提交状态不能提交视频'}, status=status.HTTP_400_BAD_REQUEST)
-        lis = []
+        if order_obj.num_selected != len(video_lis):
+            return Response({'detail': f'请上传{order_obj.num_selected}个视频'}, status=status.HTTP_400_BAD_REQUEST)
+        id_lis = []
         for video_url in video_lis:
-            lis.append(Video(video_url=video_url, order=order_obj))
+            obj = Video.objects.create(video_url=video_url)
+            id_lis.append(obj.id)
         try:
             with atomic():
-                Video.objects.bulk_create(lis)
+                order_obj.order_video.set(id_lis)
                 order_obj.status = VideoOrder.WAIT_CHECK
                 order_obj.save()
         except Exception as e:
@@ -334,21 +337,67 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
         creator_remark = request.data.get('creator_remark')
         company = request.data.get('company')
         express = request.data.get('express')
-        video_lis = request.data.get('video')
+        video_id_lis = request.data.get('video')
         remark = request.data.get('remark')
+        form, error = JsonParser(
+            Argument('demand', help="请选择需求!!"),
+            Argument('creator', help="请选择创作者!!"),
+            Argument('reward', help="请输入单视频交付金额!!"),
+            Argument('address', help="请选择收货信息!!"),
+            Argument('status', help="请选择订单状态!!"),
+        ).parse(request.data)
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+        if creator_remark is None:
+            return Response({"detail": 'creator_remark缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        if company is None:
+            return Response({"detail": 'company缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        if express is None:
+            return Response({"detail": 'express缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        if video_id_lis is None:
+            return Response({"detail": 'video_lis缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        if remark is None:
+            return Response({"detail": 'remark缺失'}, status=status.HTTP_400_BAD_REQUEST)
 
-        partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
-
-
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
+        try:
+            with atomic():
+                detail_obj = instance.video_order_detail
+                instance.reward = reward
+                instance.status = order_status
+                instance.creator_remark = creator_remark
+                instance.remark = remark
+                if instance.user.id != creator_id:
+                    instance.user = Users.objects.get(id=creator_id)
+                if instance.demand.id != demand_id:
+                    need_obj = VideoNeeded.objects.get(id=demand_id)
+                    instance.demand = need_obj
+                    detail_obj.goods_title = need_obj.goods_title
+                    detail_obj.goods_link = need_obj.goods_link
+                    detail_obj.goods_channel = need_obj.goods_channel
+                    detail_obj.goods_images = need_obj.goods_images
+                    detail_obj.category = need_obj.category
+                    detail_obj.return_receiver_name = need_obj.receiver_name
+                    detail_obj.return_receiver_phone = need_obj.receiver_phone
+                    detail_obj.return_receiver_province = need_obj.receiver_province
+                    detail_obj.return_receiver_city = need_obj.receiver_city
+                    detail_obj.return_receiver_district = need_obj.receiver_district
+                    detail_obj.return_receiver_location = need_obj.receiver_location
+                add_obj = Address.objects.get(id=address_id)
+                detail_obj.receiver_name = add_obj.name
+                detail_obj.receiver_phone = add_obj.phone
+                detail_obj.receiver_province = add_obj.province
+                detail_obj.receiver_city = add_obj.city
+                detail_obj.receiver_district = add_obj.district
+                detail_obj.receiver_location = add_obj.location
+                instance.save()
+                detail_obj.save()
+                instance.order_video.set(video_id_lis)
+        except Exception as e:
+            logger.info('后台订单编辑失败')
+            logger.info(e)
+            print(e)
+            return Response({'detail': '修改失败'}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'detail': '修改成功'})
 
 
