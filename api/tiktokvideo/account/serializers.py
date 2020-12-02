@@ -13,16 +13,22 @@ logger = logging.getLogger()
 
 class MyCreatorAccountSerializer(serializers.ModelSerializer):
     last_month = serializers.SerializerMethodField()
+    last_year = serializers.SerializerMethodField()
     last_month_reward = serializers.SerializerMethodField()
     this_month_reward = serializers.SerializerMethodField()
 
     class Meta:
         model = CreatorAccount
-        fields = ('id', 'coin_balance', 'coin_freeze', 'coin_cash_out', 'last_month',
+        fields = ('id', 'coin_balance', 'coin_freeze', 'coin_cash_out', 'last_month', 'last_year',
                   'last_month_reward', 'this_month_reward')
 
     def get_last_month(self, obj):
+        # 上个月月份
         return get_last_year_month()[1]
+
+    def get_last_year(self, obj):
+        # 上个月年份
+        return get_last_year_month()[0]
 
     def get_last_month_reward(self, obj):
         """上个月待结算松子（上个月未入账可得松子数）"""

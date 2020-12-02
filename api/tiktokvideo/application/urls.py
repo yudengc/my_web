@@ -3,12 +3,13 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from application.views import BusVideoOrderViewSet, VideoApplicationViewSet, VideoApplicationManagerViewSet, \
-    VideoCountView
+    VideoCountView, VideoOrderDetailViewSet
 
 app_name = "application"
 
 creator_router = DefaultRouter()
 creator_router.register(r'video', VideoApplicationViewSet, basename='video')
+creator_router.register(r'order', VideoOrderDetailViewSet, basename='order')
 
 
 bus_router = DefaultRouter()

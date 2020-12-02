@@ -190,3 +190,14 @@ class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
     def get_bus_name(self, obj):
         user_business = obj.demand.uid.user_business
         return user_business.bus_name if user_business else None
+
+
+class VideoOrderDetailSerializer(serializers.ModelSerializer):
+    total = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VideoOrder
+        fields = ('id', 'order_number', 'done_time', 'total')
+
+    def get_total(self, obj):
+        return obj.num_selected * obj.reward
