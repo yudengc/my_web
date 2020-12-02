@@ -177,8 +177,7 @@ class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
     creator_nickname = serializers.CharField(source='user.auth_base.nickname')
     is_signed = serializers.BooleanField(source='user.user_creator.is_signed')
     video_order_detail = VideoOrderDetailManagerSerializer()
-    # order_video = VideoSerializer(many=True)
-    order_video = serializers.StringRelatedField(many=True, read_only=True)
+    order_video = serializers.SerializerMethodField()
 
     class Meta:
         model = VideoOrder
@@ -191,6 +190,17 @@ class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
         user_business = obj.demand.uid.user_business
         return user_business.bus_name if user_business else None
 
+    def get_order_video(self, obj):
+        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+        tmp = obj.order_video.values_list('video_url', flat=True)
+        ok_lst = []
+        for i in tmp:
+            try:
+                ok_lst.append(auth.private_download_url(i))
+            except:
+                logger.info(traceback.format_exc())
+        return ok_lst
+
 
 class VideoOrderDetailSerializer(serializers.ModelSerializer):
     total = serializers.SerializerMethodField()
@@ -201,3 +211,5 @@ class VideoOrderDetailSerializer(serializers.ModelSerializer):
 
     def get_total(self, obj):
         return obj.num_selected * obj.reward
+
+

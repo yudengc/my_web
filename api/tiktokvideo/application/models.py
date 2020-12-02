@@ -42,6 +42,11 @@ class VideoOrder(BaseModel):
         verbose_name='单条视频的酬劳（松子）',
         default=0
     )
+    order_video = models.ManyToManyField(
+        # 订单成品视频
+        'Video',
+        related_name='orders',
+    )
 
     # remark
     reject_reason = models.CharField(
@@ -247,11 +252,11 @@ class Video(models.Model):
     video_url = models.URLField(
         max_length=1000
     )
-    order = models.ForeignKey(
-        'VideoOrder',
-        related_name='order_video',
-        on_delete=models.CASCADE
-    )
+    # order = models.ForeignKey(
+    #     'VideoOrder',
+    #     related_name='order_video',
+    #     on_delete=models.CASCADE
+    # )
     date_created = models.DateTimeField(
         verbose_name='创建时间',
         auto_now_add=True
