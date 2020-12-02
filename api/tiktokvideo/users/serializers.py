@@ -80,10 +80,10 @@ class UserInfoSerializer(serializers.ModelSerializer):
 
     def get_package_info(self, obj):
         r_ps = UserPackageRelation.objects.filter(uid=obj).order_by('-date_created')
-        if r_ps.exists():
-            r_obj = r_ps[0]
-            return dict(package_title=r_obj.package.package_title, expiration_time=r_obj.expiration_time)
-        return None
+        lis = []
+        for r_obj in r_ps:
+            lis.append(dict(package_title=r_obj.package.package_title, expiration_time=r_obj.expiration_time))
+        return lis
 
 
 class CreatorUserInfoSerializer(serializers.ModelSerializer):
