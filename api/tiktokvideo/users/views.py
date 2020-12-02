@@ -57,7 +57,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         form, error = JsonParser(
             Argument('username', help="请输入账号username!!"),
             Argument('password', help="请输入密码password!!")
-        )
+        ).parse(request.data)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
         user = Users.objects.filter(username=form.username, status=0, sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN]).last()
