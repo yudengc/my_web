@@ -538,15 +538,3 @@ class ScriptTypeViewSet(mixins.ListModelMixin,
     queryset = ScriptType.objects.order_by('-date_created')
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('title', )
-
-
-@shared_task
-def ee():
-    print('celery12312312312')
-
-
-class Test(APIView):
-    permission_classes = (AllowAny, )
-
-    def get(self, request):
-        ee.delay()
