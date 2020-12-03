@@ -16,6 +16,11 @@ def is_user(request):
     return request.user.is_authenticated and isinstance(request.user, Users)
 
 
+def is_super_admin(request: Request) -> bool:
+    return request.user.is_authenticated and isinstance(request.user, Users) \
+           and request.user.sys_role in [Users.SUPER_ADMIN]
+
+
 def is_admin(request: Request) -> bool:
     return request.user.is_authenticated and isinstance(request.user, Users) \
            and request.user.sys_role in [Users.ADMIN, Users.SUPER_ADMIN]
@@ -48,16 +53,17 @@ class SalesmanPermission(permissions.BasePermission):
     """业务员基本权限"""
 
     def has_permission(self, request, view):
-        print(">>>>>>>基本权限")
+        if is_super_admin(request):
+            return True
         return request.user.is_authenticated and isinstance(request.user, Users) \
                and request.user.identity in [Users.SALESMAN, Users.SUPERVISOR]
 
 
 class BusinessPermission(permissions.BasePermission):
-    """商家基本权限"""
 
     def has_permission(self, request, view):
-        print(">>>>>>>基本权限")
+        if is_super_admin(request):
+            return True
         return request.user.is_authenticated and isinstance(request.user, Users) \
                and request.user.identity == Users.BUSINESS
 
@@ -74,6 +80,7 @@ class CreatorPermission(permissions.BasePermission):
     """创作者基本权限"""
 
     def has_permission(self, request, view):
-        print(">>>>>>>基本权限")
+        if is_super_admin(request):
+            return True
         return request.user.is_authenticated and isinstance(request.user, Users) \
                and request.user.identity == Users.CREATOR
