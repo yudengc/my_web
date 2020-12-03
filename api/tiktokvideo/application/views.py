@@ -175,7 +175,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
 
 
 class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [AdminPermission, BusinessPermission]
+    permission_classes = [BusinessPermission,]
     serializer_class = BusApplicationSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filters = ('status',)
