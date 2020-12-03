@@ -110,6 +110,11 @@ class Users(AbstractUser):
         null=True,
         verbose_name='所属团队'
     )
+    has_power = models.BooleanField(
+        # 业务员才使用该字段
+        _('能否邀请创作者'),
+        default=False
+    )
     date_created = models.DateTimeField(
         _('注册时间'),
         auto_now_add=True
