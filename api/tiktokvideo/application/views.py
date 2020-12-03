@@ -273,7 +273,7 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
                                          demand=need_obj).exists():
                 fail += 1
                 success -= 1
-                fail_reason += f"该用户已经存在（{need_obj.title}）的订单。\n"
+                fail_reason += f"该用户已经存在需求标题为（{need_obj.title}）的订单。\n"
                 logger.info(f"{data.get('user')}的用户已经领取过id为：{dic['demand']}的订单")
                 continue
             try:
@@ -325,8 +325,11 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
                 logger.info(e)
                 print(e)
                 continue
-        return_dict = {'success': f'添加成功:{success}个', 'fail': f'添加失败:{fail}个', 'fail_reason': fail_reason}
-        return Response(return_dict, status=status.HTTP_201_CREATED)
+        msg = f'添加成功:{success}个\n添加失败:{fail}个\n'
+        if fail_reason:
+            fail_reason = '失败原因：' + fail_reason
+            msg += fail_reason
+        return Response({'detail': msg}, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         demand_id = request.data.get('demand')
