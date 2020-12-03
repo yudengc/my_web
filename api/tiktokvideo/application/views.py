@@ -198,7 +198,7 @@ class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
     @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
     def commit_express(self, request, **kwargs):
         form, error = JsonParser(
-            Argument('express', type=str, help="请输入 express(快递单号)"),
+            Argument('express', help="请输入 express(快递单号)"),
             Argument('company', type=str, help="请输入 company(物流公司)"),
         ).parse(request.data)
         if error:
