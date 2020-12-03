@@ -268,28 +268,28 @@ class TeamUserManagerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users
-        fields = ('id', 'username', 'salesman_name', 'team_name', 'leader_username', 'date_created')
+        fields = ('id', 'username', 'salesman_name', 'team_name', 'leader_username', 'date_created', 'has_power')
 
 
 class TeamUserManagerUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users
-        fields = ('salesman_name', 'team',)
+        fields = ('salesman_name', 'team', 'has_power')
 
 
 class TeamLeaderManagerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users
-        fields = ('id', 'username', 'salesman_name', 'date_created')
+        fields = ('id', 'username', 'salesman_name', 'date_created', 'has_power')
 
 
 class TeamLeaderManagerUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users
-        fields = ('salesman_name',)
+        fields = ('salesman_name', 'has_power')
 
 
 class CelebrityStyleSerializer(serializers.ModelSerializer):

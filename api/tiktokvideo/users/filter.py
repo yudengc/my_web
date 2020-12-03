@@ -19,7 +19,7 @@ class UserInfoManagerFilter(django_filters.FilterSet):
 
     class Meta:
         model = Users
-        fields = ('status', 'identity', 'start_time', 'end_time')
+        fields = ('status', 'identity', 'start_time', 'end_time', 'has_power')
 
 
 class UserCreatorInfoManagerFilter(django_filters.FilterSet):
@@ -52,4 +52,4 @@ class TeamUsersManagerTeamFilter(django_filters.FilterSet):
 
     class Meta:
         model = Users
-        fields = ('team', )
+        fields = ('team', 'has_power')
