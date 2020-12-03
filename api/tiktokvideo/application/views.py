@@ -128,6 +128,9 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
             return Response({'detail': f'请上传{order_obj.num_selected}个视频'}, status=status.HTTP_400_BAD_REQUEST)
         id_lis = []
         for video_url in video_lis:
+            video_url = video_url.get('video_url_arr')
+            if not video_url:
+                return Response({'detail': 'video_url_arr缺失'}, status=status.HTTP_400_BAD_REQUEST)
             obj = Video.objects.create(video_url=video_url)
             id_lis.append(obj.id)
         try:

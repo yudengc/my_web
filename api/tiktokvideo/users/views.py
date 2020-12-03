@@ -75,27 +75,64 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
     def auth(self, request):
         """微信授权登录"""
-        logger.info('开始登陆')
         openid = request.data.get('openid', None)
         username = request.data.get('username', None)
-        logger.info('打印username')
         logger.info(username)
         user_info = request.data.get('userInfo', None)
         logger.info(user_info)
         code = request.data.get('iCode')
-        identity = request.data.get('identity')
-        if not openid or not username or not identity:
-            # if not openid or not username:
+        if not username:
             return Response({"detail": "缺少参数!"}, status=status.HTTP_400_BAD_REQUEST)
-        user_instance = self.save_user_and_openid(username, openid, identity, user_info)
-
+        try:
+            user_instance = Users.objects.get(username=username)
+        except Users.DoesNotExist:
+            return Response({'detail': '新用户', 'code': 666}, status=status.HTTP_200_OK)
         if user_instance.status == Users.FROZEN:
             return Response({'detail': '账户被冻结，请联系客服处理', 'code': 444}, status=status.HTTP_200_OK)
+        user_instance = self.save_user_and_openid(user_instance, openid, user_info=user_info)  # 更新微信昵称头像
         user_info = JwtServers(user=user_instance).get_token_and_user_info()
-        if code and identity == Users.BUSINESS:  # 存在注册码绑定邀请关系
+        # 存在注册码绑定邀请关系(如果一开始是自然用户，后面仍可绑定邀请关系)
+        if code and user_instance.identity in [Users.BUSINESS, Users.CREATOR]:
             # save_invite_relation.delay(code, username)  # 绑定邀请关系
             threading.Thread(target=save_invite_relation,
                              args=(code, username)).start()  # 绑定邀请关系
+        return Response(user_info, status=status.HTTP_200_OK)
+
+    @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
+    def first_auth(self, request):
+        """第一次登陆"""
+        username = request.data.get('username', None)
+        user_info = request.data.get('userInfo', None)
+        identity = request.data.get('identity')
+        openid = request.data.get('openid', None)
+        code = request.data.get('iCode')
+
+        form, error = JsonParser(
+            Argument('username', help="缺少username"),
+            Argument('userInfo', help="缺少userInfo"),
+            Argument('identity', help="请选择注册角色"),
+            Argument('openid', help="缺少openid")
+        ).parse(request.data)
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+        if identity not in [Users.BUSINESS, Users.CREATOR]:
+            return Response({"detail": "identity错误"}, status=status.HTTP_400_BAD_REQUEST)
+        if identity == Users.CREATOR and not code:
+            return Response({"detail": "请填写邀请码"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_instance = self.save_user_and_openid(username, openid, identity, user_info)
+        if code:
+            if identity == Users.CREATOR:
+                try:
+                    salesman_obj = Users.objects.get(iCode=code)
+                except Users.DoesNotExist:
+                    return Response({"detail": "填写的邀请码错误"}, status=status.HTTP_400_BAD_REQUEST)
+                if not salesman_obj.has_power:
+                    # 该业务员无权力邀请创作者
+                    return Response({"detail": "邀请码错误"}, status=status.HTTP_400_BAD_REQUEST)
+            threading.Thread(target=save_invite_relation,
+                             args=(code, username)).start()  # 绑定邀请关系
+        user_info = JwtServers(user=user_instance).get_token_and_user_info()
         return Response(user_info, status=status.HTTP_200_OK)
 
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
@@ -141,12 +178,11 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         else:
             return Response({'detail': 'code不能为空'}, status=status.HTTP_400_BAD_REQUEST)
 
-    def save_user_and_openid(self, username, openid, select_identity, user_info=None):
+    def save_user_and_openid(self, username, openid, select_identity=None, user_info=None):
         """保存用户信息以及openid"""
         if not username:
             raise exceptions.ParseError('username不能为空')
-        user_qs = Users.objects.filter(username=username)
-        if not user_qs.exists():
+        if not isinstance(username, Users):
             user = Users.objects.create(
                 username=username,
                 openid=openid,
@@ -155,7 +191,6 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             user.iCode = InviteCls.encode_invite_code(user.id)
             user.save()
             UserExtra.objects.create(uid=user)
-            UserBusiness.objects.create(uid=user)
             UserBase.objects.create(
                 uid=user,
                 phone=username,
@@ -165,28 +200,21 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             if select_identity == Users.CREATOR:
                 UserCreator.objects.create(uid=user)
                 CreatorAccount.objects.create(uid=user)
+            elif select_identity == Users.BUSINESS:
+                UserBusiness.objects.create(uid=user)
         else:
             # 如果后台创建的用户要补充微信信息
-            user = user_qs.first()
-            user_identity = user.identity
+            user = username
             user_base = UserBase.objects.filter(uid=user).first()
             if user_base:
-                user_base.phone = username
+                user_base.phone = user.username
                 user_base.nickname = user_info.get('nickName')
                 user_base.avatars = user_info.get('avatarUrl')
                 user_base.save()
-            if user_identity == Users.CREATOR:
-                if select_identity != Users.CREATOR:
-                    raise exceptions.ParseError('请选择创作者角色登陆')
-            elif user_identity in [Users.BUSINESS, Users.SALESMAN, Users.SUPERVISOR]:  # 商家，业务员，主管都用商家端
-                if select_identity != Users.BUSINESS:
-                    raise exceptions.ParseError('请选择商家角色登陆')
-            else:
-                raise exceptions.ParseError('角色错误')
-
         # 是否换微信登录
         if user.openid != openid:
-            user_qs.update(openid=openid)
+            user.openid = openid
+            user.save()
         return user
 
 
