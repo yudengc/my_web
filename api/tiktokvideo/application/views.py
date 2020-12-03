@@ -325,10 +325,8 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
                 logger.info(e)
                 print(e)
                 continue
-        msg = f'添加成功:{success}个\n添加失败:{fail}个\n'
-        if fail_reason:
-            msg += fail_reason
-        return Response({'detail': msg}, status=status.HTTP_201_CREATED)
+        return_dict = {'success': f'添加成功:{success}个', 'fail': f'添加失败:{fail}个', 'fail_reason': fail_reason}
+        return Response(return_dict, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         demand_id = request.data.get('demand')
