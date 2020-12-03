@@ -80,14 +80,14 @@ class FlowLimitMiddleware(MiddlewareMixin):
         use_latest = settings.FLOW_LIMITER.get('use_latest', False)
         global_setting = settings.FLOW_LIMITER.get('global', None)
         if global_setting:
-            # print(request.META.get("HTTP_X_FORWARDED_FOR"))
-            # print(request.META.get("REMOTE_ADDR"))
             host = get_ip(request)
+            # 用这个作为身份限制貌似有点问题噢
             print(host)
             if isinstance(request.user, AnonymousUser):
                 key = f"{host}_nonuser"
                 limiter_key = 'nonuser'
             else:
+                # 登录了之后应该用身份作为判断依据还是依旧用ip?
                 key = f"{host}_user"
                 limiter_key = 'user'
             trigger_return = FlowLimiter.trigger(limiter_key, key, use_latest)

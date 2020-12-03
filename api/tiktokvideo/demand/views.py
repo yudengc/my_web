@@ -253,27 +253,11 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
     @action(methods=['get', ], detail=False, permission_classes=[ManagerPermission])
     def video_needed_status(self, request, **kwargs):
         data = {
-            'video_remain_num': {
-                'name': "视频剩余数",
-                'num': self.request.user.user_business.remain_video_num
-            },
-            'order_status_num': [
-                {
-                    'name': '待审核',
-                    'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_CHECK).count()
-                },
-                {
-                    'name': '已发布',
-                    'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.ON_GOING).count()
-                },
-                {
-                    'name': '未发布',
-                    'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_PUBLISH).count()
-                },
-
-            ]
+            'video_remain_num': self.request.user.user_business.remain_video_num,
+            'to_check': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_CHECK).count(),
+            'on_going': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.ON_GOING).count(),
+            'to_publish': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_PUBLISH).count()
         }
-
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -296,7 +280,8 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
             Argument('order_video_slice', type=list,
                      filter=lambda x: len([i for i in x if int(i) > 0]) == len(x),
                      handler=lambda x: sorted([{'num': int(i), 'remain': 1} for i in x], key=lambda i: i.get('num')),
-                     required=lambda rst: rst.get('action') == 'pass', help="请输入 order_video_slice(视频切片数组) e.[10, 10, 20]"),
+                     required=lambda rst: rst.get('action') == 'pass',
+                     help="请输入 order_video_slice(视频切片数组) e.[10, 10, 20]"),
             Argument('order_slice_num', type=int, required=lambda rst: rst.get('action') == 'pass',
                      help="请输入 order_slice_num(切片数) e. 10"),
             Argument('reject_reason', required=lambda rst: rst.get('action') == 'reject'),
