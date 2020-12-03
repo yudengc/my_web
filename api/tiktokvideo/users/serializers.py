@@ -175,11 +175,14 @@ class UserCreatorInfoManagerSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='uid.username')
     nickname = serializers.CharField(source='uid.auth_base.nickname')
     coin_balance = serializers.IntegerField(source='uid.creator_account.coin_balance')
+    avatar = serializers.CharField(source='uid.auth_base.avatars')
+    uuid = serializers.CharField(source='uid.uid')
 
     class Meta:
         model = UserCreator
         fields = ('id', 'username', 'nickname', 'status', 'is_signed', 'coin_balance', 'contract_reward',
-                  'team_introduction', 'capability_introduction', 'video', 'remark', 'date_created')
+                  'team_introduction', 'capability_introduction', 'video', 'remark', 'date_created',
+                  'avatar', 'uuid')
 
 
 class UserCreatorInfoUpdateManagerSerializer(serializers.ModelSerializer):
