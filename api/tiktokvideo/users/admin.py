@@ -184,17 +184,17 @@ class TeamUsersAdmin(admin.ModelAdmin):
     """团队成员"""
     # 定义admin总览里每行的显示信息
     list_display = (
-        'salesman_username', 'salesman_name', 'team_name', 'leader_username')
+        'salesman_username', 'salesman_name', 'team_name', 'leader_username', 'has_power')
     # 定义搜索框以哪些字段可以搜索
     search_fields = ('salesman_username', 'salesman_name')
     # 定义过滤器以哪些字段可以搜索
-    list_filter = ('date_created', 'team__name')
+    list_filter = ('date_created', 'team__name', 'has_power')
     # 列表页每页展示的条数
     list_per_page = 20
     # 详情页的只读字段
     # readonly_fields = ('username', 'password',)
     # 详情页面展示的字段
-    fields = ('username', 'password', 'salesman_name', 'team', )
+    fields = ('username', 'password', 'salesman_name', 'team', 'has_power')
     # 禁用编辑链接
     list_display_links = None
     form = UsersForm
@@ -251,15 +251,15 @@ class TeamLeader(Users):
 class TeamUsersAdmin(admin.ModelAdmin):
     """团队leader"""
     # 定义admin总览里每行的显示信息
-    list_display = ('leader_username', 'leader_salesman_name', 'date_created')
+    list_display = ('leader_username', 'leader_salesman_name', 'has_power', 'date_created')
     # 定义搜索框以哪些字段可以搜索
     search_fields = ('leader_username', 'leader_salesman_name')
     # 定义过滤器以哪些字段可以搜索
-    list_filter = ('date_created',)
+    list_filter = ('has_power', 'date_created',)
     # 列表页每页展示的条数
     list_per_page = 20
     # 详情页面展示的字段
-    fields = ('username', 'password', 'salesman_name', )
+    fields = ('username', 'password', 'salesman_name', 'has_power')
     # 禁用编辑链接
     list_display_links = None
     form = UsersForm

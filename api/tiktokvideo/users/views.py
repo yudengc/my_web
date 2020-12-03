@@ -91,8 +91,8 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             return Response({'detail': '账户被冻结，请联系客服处理', 'code': 444}, status=status.HTTP_200_OK)
         user_instance = self.save_user_and_openid(user_instance, openid, user_info=user_info)  # 更新微信昵称头像
         user_info = JwtServers(user=user_instance).get_token_and_user_info()
-        # 存在注册码绑定邀请关系(如果一开始是自然用户，后面仍可绑定邀请关系)
-        if code and user_instance.identity in [Users.BUSINESS, Users.CREATOR]:
+        # 存在注册码绑定邀请关系(如果一开始是自然用户，后面仍可绑定邀请关系，创作者只能在第一次登陆时输入邀请码绑定关系)
+        if code and user_instance.identity == Users.BUSINESS:
             # save_invite_relation.delay(code, username)  # 绑定邀请关系
             threading.Thread(target=save_invite_relation,
                              args=(code, username)).start()  # 绑定邀请关系
@@ -103,9 +103,9 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         """第一次登陆"""
         username = request.data.get('username', None)
         user_info = request.data.get('userInfo', None)
-        identity = request.data.get('identity')
         openid = request.data.get('openid', None)
         code = request.data.get('iCode')
+        identity = request.data.get('identity')
 
         form, error = JsonParser(
             Argument('username', help="缺少username"),
@@ -120,16 +120,17 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         if identity == Users.CREATOR and not code:
             return Response({"detail": "请填写邀请码"}, status=status.HTTP_400_BAD_REQUEST)
 
+        if identity == Users.CREATOR and code:  # 校验salesman
+            try:
+                salesman_obj = Users.objects.get(iCode=code)
+            except Users.DoesNotExist:
+                return Response({"detail": "填写的邀请码错误"}, status=status.HTTP_400_BAD_REQUEST)
+            if not salesman_obj.has_power:
+                # 该业务员无权力邀请创作者
+                return Response({"detail": "邀请码错误"}, status=status.HTTP_400_BAD_REQUEST)
+
         user_instance = self.save_user_and_openid(username, openid, identity, user_info)
         if code:
-            if identity == Users.CREATOR:
-                try:
-                    salesman_obj = Users.objects.get(iCode=code)
-                except Users.DoesNotExist:
-                    return Response({"detail": "填写的邀请码错误"}, status=status.HTTP_400_BAD_REQUEST)
-                if not salesman_obj.has_power:
-                    # 该业务员无权力邀请创作者
-                    return Response({"detail": "邀请码错误"}, status=status.HTTP_400_BAD_REQUEST)
             threading.Thread(target=save_invite_relation,
                              args=(code, username)).start()  # 绑定邀请关系
         user_info = JwtServers(user=user_instance).get_token_and_user_info()
@@ -461,6 +462,7 @@ class TeamLeaderManagerViewSet(mixins.ListModelMixin,
         username = request.data.get('username')
         password = request.data.get('password')
         salesman_name = request.data.get('salesman_name')
+        has_power = request.data.get('has_power', False)
         if not username or not password or not salesman_name:
             return Response({'detail': '参数缺失'}, status=status.HTTP_400_BAD_REQUEST)
         phone_re = re.match(r"^1[35678]\d{9}$", username)
@@ -470,7 +472,8 @@ class TeamLeaderManagerViewSet(mixins.ListModelMixin,
             return Response({'detail': '创建失败，该账号已存在'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             with atomic():
-                user = Users.objects.create(username=username, identity=Users.SUPERVISOR, salesman_name=salesman_name)
+                user = Users.objects.create(username=username, identity=Users.SUPERVISOR,
+                                            salesman_name=salesman_name, has_power=has_power)
                 user.set_password(password)
                 user.iCode = InviteCls.encode_invite_code(user.id)
                 user.save()
@@ -514,6 +517,7 @@ class TeamUsersManagerViewSet(mixins.ListModelMixin,
         password = request.data.get('password')
         salesman_name = request.data.get('salesman_name')
         team = request.data.get('team')
+        has_power = request.data.get('has_power', False)
         if not username or not password or not salesman_name or not team:
             return Response({'detail': '参数缺失'}, status=status.HTTP_400_BAD_REQUEST)
         phone_re = re.match(r"^1[35678]\d{9}$", username)
@@ -524,7 +528,7 @@ class TeamUsersManagerViewSet(mixins.ListModelMixin,
         try:
             with atomic():
                 user = Users.objects.create(username=username, identity=Users.SALESMAN,
-                                            team_id=team, salesman_name=salesman_name)
+                                            team_id=team, salesman_name=salesman_name, has_power=has_power)
                 user.set_password(password)
                 user.iCode = InviteCls.encode_invite_code(user.id)
                 user.save()

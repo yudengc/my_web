@@ -51,8 +51,7 @@ def get_application_order():
     获取申请订单号
     :return:
     """
-    out_trade_no = datetime.now().__format__('%Y%m%d%H%M%S%f')
-    return 'va' + out_trade_no
+    return 'vo' + datetime.now().__format__('%Y%m%d%H%M%S%f') + "".join(random.choices(string.digits, k=5))
 
 
 def get_nonce_str():
