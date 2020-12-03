@@ -253,27 +253,11 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
     @action(methods=['get', ], detail=False, permission_classes=[ManagerPermission])
     def video_needed_status(self, request, **kwargs):
         data = {
-            'video_remain_num': {
-                'name': "视频剩余数",
-                'num': self.request.user.user_business.remain_video_num
-            },
-            'order_status_num': [
-                {
-                    'name': '待审核',
-                    'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_CHECK).count()
-                },
-                {
-                    'name': '已发布',
-                    'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.ON_GOING).count()
-                },
-                {
-                    'name': '未发布',
-                    'num': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_PUBLISH).count()
-                },
-
-            ]
+            'video_remain_num': self.request.user.user_business.remain_video_num,
+            'to_check': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_CHECK).count(),
+            'on_going': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.ON_GOING).count(),
+            'to_publish': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_PUBLISH).count()
         }
-
         return Response(data, status=status.HTTP_200_OK)
 
 
