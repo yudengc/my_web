@@ -59,14 +59,14 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
                      handler=lambda x: Address.objects.get(id=x)),
             Argument('video_num_remained', required=False, type=int, help="请输入 video_num_remained(整型)"),
-            Argument('status', required=False, filter=lambda x: x is None, help="修改的时候不能改状态, 要调用接口"),
-            Argument('receiver_name', required=False, filter=lambda x: x is None, help="修改地址传address"),
-            Argument('receiver_phone', required=False, filter=lambda x: x is None, help="修改地址传address"),
-            Argument('receiver_province', required=False, filter=lambda x: x is None, help="修改地址传address"),
-            Argument('receiver_city', required=False, filter=lambda x: x is None, help="修改地址传address"),
-            Argument('receiver_district', required=False, filter=lambda x: x is None, help="修改地址传address"),
-            Argument('receiver_location', required=False, filter=lambda x: x is None, help="修改地址传address"),
-            Argument('video_num_needed', required=False, filter=lambda x: x is None, help="视频总数不能改"),
+            Argument('status', required=False, filter=lambda x: x in [u'', '', None], help="修改的时候不能改状态, 要调用接口"),
+            Argument('receiver_name', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
+            Argument('receiver_phone', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
+            Argument('receiver_province', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
+            Argument('receiver_city', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
+            Argument('receiver_district', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
+            Argument('receiver_location', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
+            Argument('video_num_needed', required=False, filter=lambda x: x in [u'', '', None], help="视频总数不能改"),
         ).parse(request.data, clear=True)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
