@@ -124,13 +124,15 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         if order_obj.status != VideoOrder.WAIT_COMMIT:
             logger.info(f'该订单状态不是待提交状态, 订单号:{order_obj.order_number}')
             return Response({'detail': '非待提交状态不能提交视频'}, status=status.HTTP_400_BAD_REQUEST)
-        if order_obj.num_selected != len(video_lis):
+
+        video_url_arr = video_lis.get('video_url_arr')
+        if not video_url_arr:
+            return Response({'detail': 'video_url_arr缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        if order_obj.num_selected != len(video_url_arr):
             return Response({'detail': f'请上传{order_obj.num_selected}个视频'}, status=status.HTTP_400_BAD_REQUEST)
         id_lis = []
-        for video_url in video_lis:
-            video_url = video_url.get('video_url_arr')
-            if not video_url:
-                return Response({'detail': 'video_url_arr缺失'}, status=status.HTTP_400_BAD_REQUEST)
+
+        for video_url in video_url_arr:
             obj = Video.objects.create(video_url=video_url)
             id_lis.append(obj.id)
         try:
