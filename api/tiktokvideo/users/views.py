@@ -281,6 +281,10 @@ class AddressViewSet(viewsets.ModelViewSet):
             return AddressListSerializer
         return super().get_serializer_class()
 
+    def update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return super().update(request, *args, **kwargs)
+
     def create(self, request, *args, **kwargs):
         request.data['uid'] = self.request.user.uid
         with atomic():
