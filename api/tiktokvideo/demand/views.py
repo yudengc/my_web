@@ -42,14 +42,9 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         return self.queryset
 
     def update(self, request, *args, **kwargs):
-        return Response({"detail": "请使用patch"}, status=status.HTTP_400_BAD_REQUEST)
-
-    def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         if instance.uid != self.request.user:
             return Response({"detail": "找不到这个订单"}, status=status.HTTP_400_BAD_REQUEST)
-        # if instance.status != VideoNeeded.TO_PUBLISH:
-        #     return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
         form, error = JsonParser(
             Argument('category', help='请输入 category(商品品类id)', type=int,
                      required=False,
@@ -115,6 +110,9 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             if flag == 1:
                 return Response({"detail": "修改成功, 已重新发起审核, 待运营审核通过后即可上线"}, status=status.HTTP_200_OK)
             return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        return Response({"detail": "请使用put"}, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
         form, error = JsonParser(
