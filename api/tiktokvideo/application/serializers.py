@@ -62,18 +62,18 @@ class VideoApplicationListSerializer(serializers.ModelSerializer):
 
 class VideoApplicationDetailRetrieveSerializer(serializers.ModelSerializer):
     category = serializers.CharField(source='category.title')
-    location = serializers.SerializerMethodField()
+    # location = serializers.SerializerMethodField()
 
     class Meta:
         model = VideoOrderDetail
         fields = (
             'goods_link', 'goods_images', 'goods_channel', 'goods_title', 'category', 'receiver_name', 'receiver_phone',
-            'location', 'company', 'express',
+            'receiver_location', 'company', 'express',
         )
 
-    def get_location(self, obj):
-        tmp = [obj.receiver_province, obj.receiver_city, obj.receiver_district, obj.receiver_location]
-        return ''.join([i for i in tmp if i])
+    # def get_location(self, obj):
+    #     tmp = [obj.receiver_province, obj.receiver_city, obj.receiver_district, obj.receiver_location]
+    #     return ''.join([i for i in tmp if i])
 
 
 class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
@@ -92,11 +92,11 @@ class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
     def get_return_sample(self, obj):
         # 返样信息
         if obj.is_return and obj.status == VideoOrder.WAIT_RETURN:
-            location = obj.return_receiver_province + obj.return_receiver_city + \
-                       obj.return_receiver_district + obj.return_receiver_location
+            # location = obj.return_receiver_province + obj.return_receiver_city + \
+            #            obj.return_receiver_district + obj.return_receiver_location
             return dict(return_receiver_name=obj.return_receiver_name,
                         return_receiver_phone=obj.return_receiver_phone,
-                        return_location=location,
+                        return_location=obj.return_receiver_location,
                         return_company=obj.return_company,
                         return_express=obj.return_express)
         return None
@@ -181,7 +181,7 @@ class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VideoOrder
-        fields = ('id', 'title', 'bus_username', 'bus_name', 'num_selected', 'sample_count'
+        fields = ('id', 'title', 'bus_username', 'bus_name', 'num_selected', 'sample_count',
                   'is_return', 'creator_nickname', 'creator_username', 'reward', 'is_signed',
                   'status', 'creator_remark', 'system_remark', 'remark',
                   'date_created', 'check_time', 'send_time', 'done_time', 'video_order_detail', 'order_video')

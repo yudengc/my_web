@@ -51,7 +51,7 @@ class CreatorBill(models.Model):
         _('本期账单月'),
         null=True,
     )
-    PENDING, DONE = range(2)
+    PENDING, DONE = 0, 1
     status = models.PositiveSmallIntegerField(
         _('结算状态'),
         default=PENDING,
