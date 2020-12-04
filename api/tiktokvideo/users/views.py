@@ -283,7 +283,10 @@ class AddressViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         kwargs['partial'] = True
-        return super().update(request, *args, **kwargs)
+        with atomic():
+            if self.request.data.get('is_default') is True:
+                Address.objects.filter(uid=request.user).update(is_default=False)
+            return super().update(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         request.data['uid'] = self.request.user.uid
