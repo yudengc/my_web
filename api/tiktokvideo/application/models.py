@@ -165,23 +165,23 @@ class VideoOrderDetail(models.Model):
         max_length=64,
         null=True
     )
-    receiver_province = models.CharField(
-        verbose_name='样品收货人所在地省',
-        max_length=128,
-        null=True
-    )
-    receiver_city = models.CharField(
-        verbose_name='样品收货人所在地市',
-        max_length=128,
-        null=True
-    )
-    receiver_district = models.CharField(
-        verbose_name='样品收货人所在地地区',
-        max_length=128,
-        null=True
-    )
+    # receiver_province = models.CharField(
+    #     verbose_name='样品收货人所在地省',
+    #     max_length=128,
+    #     null=True
+    # )
+    # receiver_city = models.CharField(
+    #     verbose_name='样品收货人所在地市',
+    #     max_length=128,
+    #     null=True
+    # )
+    # receiver_district = models.CharField(
+    #     verbose_name='样品收货人所在地地区',
+    #     max_length=128,
+    #     null=True
+    # )
     receiver_location = models.CharField(
-        verbose_name='样品收货人寄样具体地址',
+        verbose_name='样品收货人寄样具体地址(包括省市区)',
         max_length=128,
         null=True,
     )
@@ -209,23 +209,23 @@ class VideoOrderDetail(models.Model):
         max_length=64,
         null=True
     )
-    return_receiver_province = models.CharField(
-        verbose_name='返样收货人所在地省',
-        max_length=128,
-        null=True
-    )
-    return_receiver_city = models.CharField(
-        verbose_name='返样收货人所在地市',
-        max_length=128,
-        null=True
-    )
-    return_receiver_district = models.CharField(
-        verbose_name='返样收货人所在地地区',
-        max_length=128,
-        null=True
-    )
+    # return_receiver_province = models.CharField(
+    #     verbose_name='返样收货人所在地省',
+    #     max_length=128,
+    #     null=True
+    # )
+    # return_receiver_city = models.CharField(
+    #     verbose_name='返样收货人所在地市',
+    #     max_length=128,
+    #     null=True
+    # )
+    # return_receiver_district = models.CharField(
+    #     verbose_name='返样收货人所在地地区',
+    #     max_length=128,
+    #     null=True
+    # )
     return_receiver_location = models.CharField(
-        verbose_name='返样收货人寄样具体地址',
+        verbose_name='返样收货人寄样具体地址(包括省市区)',
         max_length=128,
         null=True,
     )

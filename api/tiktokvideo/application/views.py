@@ -251,10 +251,10 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
     def create(self, request, *args, **kwargs):
         """批量创建订单"""
         data = request.data
-        try:
-            add_obj = Address.objects.get(id=data.get('address'))
-        except Address.DoesNotExist:
-            return Response({'detail': '所选地址不存在'}, status=status.HTTP_400_BAD_REQUEST)
+        # try:
+        #     add_obj = Address.objects.get(id=data.get('address'))
+        # except Address.DoesNotExist:
+        #     return Response({'detail': '所选地址不存在'}, status=status.HTTP_400_BAD_REQUEST)
 
         contract_reward = data.get('contract_reward', None)  # 单个视频交付松子币
         if contract_reward is None:
@@ -299,18 +299,17 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
                                                     goods_channel=need_obj.goods_channel,
                                                     goods_images=need_obj.goods_images,
                                                     category=need_obj.category,
-                                                    receiver_name=add_obj.name,
-                                                    receiver_phone=add_obj.phone,
-                                                    receiver_province=add_obj.province,
-                                                    receiver_city=add_obj.city,
-                                                    receiver_district=add_obj.district,
-                                                    receiver_location=add_obj.location,
+                                                    receiver_name=request.data.get('receiver_name'),
+                                                    receiver_phone=request.data.get('receiver_phone'),
+                                                    receiver_location=request.data.get('receiver_location'),
                                                     return_receiver_name=need_obj.receiver_name,
                                                     return_receiver_phone=need_obj.receiver_phone,
-                                                    return_receiver_province=need_obj.receiver_province,
-                                                    return_receiver_city=need_obj.receiver_city,
-                                                    return_receiver_district=need_obj.receiver_district,
-                                                    return_receiver_location=need_obj.receiver_location,
+                                                    # return_receiver_province=need_obj.receiver_province,
+                                                    # return_receiver_city=need_obj.receiver_city,
+                                                    # return_receiver_district=need_obj.receiver_district,
+                                                    return_receiver_location=need_obj.receiver_province +
+                                                    need_obj.receiver_city + need_obj.receiver_district +
+                                                    need_obj.receiver_location,
                                                     )
             except ValueError:
                 fail += 1

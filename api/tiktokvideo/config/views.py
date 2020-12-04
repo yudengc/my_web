@@ -98,18 +98,14 @@ class VideoViewSet(mixins.CreateModelMixin, GenericViewSet):
     serializer_class = VideoCreateSerializer
     permission_classes = (ManagerPermission,)
 
-    # def create(self, request, *args, **kwargs):
-    #     request_data = request.data
-    #     if request_data.get('artBeats_link'):
-    #         auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
-    #         request_data['cover'] = auth.private_download_url(request_data['artBeats_link'] + '?vframe/jpg/offset/1',
-    #                                                           expires=315360000)  # 10 years
-    #         request_data['artBeats_link'] = auth.private_download_url(request_data['artBeats_link'], expires=315360000)
-    #     else:
-    #         return Response({'detail': '视频参数缺失'}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #     serializer = self.get_serializer(data=request_data)
-    #     serializer.is_valid(raise_exception=True)
-    #     self.perform_create(serializer)
-    #     headers = self.get_success_headers(serializer.data)
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        data = serializer.data
+        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+        data['cover'] = auth.private_download_url(data['video_url'] + '?vframe/jpg/offset/1')
+        data['video_url'] = auth.private_download_url(data['video_url'])
+        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+
