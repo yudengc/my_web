@@ -48,8 +48,8 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if instance.uid != self.request.user:
             return Response({"detail": "找不到这个订单"}, status=status.HTTP_400_BAD_REQUEST)
-        if instance.status != VideoNeeded.TO_PUBLISH:
-            return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
+        # if instance.status != VideoNeeded.TO_PUBLISH:
+        #     return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
         form, error = JsonParser(
             Argument('category', help='请输入 category(商品品类id)', type=int,
                      required=False,
@@ -92,17 +92,28 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             conn.delete(title_key, channel_key, images_key)
 
         with atomic():
+            reduce = 0
+            flag = 0
             if 'video_num_remained' in form:
                 reduce = instance.video_num_remained - form.video_num_needed
                 if reduce < 0:
                     return Response({"detail": "修改剩余数不能大于现在的哦"}, status=status.HTTP_400_BAD_REQUEST)
                 instance.video_num_needed -= reduce
                 instance.save()
+            if instance.status in [VideoNeeded.TO_CHECK, VideoNeeded.ON_GOING]:
+                # 进行中/审核中的需求编辑后要重新 待审核
+                user_business = self.request.user.user_business
+                user_business.remain_video_num += reduce
+                user_business.save()
+                flag = 1
+                request.data['status'] = VideoNeeded.TO_CHECK
             serializer = self.get_serializer(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
             if getattr(instance, '_prefetched_objects_cache', None):
                 instance._prefetched_objects_cache = {}
+            if flag == 1:
+                return Response({"detail": "修改成功, 已重新发起审核, 待运营审核通过后即可上线"}, status=status.HTTP_200_OK)
             return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
@@ -209,15 +220,16 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                 instance.save()
                 return Response({"detail": "以发布, 待审核中"}, status=status.HTTP_200_OK)
             else:
-                if instance.status not in [VideoNeeded.TO_CHECK, VideoNeeded.ON_GOING]:
-                    return Response({"detail": "不需要下架的订单"}, status=status.HTTP_400_BAD_REQUEST)
-                # 余量补回, 剩余量可能会被商家更改过
-                user_business.remain_video_num += instance.video_num_remained
-                user_business.save()
-                instance.status = VideoNeeded.TO_PUBLISH
-                instance.non_publish_time = datetime.datetime.now()
-                instance.save()
-                return Response({"detail": "已经下架"}, status=status.HTTP_200_OK)
+                return Response({"detail": "下架已经不用这个接口咯, 直接编辑的话会重新变成审核状态的"}, status=status.HTTP_400_BAD_REQUEST)
+                # if instance.status not in [VideoNeeded.TO_CHECK, VideoNeeded.ON_GOING]:
+                #     return Response({"detail": "不需要下架的订单"}, status=status.HTTP_400_BAD_REQUEST)
+                # # 余量补回, 剩余量可能会被商家更改过
+                # user_business.remain_video_num += instance.video_num_remained
+                # user_business.save()
+                # instance.status = VideoNeeded.TO_PUBLISH
+                # instance.non_publish_time = datetime.datetime.now()
+                # instance.save()
+                # return Response({"detail": "已经下架"}, status=status.HTTP_200_OK)
 
     @action(methods=['post', ], detail=False, permission_classes=[ManagerPermission])
     def check_link(self, request, **kwargs):
