@@ -117,7 +117,7 @@ class AddressListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Address
-        fields = ('id', 'name', 'phone', 'is_default', 'address')
+        fields = '__all__'
 
     def get_address(self, obj):
         _l = [obj.province, obj.city, obj.district, obj.location]
