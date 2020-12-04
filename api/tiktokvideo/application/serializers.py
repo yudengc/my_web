@@ -181,7 +181,7 @@ class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VideoOrder
-        fields = ('id', 'title', 'bus_username', 'bus_name', 'num_selected',
+        fields = ('id', 'title', 'bus_username', 'bus_name', 'num_selected', 'sample_count'
                   'is_return', 'creator_nickname', 'creator_username', 'reward', 'is_signed',
                   'status', 'creator_remark', 'system_remark', 'remark',
                   'date_created', 'check_time', 'send_time', 'done_time', 'video_order_detail', 'order_video')
