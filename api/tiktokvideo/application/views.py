@@ -108,6 +108,9 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                                                 return_receiver_district=need_obj.receiver_district,
                                                 return_receiver_location=need_obj.receiver_location,
                                                 )
+                assert need_obj.status == VideoNeeded.ON_GOING, '该需求已经不是进行中的状态！'
+        except AssertionError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except ValueError:
             return Response({'detail': '哎呀呀，您选择的拍摄视频数已被选走，请重选选择'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -197,7 +200,7 @@ class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
     @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
     def commit_express(self, request, **kwargs):
         form, error = JsonParser(
-            Argument('express', type=str, help="请输入 express(快递单号)"),
+            Argument('express', help="请输入 express(快递单号)"),
             Argument('company', type=str, help="请输入 company(物流公司)"),
         ).parse(request.data)
         if error:
@@ -311,6 +314,12 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
                                                     need_obj.receiver_city + need_obj.receiver_district +
                                                     need_obj.receiver_location,
                                                     )
+                    assert need_obj.status == VideoNeeded.ON_GOING, '该需求已经不是进行中的状态！'
+            except AssertionError as e:
+                fail += 1
+                success -= 1
+                fail_reason += f'({need_obj.title}) {str(e)}\n'
+                continue
             except ValueError:
                 fail += 1
                 success -= 1

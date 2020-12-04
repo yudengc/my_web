@@ -16,8 +16,8 @@ class VideoNeeded(models.Model):
             (TO_PUBLISH, '未发布'),
             (TO_CHECK, '待审核'),
             (ON_GOING, '进行中'),
-            (DONE, '已完成'),
-            (EXCEPTION, '异常'),
+            (DONE, '已完成'),  # 没用到
+            (EXCEPTION, '异常'),  # 没用到
         )
     )
     reject_reason = models.TextField(
