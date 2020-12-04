@@ -10,6 +10,7 @@ from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
 
 logger = logging.getLogger()
 
+
 class VideoApplicationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoOrder

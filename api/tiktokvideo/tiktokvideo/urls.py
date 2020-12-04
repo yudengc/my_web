@@ -28,6 +28,7 @@ urlpatterns = [
     path(r'api/v1/transaction/', include('transaction.urls', namespace='transaction')),
     path(r'api/v1/demand/', include('demand.urls', namespace='demand')),
     path(r'api/v1/application/', include('application.urls', namespace='application')),
+    path(r'api/v1/account/', include('account.urls', namespace='account')),
 ]
 
 admin.site.site_header = "松鼠短视频运营管理后台"
