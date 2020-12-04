@@ -350,12 +350,18 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
         express = request.data.get('express')
         video_id_lis = request.data.get('video')
         remark = request.data.get('remark')
+        receiver_name = request.data.get('receiver_name')
+        receiver_phone = request.data.get('receiver_phone')
+        receiver_location = request.data.get('receiver_location')
         form, error = JsonParser(
             Argument('demand', help="请选择需求!!"),
             Argument('creator', help="请选择创作者!!"),
             Argument('reward', help="请输入单视频交付金额!!"),
             Argument('address', help="请选择收货信息!!"),
             Argument('status', help="请选择订单状态!!"),
+            Argument('receiver_name', help="缺少receiver_name!!"),
+            Argument('receiver_phone', help="缺少receiver_phone!!"),
+            Argument('receiver_location', help="缺少receiver_location!!"),
         ).parse(request.data)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
@@ -390,17 +396,18 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
                     detail_obj.category = need_obj.category
                     detail_obj.return_receiver_name = need_obj.receiver_name
                     detail_obj.return_receiver_phone = need_obj.receiver_phone
-                    detail_obj.return_receiver_province = need_obj.receiver_province
-                    detail_obj.return_receiver_city = need_obj.receiver_city
-                    detail_obj.return_receiver_district = need_obj.receiver_district
-                    detail_obj.return_receiver_location = need_obj.receiver_location
-                add_obj = Address.objects.get(id=address_id)
-                detail_obj.receiver_name = add_obj.name
-                detail_obj.receiver_phone = add_obj.phone
-                detail_obj.receiver_province = add_obj.province
-                detail_obj.receiver_city = add_obj.city
-                detail_obj.receiver_district = add_obj.district
-                detail_obj.receiver_location = add_obj.location
+                    # detail_obj.return_receiver_province = need_obj.receiver_province
+                    # detail_obj.return_receiver_city = need_obj.receiver_city
+                    # detail_obj.return_receiver_district = need_obj.receiver_district
+                    detail_obj.return_receiver_location = need_obj.receiver_province + need_obj.receiver_city + \
+                        need_obj.receiver_district + need_obj.receiver_location
+                # add_obj = Address.objects.get(id=address_id)
+                detail_obj.receiver_name = receiver_name
+                detail_obj.receiver_phone = receiver_phone
+                # detail_obj.receiver_province = add_obj.province
+                # detail_obj.receiver_city = add_obj.city
+                # detail_obj.receiver_district = add_obj.district
+                detail_obj.receiver_location = receiver_location
                 instance.save()
                 detail_obj.save()
                 instance.order_video.set(video_id_lis)

@@ -140,26 +140,26 @@ class VideoApplicationManagerListSerializer(serializers.ModelSerializer):
 
 
 class VideoOrderDetailManagerSerializer(serializers.ModelSerializer):
-    location = serializers.SerializerMethodField()
-    return_location = serializers.SerializerMethodField()
+    # location = serializers.SerializerMethodField()
+    # return_location = serializers.SerializerMethodField()
     category = serializers.CharField(source='category.title')
 
     class Meta:
         model = VideoOrderDetail
         fields = (
-            'receiver_name', 'receiver_phone', 'location', 'return_receiver_name', 'return_receiver_phone',
-            'return_location', 'goods_title', 'goods_link', 'goods_images', 'goods_channel', 'category', 'company',
-            'express'
+            'receiver_name', 'receiver_phone', 'receiver_location', 'return_receiver_name', 'return_receiver_phone',
+            'return_receiver_location', 'goods_title', 'goods_link', 'goods_images', 'goods_channel', 'category',
+            'company', 'express'
         )
 
-    def get_location(self, obj):
-        tmp = [obj.receiver_province, obj.receiver_city, obj.receiver_district, obj.receiver_location]
-        return ''.join([i for i in tmp if i])
+    # def get_location(self, obj):
+    #     tmp = [obj.receiver_province, obj.receiver_city, obj.receiver_district, obj.receiver_location]
+    #     return ''.join([i for i in tmp if i])
 
-    def get_return_location(self, obj):
-        tmp = [obj.return_receiver_province, obj.return_receiver_city,
-               obj.return_receiver_district, obj.return_receiver_location]
-        return ''.join([i for i in tmp if i])
+    # def get_return_location(self, obj):
+    #     tmp = [obj.return_receiver_province, obj.return_receiver_city,
+    #            obj.return_receiver_district, obj.return_receiver_location]
+    #     return ''.join([i for i in tmp if i])
 
 
 class VideoSerializer(serializers.ModelSerializer):
