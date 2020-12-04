@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from django.db.models import Sum, F, FloatField
 from rest_framework import serializers
 
-from account.models import CreatorAccount, CreatorBill
+from account.models import CreatorAccount, CreatorBill, BalanceRecord
 from application.models import VideoOrder
 from libs.common.utils import get_last_year_month, get_first_and_now
 
@@ -19,7 +19,7 @@ class MyCreatorAccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CreatorAccount
-        fields = ('id', 'coin_balance', 'coin_freeze', 'coin_cash_out', 'last_month', 'last_year',
+        fields = ('id', 'coin_balance', 'coin_cash_out', 'last_month', 'last_year',
                   'last_month_reward', 'this_month_reward')
 
     def get_last_month(self, obj):
@@ -54,3 +54,22 @@ class MyCreatorAccountSerializer(serializers.ModelSerializer):
                                                       done_time__range=get_first_and_now()).aggregate(
             total=Sum(F('num_selected') * F('reward'), output_field=FloatField()))['total']
         return this_month_reward if this_month_reward else 0
+
+    def to_representation(self, instance):
+        data = super(MyCreatorAccountSerializer, self).to_representation(instance)
+        data['coin_freeze'] = data['last_month_reward'] + data['this_month_reward']   # 待结算
+        return data
+
+
+class MyCreatorBillSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CreatorBill
+        fields = ('id', 'bill_year', 'bill_month', 'total', 'status')
+
+
+class MyBalanceRecordSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = BalanceRecord
+        fields = ('id', 'operation_type', 'amount', 'balance', 'date_created')

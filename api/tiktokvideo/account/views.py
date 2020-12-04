@@ -1,7 +1,9 @@
-from rest_framework import mixins, viewsets
+from django_filters import rest_framework
+from rest_framework import mixins, viewsets, filters
+from rest_framework.response import Response
 
-from account.models import CreatorAccount
-from account.serializers import MyCreatorAccountSerializer
+from account.models import CreatorAccount, CreatorBill, BalanceRecord
+from account.serializers import MyCreatorAccountSerializer, MyCreatorBillSerializer, MyBalanceRecordSerializer
 from libs.common.permission import ManagerPermission, CreatorPermission
 
 
@@ -20,3 +22,33 @@ class MyCreatorAccountViewSet(viewsets.ReadOnlyModelViewSet):
         self.queryset = CreatorAccount.objects.filter(uid=self.request.user)
         return super().get_queryset()
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data[0])
+
+
+class MyCreatorBillViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    我的历史统计账单
+    """
+    permission_classes = (CreatorPermission,)
+    serializer_class = MyCreatorBillSerializer
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_fields = ('bill_year',)
+
+    def get_queryset(self):
+        self.queryset = CreatorBill.objects.filter(uid=self.request.user).order_by('-date_created')
+        return super().get_queryset()
+
+
+class MyBalanceRecordViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    我的历史统计账单
+    """
+    permission_classes = (CreatorPermission,)
+    serializer_class = MyBalanceRecordSerializer
+
+    def get_queryset(self):
+        self.queryset = BalanceRecord.objects.filter(uid=self.request.user)
+        return super().get_queryset()

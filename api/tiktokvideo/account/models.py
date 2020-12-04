@@ -16,10 +16,10 @@ class CreatorAccount(BaseModel):
         _('松子余额'),
         default=0
     )
-    coin_freeze = models.IntegerField(
-        _('待结算松子'),
-        default=0
-    )
+    # coin_freeze = models.IntegerField(
+    #     _('待结算松子'),
+    #     default=0
+    # )
     coin_cash_out = models.IntegerField(
         _('已提现的松子'),
         default=0
@@ -39,6 +39,15 @@ class CreatorBill(models.Model):
         on_delete=models.DO_NOTHING,
         related_name='creator_bill',
     )
+    PENDING, DONE = 0, 1
+    status = models.PositiveSmallIntegerField(
+        _('结算状态'),
+        default=PENDING,
+        choices=(
+            (PENDING, '待结算'),
+            (DONE, '已结算'),
+        )
+    )
     total = models.IntegerField(
         _('当月结算松子数量'),
         default=0
@@ -50,15 +59,6 @@ class CreatorBill(models.Model):
     bill_month = models.PositiveSmallIntegerField(
         _('本期账单月'),
         null=True,
-    )
-    PENDING, DONE = 0, 1
-    status = models.PositiveSmallIntegerField(
-        _('结算状态'),
-        default=PENDING,
-        choices=(
-            (PENDING, '待结算'),
-            (DONE, '已结算'),
-        )
     )
     date_created = models.DateTimeField(
         _('账单记录时间'),
@@ -73,7 +73,6 @@ class CreatorBill(models.Model):
         db_table = 'CreatorBill'
         verbose_name = '创作者每月账单'
         verbose_name_plural = verbose_name
-        ordering = ('-date_created', )
         unique_together = ('uid', 'bill_year', 'bill_month')
 
 
