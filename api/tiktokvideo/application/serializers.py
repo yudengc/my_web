@@ -172,9 +172,11 @@ class VideoSerializer(serializers.ModelSerializer):
 
 class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
     title = serializers.CharField(source='demand.title', read_only=True)
+    demand_id = serializers.IntegerField(source='demand.id', read_only=True)
     bus_username = serializers.CharField(source='demand.uid.username', read_only=True)
     bus_name = serializers.SerializerMethodField()
     creator_username = serializers.CharField(source='user.username')
+    creator_id = serializers.CharField(source='user.id')
     creator_nickname = serializers.CharField(source='user.auth_base.nickname')
     is_signed = serializers.BooleanField(source='user.user_creator.is_signed')
     video_order_detail = VideoOrderDetailManagerSerializer()
@@ -182,7 +184,7 @@ class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VideoOrder
-        fields = ('id', 'title', 'bus_username', 'bus_name', 'num_selected', 'sample_count',
+        fields = ('id', 'title', 'bus_username', 'bus_name', 'num_selected', 'sample_count', 'demand_id', 'creator_id',
                   'is_return', 'creator_nickname', 'creator_username', 'reward', 'is_signed',
                   'status', 'creator_remark', 'system_remark', 'remark',
                   'date_created', 'check_time', 'send_time', 'done_time', 'video_order_detail', 'order_video')
@@ -197,7 +199,9 @@ class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
         ok_lst = []
         for i in tmp:
             try:
-                ok_lst.append({'id': i[1], 'video_url': auth.private_download_url(i[0])})
+                ok_lst.append({'id': i[1],
+                               'video_url': auth.private_download_url(i[0]),
+                               'cover': auth.private_download_url(i[0] + '?vframe/jpg/offset/1')})
             except:
                 logger.info(traceback.format_exc())
         return ok_lst
