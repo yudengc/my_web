@@ -1,5 +1,9 @@
+from django.db.models import Sum, F, FloatField
 from rest_framework import serializers, exceptions
 
+from account.models import CreatorBill
+from application.models import VideoOrder
+from libs.common.utils import get_last_year_month, get_first_and_now
 from relations.models import InviteRelationManager
 from transaction.models import UserPackageRelation
 from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase, CelebrityStyle, ScriptType
@@ -93,17 +97,40 @@ class CreatorUserInfoSerializer(serializers.ModelSerializer):
     """
     creator_id = serializers.IntegerField(source='user_creator.id')
     status = serializers.IntegerField(source='user_creator.status')
+    coin_balance = serializers.CharField(source='creator_account.coin_balance')
     remark = serializers.CharField(source='user_creator.remark')
-    nickname = serializers.CharField(source='auth_base.nickname')
-    avatars = serializers.CharField(source='auth_base.avatars')
-    creator_account = serializers.SerializerMethodField()
+    coin_freeze = serializers.SerializerMethodField()
 
     class Meta:
         model = Users
-        fields = ('creator_id', 'username', 'identity', 'status', 'remark', 'nickname', 'avatars', 'creator_account')
+        fields = ('creator_id', 'status', 'remark', 'coin_balance', 'coin_freeze')
 
-    def get_creator_account(self, obj):
-        return dict(coin_balance=obj.creator_account.coin_balance, coin_freeze=obj.creator_account.coin_freeze)
+    def get_coin_freeze(self, obj):
+        """上个月待结算松子（上个月未入账可得松子数）"""
+        year, month = get_last_year_month()
+        bill_obj = CreatorBill.objects.filter(uid=obj, bill_year=year,
+                                              bill_month=month).first()
+        if bill_obj:
+            if bill_obj.status == CreatorBill.PENDING:
+                last_month_reward = bill_obj.first().total
+            else:
+                last_month_reward = 0
+        else:
+            last_month_reward = VideoOrder.objects.filter(user=obj,
+                                                          status=VideoOrder.DONE,
+                                                          done_time__year=year,
+                                                          done_time__month=month).aggregate(
+                total=Sum(F('num_selected') * F('reward'), output_field=FloatField()))['total']
+            last_month_reward = last_month_reward if last_month_reward else 0
+
+        """本月未入账待结算松子（本月到现在为止可得松子数）"""
+        this_month_reward = VideoOrder.objects.filter(user=obj,
+                                                      status=VideoOrder.DONE,
+                                                      done_time__range=get_first_and_now()).aggregate(
+            total=Sum(F('num_selected') * F('reward'), output_field=FloatField()))['total']
+        this_month_reward = this_month_reward if this_month_reward else 0
+
+        return last_month_reward + this_month_reward
 
 
 class AddressSerializer(serializers.ModelSerializer):
