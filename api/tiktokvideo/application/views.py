@@ -97,16 +97,20 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                                                 category=need_obj.category,
                                                 receiver_name=add_obj.name,
                                                 receiver_phone=add_obj.phone,
-                                                receiver_province=add_obj.province,
-                                                receiver_city=add_obj.city,
-                                                receiver_district=add_obj.district,
-                                                receiver_location=add_obj.location,
+                                                # receiver_province=add_obj.province,
+                                                # receiver_city=add_obj.city,
+                                                # receiver_district=add_obj.district,
+                                                receiver_location=add_obj.province + add_obj.city +
+                                                                  add_obj.district + add_obj.location,
                                                 return_receiver_name=need_obj.receiver_name,
                                                 return_receiver_phone=need_obj.receiver_phone,
-                                                return_receiver_province=need_obj.receiver_province,
-                                                return_receiver_city=need_obj.receiver_city,
-                                                return_receiver_district=need_obj.receiver_district,
-                                                return_receiver_location=need_obj.receiver_location,
+                                                # return_receiver_province=need_obj.receiver_province,
+                                                # return_receiver_city=need_obj.receiver_city,
+                                                # return_receiver_district=need_obj.receiver_district,
+                                                return_receiver_location=need_obj.receiver_province +
+                                                                         need_obj.receiver_city +
+                                                                         need_obj.receiver_district +
+                                                                         need_obj.receiver_location,
                                                 )
                 assert need_obj.status == VideoNeeded.ON_GOING, '该需求已经不是进行中的状态！'
         except AssertionError as e:
