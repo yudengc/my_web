@@ -107,10 +107,11 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                                                 # return_receiver_province=need_obj.receiver_province,
                                                 # return_receiver_city=need_obj.receiver_city,
                                                 # return_receiver_district=need_obj.receiver_district,
-                                                return_receiver_location=need_obj.receiver_province +
-                                                                         need_obj.receiver_city +
-                                                                         need_obj.receiver_district +
-                                                                         need_obj.receiver_location,
+                                                return_receiver_location=''.join(i for i in [need_obj.receiver_province,
+                                                                                             need_obj.receiver_city,
+                                                                                             need_obj.receiver_district,
+                                                                                             need_obj.receiver_location]
+                                                                                 if i)
                                                 )
                 assert need_obj.status == VideoNeeded.ON_GOING, '该需求已经不是进行中的状态！'
         except AssertionError as e:
@@ -187,7 +188,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
 
 
 class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [BusinessPermission,]
+    permission_classes = [BusinessPermission, ]
     serializer_class = BusApplicationSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_fields = ('status',)
@@ -315,8 +316,8 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
                                                     # return_receiver_city=need_obj.receiver_city,
                                                     # return_receiver_district=need_obj.receiver_district,
                                                     return_receiver_location=need_obj.receiver_province +
-                                                    need_obj.receiver_city + need_obj.receiver_district +
-                                                    need_obj.receiver_location,
+                                                                             need_obj.receiver_city + need_obj.receiver_district +
+                                                                             need_obj.receiver_location,
                                                     )
                     assert need_obj.status == VideoNeeded.ON_GOING, '该需求已经不是进行中的状态！'
             except AssertionError as e:
@@ -404,7 +405,7 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
                     # detail_obj.return_receiver_city = need_obj.receiver_city
                     # detail_obj.return_receiver_district = need_obj.receiver_district
                     detail_obj.return_receiver_location = need_obj.receiver_province + need_obj.receiver_city + \
-                        need_obj.receiver_district + need_obj.receiver_location
+                                                          need_obj.receiver_district + need_obj.receiver_location
                 # add_obj = Address.objects.get(id=address_id)
                 detail_obj.receiver_name = receiver_name
                 detail_obj.receiver_phone = receiver_phone
@@ -435,7 +436,7 @@ class VideoCountView(APIView):
         total = VideoOrder.objects.exclude(status=VideoOrder.DONE).aggregate(sum=Sum('num_selected'))['sum']
         if not total:
             total = 0
-        return Response({'ongoing': total, 'Remaining': 5-total if not obj.is_signed else '不限制'})
+        return Response({'ongoing': total, 'Remaining': 5 - total if not obj.is_signed else '不限制'})
 
 
 class VideoOrderDetailViewSet(viewsets.ReadOnlyModelViewSet):
@@ -458,4 +459,3 @@ class VideoOrderDetailViewSet(viewsets.ReadOnlyModelViewSet):
         else:
             self.queryset = VideoOrder.objects.all()
         return super().get_queryset()
-
