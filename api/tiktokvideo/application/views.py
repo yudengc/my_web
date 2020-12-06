@@ -190,7 +190,7 @@ class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [BusinessPermission,]
     serializer_class = BusApplicationSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    filters = ('status',)
+    filter_fields = ('status',)
 
     def get_queryset(self):
         return VideoOrder.objects.filter(demand__uid=self.request.user)
