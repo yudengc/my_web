@@ -152,7 +152,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         return Response({'detail': '提交成功'})
 
     @action(methods=['put'], detail=True)
-    def input_logistics_info(self, request):
+    def input_logistics_info(self, request, *args, **kwargs):
         """填写返样快递信息"""
         order_obj = self.get_object()
         return_company = request.data.get('return_company')
@@ -178,7 +178,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         return Response({'detail': '提交成功'})
 
     @action(methods=['get'], detail=False)
-    def order_status_count(self, request):
+    def order_status_count(self, request, *args, **kwargs):
         order_qs = VideoOrder.objects.filter(user=request.user)
         data = dict(wait_send=order_qs.filter(status=VideoOrder.WAIT_SEND).count(),
                     wait_commit=order_qs.filter(status=VideoOrder.WAIT_COMMIT).count(),
