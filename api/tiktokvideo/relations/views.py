@@ -50,6 +50,6 @@ class MyRelationInfoManagerViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (AdminPermission,)
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('invitee__username', 'invitee__auth_base__nickname',
-                     'inviter__username', 'inviter__auth_base__nickname', )
+                     'salesman__username', 'salesman__salesman_name', )
 
 
