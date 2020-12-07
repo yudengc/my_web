@@ -125,7 +125,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @action(methods=['put'], detail=True)
-    def upload_video(self, request):
+    def upload_video(self, request, *args, **kwargs):
         """提交视频"""
         video_lis = request.data.get('video_url_arr')
         order_obj = self.get_object()
