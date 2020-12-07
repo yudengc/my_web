@@ -481,14 +481,17 @@ class Address(BaseModel):
     province = models.CharField(
         _('所在地省'),
         max_length=128,
+        null=True
     )
     city = models.CharField(
         _('所在地市'),
         max_length=128,
+        null=True
     )
     district = models.CharField(
         _('所在地地区'),
         max_length=128,
+        null=True
     )
     location = models.CharField(
         _('具体地址'),
