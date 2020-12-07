@@ -46,8 +46,8 @@ class GoodsCategoryViewSet(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     def destroy(self, request, *args, **kwargs):
-        s = """find */migrations/ -name '*.py'|xargs -i grep -E 'config.GoodsCategory' {} -B 1|grep -E '^[ 
-                \t]*name=|config.GoodsCategory' """
+        s = """find */migrations/ -name '*.py'|xargs -i grep -E 'config.GoodsCategory' {} -B 1|\
+        grep -E '^[ \t]*name=|config.GoodsCategory'"""
         related_name_list = subprocess.getoutput(s).replace(' ', '').split('\n')
         # relate_name: 字段名
         result_dict = {}
