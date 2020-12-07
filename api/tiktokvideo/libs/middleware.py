@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -9,8 +10,6 @@ from redis import StrictRedis
 from rest_framework import status, exceptions
 from rest_framework.request import Request
 from rest_framework.response import Response
-import logging
-
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 
 from flow_limiter.services import FlowLimiter
