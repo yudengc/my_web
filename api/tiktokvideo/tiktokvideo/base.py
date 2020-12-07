@@ -106,6 +106,7 @@ DATABASES = {
 
 # 限流器
 FLOW_LIMITER = {
+    # 超限后是否使用最近一次的请求结果
     'use_latest': bool(os.environ.get("USE_LATEST", 0)),
     'global': {
         'user': '100000/day;',
