@@ -356,7 +356,7 @@ class UserInfoManagerViewSet(mixins.ListModelMixin,
     queryset = Users.objects.exclude(is_superuser=True).order_by('-date_created')
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserInfoManagerFilter
-    search_fields = ('username', 'auth_base__nickname')
+    search_fields = ('=username', 'auth_base__nickname')
 
 
 class UserCreatorInfoManagerViewSet(mixins.ListModelMixin,
@@ -368,7 +368,7 @@ class UserCreatorInfoManagerViewSet(mixins.ListModelMixin,
     serializer_class = UserCreatorInfoManagerSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserCreatorInfoManagerFilter
-    search_fields = ('uid__username', 'uid__auth_base__nickname')
+    search_fields = ('=uid__username', 'uid__auth_base__nickname')
 
     def get_queryset(self):
         if self.action in ['list', 'retrieve']:
@@ -393,7 +393,7 @@ class UserBusinessInfoManagerViewSet(mixins.ListModelMixin,
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     queryset = Users.objects.exclude(is_superuser=True).filter(identity=Users.BUSINESS, sys_role=Users.COMMON)
     filter_class = UserBusinessInfoManagerFilter
-    search_fields = ('username', 'auth_base__nickname', 'user_invitee__salesman__username',
+    search_fields = ('=username', 'auth_base__nickname', '=user_invitee__salesman__username',
                      'user_invitee__salesman__salesman_name')
 
     def get_serializer_class(self):
@@ -412,7 +412,7 @@ class BusinessInfoManagerViewSet(mixins.ListModelMixin,
     queryset = UserBusiness.objects.all()
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserInfoManagerFilter
-    search_fields = ('uid__username', 'uid__auth_base__nickname', 'contact')
+    search_fields = ('=uid__username', 'uid__auth_base__nickname', 'contact')
 
 
 class TeamManagerViewSet(mixins.ListModelMixin,
@@ -452,7 +452,7 @@ class TeamLeaderManagerViewSet(mixins.ListModelMixin,
     serializer_class = TeamLeaderManagerSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserInfoManagerFilter
-    search_fields = ('username', 'salesman_name')
+    search_fields = ('=username', 'salesman_name')
 
     def get_queryset(self):
         if self.action == 'list':
@@ -508,7 +508,7 @@ class TeamUsersManagerViewSet(mixins.ListModelMixin,
     queryset = Users.objects.all()
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = TeamUsersManagerTeamFilter
-    search_fields = ('username', 'salesman_name')
+    search_fields = ('=username', 'salesman_name')
 
     def get_queryset(self):
         if self.action == 'list':  # 团队成员
