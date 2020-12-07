@@ -389,3 +389,9 @@ class test(APIView):
     def post(self, request):
         # data = check_link_and_get_data(request.data.get('goods_link').strip())
         return Response([{10: 1}, {20: 1}, {30: 0}], status=status.HTTP_200_OK)
+
+    def get(self, request):
+        from qiniu import Auth
+        from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
+        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+        return Response(auth.private_download_url('https://cdn.darentui.com/songshuVideo/video_1607072492210.mp4' + '?vframe/jpg/offset/1'))
