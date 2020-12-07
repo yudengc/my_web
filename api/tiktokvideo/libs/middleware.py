@@ -1,15 +1,16 @@
 import json
+import logging
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from django.core.cache import cache
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 from django_redis import get_redis_connection
 from redis import StrictRedis
 from rest_framework import status, exceptions
+from rest_framework.request import Request
 from rest_framework.response import Response
-import logging
+from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 
 from flow_limiter.services import FlowLimiter
 from libs.common.utils import get_ip
@@ -63,12 +64,21 @@ class FrozenCheckMiddleware(MiddlewareMixin):
     def __call__(self, request):
         response = None
         if isinstance(request.user, Users):
-            if request.user.status == Users.FROZEN:
+            req = request
+        elif hasattr(request, '_req'):
+            req = request._req
+        else:
+            req = Request(
+                request,
+                authenticators=[JSONWebTokenAuthentication()],
+            )
+            request._req = req
+        if isinstance(req.user, Users):
+            if req.user.status == Users.FROZEN:
                 # 冻结用户的所有 post, put, patch, delete 请求都屏蔽了
-                # if request.MET
                 if request.method.lower() in ['post', 'put', 'patch', 'delete']:
                     return JsonResponse({"detail": "该账号已被冻结, 无法执行该操作, 解冻请联系客服"},
-                                        status=status.HTTP_400_BAD_REQUEST)
+                                        status=status.HTTP_206_PARTIAL_CONTENT)
         response = response or self.get_response(request)
         return response
 
@@ -79,16 +89,25 @@ class FlowLimitMiddleware(MiddlewareMixin):
         response = None
         use_latest = settings.FLOW_LIMITER.get('use_latest', False)
         global_setting = settings.FLOW_LIMITER.get('global', None)
+        if isinstance(request.user, Users):
+            req = request
+        elif hasattr(request, '_req'):
+            req = request._req
+        else:
+            req = Request(
+                request,
+                authenticators=[JSONWebTokenAuthentication()],
+            )
+            request._req = req
         if global_setting:
-            host = get_ip(request)
-            # 用这个作为身份限制貌似有点问题噢
-            print(host)
-            if isinstance(request.user, AnonymousUser):
+            if isinstance(req.user, AnonymousUser):
+                # 用这个ip作为身份辨识貌似有点问题
+                host = get_ip(request)
                 key = f"{host}_nonuser"
                 limiter_key = 'nonuser'
             else:
-                # 登录了之后应该用身份作为判断依据还是依旧用ip?
-                key = f"{host}_user"
+                # 登录之后用uid作为辨识
+                key = f"{req.user.uid.hex}_user"
                 limiter_key = 'user'
             trigger_return = FlowLimiter.trigger(limiter_key, key, use_latest)
             if isinstance(trigger_return, bool):
