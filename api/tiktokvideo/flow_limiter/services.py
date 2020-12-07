@@ -123,7 +123,10 @@ class FlowLimiter:
                 if not isinstance(request, Request):
                     raise exceptions.APIException(detail="请求错误, 无法获取request",
                                                   code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                action_key = f"{get_ip(request)}_{request.path}"
+                if not hasattr(request.user, 'uid'):
+                    action_key = f"{get_ip(request)}_{request.path}"
+                else:
+                    action_key = f"{request.user.uid.hex}_{request.path}"
                 trigger_return = FlowLimiter.trigger(limit_key, action_key, use_latest)
                 if isinstance(trigger_return, bool):
                     func_return = func(*args, **kwargs)

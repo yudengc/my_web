@@ -64,7 +64,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'libs.middleware.FrozenCheckMiddleware',
-    # 'libs.middleware.FlowLimitMiddleware',
+    'libs.middleware.FlowLimitMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'libs.middleware.ResponseMiddleware',
