@@ -73,18 +73,20 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             request.data['receiver_district'] = form.address.district
             request.data['receiver_location'] = form.address.location
             request.data.pop('address')
+
+        # init key
+        title_key, channel_key, images_key = [''] * 3
         if 'goods_link' in form:
             hash_key = form.goods_link.__hash__()
-            images_key = f'images_{hash_key}'
-            channel_key = f'channel_{hash_key}'
-            title_key = f'title_{hash_key}'
+            images_key = f'images_{hash_key}_{self.request.user.id}'
+            channel_key = f'channel_{hash_key}_{self.request.user.id}'
+            title_key = f'title_{hash_key}_{self.request.user.id}'
             if not conn.exists(title_key):
                 return Response({"detail": "该商品链接没有经过校验, 请先校验！"}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 form['goods_images'] = conn.get(images_key).decode('utf-8')
                 form['goods_channel'] = conn.get(channel_key).decode('utf-8')
                 form['goods_title'] = conn.get(title_key).decode('utf-8')
-            conn.delete(title_key, channel_key, images_key)
 
         with atomic():
             reduce = 0
@@ -105,6 +107,8 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
+            if 'goods_link' in form:
+                conn.delete(title_key, channel_key, images_key)
             if getattr(instance, '_prefetched_objects_cache', None):
                 instance._prefetched_objects_cache = {}
             if flag == 1:
@@ -146,9 +150,9 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
 
         hash_key = form.goods_link.__hash__()
-        images_key = f'images_{hash_key}'
-        channel_key = f'channel_{hash_key}'
-        title_key = f'title_{hash_key}'
+        images_key = f'images_{hash_key}_{self.request.user.id}'
+        channel_key = f'channel_{hash_key}_{self.request.user.id}'
+        title_key = f'title_{hash_key}_{self.request.user.id}'
         if not conn.exists(title_key):
             return Response({"detail": "该商品链接没有经过校验, 请先校验！"}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -171,7 +175,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             form['publish_time'] = datetime.datetime.now()
         form.pop('action')
         form['video_num_remained'] = form.video_num_needed
-        conn.delete(title_key, channel_key, images_key)
+
         with atomic():
             if form.status == VideoNeeded.TO_CHECK:
                 user_business = self.request.user.user_business
@@ -180,6 +184,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                 user_business.remain_video_num -= form.video_num_needed
                 user_business.save()
             instance = VideoNeeded.objects.create(uid=self.request.user, **form)
+            conn.delete(title_key, channel_key, images_key)
             serializer = self.get_serializer(instance)
             headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -239,9 +244,9 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             if data == 444:
                 return Response({'detail': '抱歉，该商品不是淘宝联盟商品'}, status=status.HTTP_400_BAD_REQUEST)
             hash_key = form.goods_link.__hash__()
-            images_key = f'images_{hash_key}'
-            channel_key = f'channel_{hash_key}'
-            title_key = f'title_{hash_key}'
+            images_key = f'images_{hash_key}_{self.request.user.id}'
+            channel_key = f'channel_{hash_key}_{self.request.user.id}'
+            title_key = f'title_{hash_key}_{self.request.user.id}'
             channel_value = data.get('channel', None)
             images_value = data.get('itempic', None)
             title_value = data.get('itemtitle', None)
