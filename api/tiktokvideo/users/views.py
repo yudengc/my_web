@@ -393,7 +393,8 @@ class UserBusinessInfoManagerViewSet(mixins.ListModelMixin,
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     queryset = Users.objects.exclude(is_superuser=True).filter(identity=Users.BUSINESS, sys_role=Users.COMMON)
     filter_class = UserBusinessInfoManagerFilter
-    search_fields = ('username', 'auth_base__nickname', 'user_salesman__salesman__username')
+    search_fields = ('username', 'auth_base__nickname', 'user_invitee__salesman__username',
+                     'user_invitee__salesman__salesman_name')
 
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update']:
