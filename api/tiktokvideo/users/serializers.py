@@ -1,10 +1,12 @@
 from django.db.models import Sum, F, FloatField
+from qiniu import Auth
 from rest_framework import serializers, exceptions
 
 from account.models import CreatorBill
 from application.models import VideoOrder
 from libs.common.utils import get_last_year_month, get_first_and_now
 from relations.models import InviteRelationManager
+from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
 from transaction.models import UserPackageRelation
 from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase, CelebrityStyle, ScriptType
 
@@ -152,9 +154,15 @@ class AddressListSerializer(serializers.ModelSerializer):
 
 
 class UserCreatorSerializer(serializers.ModelSerializer):
+    cover = serializers.SerializerMethodField()
+
     class Meta:
         model = UserCreator
-        fields = ('status', 'video', 'team_introduction', 'capability_introduction', 'remark')
+        fields = ('status', 'video', 'team_introduction', 'capability_introduction', 'remark', 'cover')
+
+    def get_cover(self, obj):
+        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+        return auth.private_download_url(obj.video + '?vframe/jpg/offset/1')
 
 
 class UserCreatorPutSerializer(serializers.ModelSerializer):
