@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 import datetime
 import os
+
+from celery.schedules import crontab
+
 from tiktokvideo.admin import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -217,6 +220,17 @@ CELERY_ENABLE_UTC = True
 CELERY_SEND_TASK_SENT_EVENT = True
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
+
+# ################### Celery 定时任务 SETTINGS ##########################
+
+
+CELERY_BEAT_SCHEDULE = {
+    'create_bill': {
+        # 每月8号产生上个月创作者账单
+        'task': 'account.tasks.task_create_bill',
+        'schedule': crontab(minute=0, hour=1, day_of_month=8),
+    },
+}
 
 
 # Json web token 设置/ 登陆凭证设置

@@ -241,8 +241,8 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
     queryset = VideoOrder.objects.all()
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = VideoApplicationManagerFilter
-    search_fields = ('demand__title', 'demand__uid__username', 'demand__uid__user_business__bus_name',
-                     'user__auth_base__nickname', 'user__username')
+    search_fields = ('demand__title', '=demand__uid__username', 'demand__uid__user_business__bus_name',
+                     'user__auth_base__nickname', '=user__username')
 
     def get_serializer_class(self):
         if self.action == 'list':
