@@ -229,7 +229,7 @@ CELERY_BEAT_SCHEDULE = {
         # 每月8号产生上个月创作者账单
         'task': 'account.tasks.task_create_bill',
         # 'schedule': crontab(minute=0, hour=1, day_of_month=8),
-        'schedule': crontab(minute=14, hour=10),
+        'schedule': crontab(minute=20, hour=10),
     },
 }
 
