@@ -309,7 +309,7 @@ class ManageAddressViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
     search_fields = ('=uid__username', 'uid__auth_base__nickname', 'phone', 'name')
     filter_fields = ('uid__identity',)
-    queryset = Address.objects.all()
+    queryset = Address.objects.exclude(uid__identity__in=[Users.SALESMAN, Users.SUPERVISOR])
 
 
 class UserCreatorViewSet(mixins.ListModelMixin,
@@ -341,6 +341,7 @@ class UserCreatorViewSet(mixins.ListModelMixin,
             instance = UserCreator.objects.get(uid=request.user)
         except UserCreator.DoesNotExist:
             instance = UserCreator.objects.create(uid=request.user)
+        request.data['status'] = UserCreator.PENDING
         serializer = self.get_serializer(instance, data=request.data, partial=False)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -353,7 +354,8 @@ class UserInfoManagerViewSet(mixins.ListModelMixin,
     """用户管理"""
     permission_classes = (AdminPermission,)
     serializer_class = UserInfoManagerSerializer
-    queryset = Users.objects.exclude(is_superuser=True).order_by('-date_created')
+    queryset = Users.objects.exclude(is_superuser=True,
+                                     identity__in=[Users.SALESMAN, Users.SUPERVISOR]).order_by('-date_created')
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserInfoManagerFilter
     search_fields = ('=username', 'auth_base__nickname')

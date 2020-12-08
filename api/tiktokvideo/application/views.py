@@ -347,7 +347,6 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
         demand_id = request.data.get('demand')
         creator_id = request.data.get('creator')
         reward = request.data.get('reward')
-        address_id = request.data.get('address')
         order_status = request.data.get('status')
         creator_remark = request.data.get('creator_remark')
         company = request.data.get('company')
@@ -361,7 +360,6 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
             Argument('demand', help="请选择需求!!"),
             Argument('creator', help="请选择创作者!!"),
             Argument('reward', help="请输入单视频交付金额!!"),
-            Argument('address', help="请选择收货信息!!"),
             Argument('status', help="请选择订单状态!!"),
             Argument('receiver_name', help="缺少receiver_name!!"),
             Argument('receiver_phone', help="缺少receiver_phone!!"),
@@ -369,16 +367,16 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
         ).parse(request.data)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-        if creator_remark is None:
-            return Response({"detail": 'creator_remark缺失'}, status=status.HTTP_400_BAD_REQUEST)
-        if company is None:
-            return Response({"detail": 'company缺失'}, status=status.HTTP_400_BAD_REQUEST)
-        if express is None:
-            return Response({"detail": 'express缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        # if creator_remark is None:
+        #     return Response({"detail": 'creator_remark缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        # if company is None:
+        #     return Response({"detail": 'company缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        # if express is None:
+        #     return Response({"detail": 'express缺失'}, status=status.HTTP_400_BAD_REQUEST)
         if video_id_lis is None:
             return Response({"detail": 'video_lis缺失'}, status=status.HTTP_400_BAD_REQUEST)
-        if remark is None:
-            return Response({"detail": 'remark缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        # if remark is None:
+        #     return Response({"detail": 'remark缺失'}, status=status.HTTP_400_BAD_REQUEST)
 
         instance = self.get_object()
         try:

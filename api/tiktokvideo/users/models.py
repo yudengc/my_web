@@ -202,7 +202,6 @@ class UserBase(BaseModel):
         verbose_name = '用户基础信息'
         verbose_name_plural = verbose_name
         db_table = 'UserBase'
-        unique_together = ('phone',)
 
     def __str__(self):
         return self.nickname if self.nickname else ''
