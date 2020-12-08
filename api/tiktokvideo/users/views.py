@@ -341,6 +341,7 @@ class UserCreatorViewSet(mixins.ListModelMixin,
             instance = UserCreator.objects.get(uid=request.user)
         except UserCreator.DoesNotExist:
             instance = UserCreator.objects.create(uid=request.user)
+        request.data['status'] = UserCreator.PENDING
         serializer = self.get_serializer(instance, data=request.data, partial=False)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
