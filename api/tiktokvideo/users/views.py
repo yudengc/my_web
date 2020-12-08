@@ -309,7 +309,7 @@ class ManageAddressViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
     search_fields = ('=uid__username', 'uid__auth_base__nickname', 'phone', 'name')
     filter_fields = ('uid__identity',)
-    queryset = Address.objects.all()
+    queryset = Address.objects.exclude(uid__identity__in=[Users.SALESMAN, Users.SUPERVISOR])
 
 
 class UserCreatorViewSet(mixins.ListModelMixin,
@@ -354,7 +354,8 @@ class UserInfoManagerViewSet(mixins.ListModelMixin,
     """用户管理"""
     permission_classes = (AdminPermission,)
     serializer_class = UserInfoManagerSerializer
-    queryset = Users.objects.exclude(is_superuser=True).order_by('-date_created')
+    queryset = Users.objects.exclude(is_superuser=True,
+                                     identity__in=[Users.SALESMAN, Users.SUPERVISOR]).order_by('-date_created')
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserInfoManagerFilter
     search_fields = ('=username', 'auth_base__nickname')
