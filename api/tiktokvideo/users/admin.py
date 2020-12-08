@@ -23,12 +23,17 @@ class UsersAdmin(admin.ModelAdmin):
     search_fields = ('username', 'salesman_name', 'auth_base__nickname',)
     # 定义过滤器以哪些字段可以搜索
     list_filter = ('status', 'identity', 'date_created')
-    # 详情页面展示的字段
-    fields = ('username', 'nickname', 'identity', 'salesman_name', 'status', 'reason')
     # 详情页的只读字段
     readonly_fields = ('username', 'nickname', 'identity')
     # 列表页每页展示的条数
     list_per_page = 20
+
+    def get_fields(self, request, obj=None):
+        if obj and obj.identity in [Users.SUPERVISOR, Users.SALESMAN]:
+            self.fields = ('username', 'nickname', 'identity', 'salesman_name', 'status', 'reason')
+        else:
+            self.fields = ('username', 'nickname', 'identity', 'status', 'reason')
+        return self.fields
 
     def has_delete_permission(self, request, obj=None):
         return False

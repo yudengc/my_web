@@ -48,6 +48,10 @@ class OrderInfo(models.Model):
     parm_id = models.PositiveSmallIntegerField(
         _('购买的商品对应的id'),
     )
+    video_num = models.PositiveSmallIntegerField(
+        _('购买套餐时的赠送视频数'),
+        default=0,
+    )
     date_created = models.DateTimeField(
         _('订单生成时间'),
         auto_now_add=True,
@@ -66,12 +70,13 @@ class OrderInfo(models.Model):
         ordering = ('-date_created',)
 
     @staticmethod
-    def create_order(user, amount, t_type, p_id):
+    def create_order(user, amount, t_type, p_id, video_num=None):
         order = OrderInfo.objects.create(
             uid=user,
             amount=amount,
             tran_type=t_type,
-            parm_id=p_id
+            parm_id=p_id,
+            video_num=video_num if video_num else 0,
         )
         return order
 
