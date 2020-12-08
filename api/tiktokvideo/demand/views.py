@@ -411,3 +411,4 @@ class test(APIView):
         from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
         auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
         return Response(auth.private_download_url('https://cdn.darentui.com/songshuVideo/video_1607072492210.mp4' + '?vframe/jpg/offset/1'))
+
