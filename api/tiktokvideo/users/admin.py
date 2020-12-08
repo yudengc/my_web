@@ -191,17 +191,25 @@ class TeamUsersAdmin(admin.ModelAdmin):
     list_filter = ('date_created', 'team__name', 'has_power')
     # 列表页每页展示的条数
     list_per_page = 20
-    # 详情页的只读字段
-    # readonly_fields = ('username', 'password',)
-    # 详情页面展示的字段
-    fields = ('username', 'password', 'salesman_name', 'team', 'has_power')
-    # 禁用编辑链接
-    list_display_links = None
     form = UsersForm
 
     def get_queryset(self, request):
         queryset = self.model.objects.filter(identity=Users.SALESMAN)
         return queryset
+
+    def get_fields(self, request, obj=None):
+        if obj:
+            self.fields = ('username', 'salesman_name', 'team', 'has_power')
+        else:
+            self.fields = ('username', 'password', 'salesman_name', 'team', 'has_power')
+        return self.fields
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            self.readonly_fields = ('username',)
+        else:
+            self.readonly_fields = []
+        return self.readonly_fields
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -242,7 +250,7 @@ class TeamUsersAdmin(admin.ModelAdmin):
 
 class TeamLeader(Users):
     class Meta:
-        verbose_name = '团队成员'
+        verbose_name = '团队主管'
         verbose_name_plural = verbose_name
         proxy = True
 
@@ -258,11 +266,21 @@ class TeamUsersAdmin(admin.ModelAdmin):
     list_filter = ('has_power', 'date_created',)
     # 列表页每页展示的条数
     list_per_page = 20
-    # 详情页面展示的字段
-    fields = ('username', 'password', 'salesman_name', 'has_power')
-    # 禁用编辑链接
-    list_display_links = None
     form = UsersForm
+
+    def get_fields(self, request, obj=None):
+        if obj:
+            self.fields = ('username', 'salesman_name', 'has_power')
+        else:
+            self.fields = ('username', 'password', 'salesman_name', 'has_power')
+        return self.fields
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            self.readonly_fields = ('username',)
+        else:
+            self.readonly_fields = []
+        return self.readonly_fields
 
     def get_queryset(self, request):
         queryset = self.model.objects.filter(identity=Users.SUPERVISOR)
