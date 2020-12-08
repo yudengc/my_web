@@ -348,7 +348,6 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
         demand_id = request.data.get('demand')
         creator_id = request.data.get('creator')
         reward = request.data.get('reward')
-        address_id = request.data.get('address')
         order_status = request.data.get('status')
         creator_remark = request.data.get('creator_remark')
         company = request.data.get('company')
@@ -362,7 +361,6 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
             Argument('demand', help="请选择需求!!"),
             Argument('creator', help="请选择创作者!!"),
             Argument('reward', help="请输入单视频交付金额!!"),
-            Argument('address', help="请选择收货信息!!"),
             Argument('status', help="请选择订单状态!!"),
             Argument('receiver_name', help="缺少receiver_name!!"),
             Argument('receiver_phone', help="缺少receiver_phone!!"),
