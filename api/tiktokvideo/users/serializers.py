@@ -110,11 +110,10 @@ class CreatorUserInfoSerializer(serializers.ModelSerializer):
     def get_coin_freeze(self, obj):
         """上个月待结算松子（上个月未入账可得松子数）"""
         year, month = get_last_year_month()
-        bill_obj = CreatorBill.objects.filter(uid=obj, bill_year=year,
-                                              bill_month=month).first()
+        bill_obj = CreatorBill.objects.filter(uid=obj, bill_year=year, bill_month=month).first()
         if bill_obj:
             if bill_obj.status == CreatorBill.PENDING:
-                last_month_reward = bill_obj.first().total
+                last_month_reward = bill_obj.total
             else:
                 last_month_reward = 0
         else:

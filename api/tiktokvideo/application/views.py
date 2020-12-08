@@ -368,16 +368,16 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
         ).parse(request.data)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-        if creator_remark is None:
-            return Response({"detail": 'creator_remark缺失'}, status=status.HTTP_400_BAD_REQUEST)
-        if company is None:
-            return Response({"detail": 'company缺失'}, status=status.HTTP_400_BAD_REQUEST)
-        if express is None:
-            return Response({"detail": 'express缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        # if creator_remark is None:
+        #     return Response({"detail": 'creator_remark缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        # if company is None:
+        #     return Response({"detail": 'company缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        # if express is None:
+        #     return Response({"detail": 'express缺失'}, status=status.HTTP_400_BAD_REQUEST)
         if video_id_lis is None:
             return Response({"detail": 'video_lis缺失'}, status=status.HTTP_400_BAD_REQUEST)
-        if remark is None:
-            return Response({"detail": 'remark缺失'}, status=status.HTTP_400_BAD_REQUEST)
+        # if remark is None:
+        #     return Response({"detail": 'remark缺失'}, status=status.HTTP_400_BAD_REQUEST)
 
         instance = self.get_object()
         try:

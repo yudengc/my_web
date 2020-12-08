@@ -36,7 +36,7 @@ class MyCreatorAccountSerializer(serializers.ModelSerializer):
         bill_obj = CreatorBill.objects.filter(uid=self.context['request'].user, bill_year=year, bill_month=month).first()
         if bill_obj:
             if bill_obj.status == CreatorBill.PENDING:
-                last_month_reward = bill_obj.first().total
+                last_month_reward = bill_obj.total
             else:
                 last_month_reward = 0
         else:
