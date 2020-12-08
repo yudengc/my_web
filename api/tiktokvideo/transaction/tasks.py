@@ -46,7 +46,7 @@ def update_order_status(out_trade_no, gmt_payment, attach):
                 business_qs = UserBusiness.objects.filter(uid=this_man)
                 if not business_qs.exists():
                     UserBusiness.objects.create(uid=this_man)
-                this_man.user_business.remain_video_num += p_obj.video_num
+                this_man.user_business.remain_video_num += p_obj.video_num + p_obj.buy_video_num
                 this_man.user_business.save()
 
         # logger.info("======= Pay Success And Update Order Status!!!!!! =======")

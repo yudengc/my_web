@@ -1,7 +1,6 @@
 import logging
 import traceback
 
-from qiniu import Auth
 from rest_framework import serializers
 
 from application.models import VideoOrder, VideoOrderDetail, Video
@@ -111,14 +110,13 @@ class BusApplicationSerializer(VideoApplicationRetrieveSerializer):
         fields = '__all__'
 
     def get_video_download(self, obj):
-        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
         tmp = obj.order_video.values_list('video_url', 'id')
         ok_lst = []
         for i in tmp:
             try:
                 ok_lst.append({'id': i[1],
-                               'video_url': auth.private_download_url(i[0]),
-                               'cover': auth.private_download_url(i[0] + '?vframe/jpg/offset/1')})
+                               'video_url': i[0],
+                               'cover': i[0] + '?vframe/jpg/offset/1'})
             except:
                 logger.info(traceback.format_exc())
         return ok_lst
@@ -196,14 +194,13 @@ class VideoApplicationManagerRetrieveSerializer(serializers.ModelSerializer):
         return user_business.bus_name if user_business else None
 
     def get_order_video(self, obj):
-        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
         tmp = obj.order_video.values_list('video_url', 'id')
         ok_lst = []
         for i in tmp:
             try:
                 ok_lst.append({'id': i[1],
-                               'video_url': auth.private_download_url(i[0]),
-                               'cover': auth.private_download_url(i[0] + '?vframe/jpg/offset/1')})
+                               'video_url': i[0],
+                               'cover': i[0] + '?vframe/jpg/offset/1'})
             except:
                 logger.info(traceback.format_exc())
         return ok_lst

@@ -1,6 +1,5 @@
 import subprocess
 
-from qiniu import Auth
 from rest_framework import viewsets, status, mixins
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -104,8 +103,7 @@ class VideoViewSet(mixins.CreateModelMixin, GenericViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         data = serializer.data
-        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
-        data['cover'] = auth.private_download_url(data['video_url'] + '?vframe/jpg/offset/1')
-        data['video_url'] = auth.private_download_url(data['video_url'])
+        data['cover'] = data['video_url'] + '?vframe/jpg/offset/1'
+        data['video_url'] = data['video_url']
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
