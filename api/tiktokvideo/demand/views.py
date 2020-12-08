@@ -24,6 +24,7 @@ from libs.common.permission import ManagerPermission, AdminPermission, AllowAny
 from libs.pagination import StandardResultsSetPagination
 from libs.parser import JsonParser, Argument
 from libs.services import check_link_and_get_data, CheckLinkError, CheckLinkRequestError
+from transaction.models import OrderInfo
 from users.models import Address
 
 logger = logging.getLogger()
@@ -178,9 +179,14 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
 
         with atomic():
             if form.status == VideoNeeded.TO_CHECK:
+                order_qs = OrderInfo.objects.filter(uid=self.request.user, status=OrderInfo.SUCCESS)
+                if order_qs.exists():
+                    return Response({"detail": "您未购买套餐", "err_code": 222},
+                                    status=status.HTTP_206_PARTIAL_CONTENT)
                 user_business = self.request.user.user_business
                 if user_business.remain_video_num < form.video_num_needed:
-                    return Response({"detail": "您账户中可使用的剩余视频数不足"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": "您账户中可使用的剩余视频数不足", "err_code": 111},
+                                    status=status.HTTP_206_PARTIAL_CONTENT)
                 user_business.remain_video_num -= form.video_num_needed
                 user_business.save()
             instance = VideoNeeded.objects.create(uid=self.request.user, **form)
@@ -214,8 +220,13 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             if form.action == 0:
                 if instance.status != VideoNeeded.TO_PUBLISH:
                     return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
+                order_qs = OrderInfo.objects.filter(uid=self.request.user, status=OrderInfo.SUCCESS)
+                if order_qs.exists():
+                    return Response({"detail": "您未购买套餐", "err_code": 222},
+                                    status=status.HTTP_206_PARTIAL_CONTENT)
                 if user_business.remain_video_num < instance.video_num_needed:
-                    return Response({"detail": "您账户中可使用的剩余视频数不足"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": "您账户中可使用的剩余视频数不足", "err_code": 111},
+                                    status=status.HTTP_206_PARTIAL_CONTENT)
                 user_business.remain_video_num -= instance.video_num_remained
                 user_business.save()
                 instance.status = VideoNeeded.TO_CHECK
@@ -400,3 +411,4 @@ class test(APIView):
         from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
         auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
         return Response(auth.private_download_url('https://cdn.darentui.com/songshuVideo/video_1607072492210.mp4' + '?vframe/jpg/offset/1'))
+
