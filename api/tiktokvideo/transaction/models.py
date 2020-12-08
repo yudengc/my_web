@@ -196,6 +196,10 @@ class Package(BaseModel):
         decimal_places=2,
         default=0
     )
+    buy_video_num = models.PositiveIntegerField(
+        verbose_name='购买(拍摄)视频数',
+        default=0
+    )
     video_num = models.PositiveIntegerField(
         verbose_name='赠送视频数',
         default=0
