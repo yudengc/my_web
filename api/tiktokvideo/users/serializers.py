@@ -168,7 +168,7 @@ class UserCreatorSerializer(serializers.ModelSerializer):
 class UserCreatorPutSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserCreator
-        fields = ('video', 'team_introduction', 'capability_introduction')
+        fields = ('video', 'team_introduction', 'capability_introduction', 'status')
 
 
 class ManageAddressSerializer(serializers.ModelSerializer):
