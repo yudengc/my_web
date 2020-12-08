@@ -492,6 +492,7 @@ class TeamLeaderManagerViewSet(mixins.ListModelMixin,
                     uid=user,
                     phone=user.username
                 )
+                UserBusiness.objects.create(uid=user)
         except Exception as e:
             logger.info('后台创建团队主管失败')
             logger.info(e)
@@ -549,6 +550,7 @@ class TeamUsersManagerViewSet(mixins.ListModelMixin,
                 )
                 leader = Team.objects.get(id=team).leader
                 InviteRelationManager.objects.create(inviter=leader, invitee=user, level=1)
+                UserBusiness.objects.create(uid=user)
         except Exception as e:
             logger.info('后台创建团队成员失败')
             logger.info(e)
