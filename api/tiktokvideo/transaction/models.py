@@ -1,4 +1,5 @@
 from ckeditor.fields import RichTextField
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models import ImageField
 from django.utils.translation import ugettext_lazy as _
@@ -57,6 +58,12 @@ class OrderInfo(models.Model):
         _('支付时间'),
         null=True,
         blank=True
+    )
+
+    pkg_value = JSONField(
+        _('购买套餐那时候的套餐值'),
+        null=True,
+        default=None
     )
 
     class Meta:

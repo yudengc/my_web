@@ -16,7 +16,8 @@ from rest_framework.viewsets import GenericViewSet
 
 from transaction.filter import UserPackageRelationManagerFilter
 from transaction.serializers import PackageSerializer, MyPackageSerializer, OrderInfoSerializer, \
-    PackageManagerSerializer, UserPackageRelationManagerSerializer, UserPackageRelationManagerUpdateSerializer
+    PackageManagerSerializer, UserPackageRelationManagerSerializer, UserPackageRelationManagerUpdateSerializer, \
+    PackageCommonSerializer
 from transaction.tasks import update_order_status
 from transaction.models import OrderInfo, UserPackageRelation
 from libs.common.pay import WeChatPay
@@ -41,13 +42,16 @@ class WeChatPayViewSet(APIView):
         if not p_id:
             return Response({"detail": "缺少参数配置ID"}, status=status.HTTP_400_BAD_REQUEST)
         if t_type in ['0', 0]:
-            package_ps = Package.objects.filter(id=p_id)
-            if not package_ps.exists():
+            package_qs = Package.objects.filter(id=p_id)
+            if not package_qs.exists():
                 return Response({"detail": '该套餐不存在'}, status=status.HTTP_400_BAD_REQUEST)
-            money = package_ps.first().package_amount
+            money = package_qs.first().package_amount
+            order = OrderInfo.create_order(request.user, money, t_type, p_id)
+            order.pkg_value = dict(PackageCommonSerializer(package_qs, many=True).data[0])
+            order.save()
         else:
             return Response({"detail": 't_type错误'}, status=status.HTTP_400_BAD_REQUEST)
-        order = OrderInfo.create_order(request.user, money, t_type, p_id)
+
         # 获取客户端ip
         client_ip = get_ip(request)
         attach = str(request.user.uid) + '_' + str(p_id)  # 自定义参数，回调要用

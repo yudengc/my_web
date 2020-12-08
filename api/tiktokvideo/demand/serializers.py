@@ -1,4 +1,3 @@
-from qiniu import Auth
 from rest_framework import serializers
 
 from config.models import GoodsCategory
@@ -130,5 +129,4 @@ class HomePageVideoSerializer(serializers.ModelSerializer):
         return obj.category.title if obj.category else '无'
 
     def get_video_download_link(self, obj):
-        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
-        return auth.private_download_url(obj.video_link, expires=315360000) if obj.video_link else ''
+        return obj.video_link if obj.video_link else ''

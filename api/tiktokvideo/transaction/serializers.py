@@ -6,6 +6,15 @@ from users.models import UserBusiness
 from users.serializers import BusinessInfoManagerSerializer
 
 
+class PackageCommonSerializer(serializers.ModelSerializer):
+    """
+    套餐包订单用的套餐记录序列化器
+    """
+    class Meta:
+        model = Package
+        fields = '__all__'
+
+
 class PackageSerializer(serializers.ModelSerializer):
     """
     套餐包

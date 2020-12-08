@@ -4,7 +4,6 @@ import logging
 
 from django.db.models import Sum
 from django.db.transaction import atomic
-from qiniu import Auth
 from rest_framework import viewsets, status, mixins, filters, exceptions
 from django_filters import rest_framework
 from rest_framework.decorators import action

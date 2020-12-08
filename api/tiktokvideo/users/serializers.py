@@ -1,5 +1,4 @@
 from django.db.models import Sum, F, FloatField
-from qiniu import Auth
 from rest_framework import serializers, exceptions
 
 from account.models import CreatorBill
@@ -161,8 +160,7 @@ class UserCreatorSerializer(serializers.ModelSerializer):
         fields = ('status', 'video', 'team_introduction', 'capability_introduction', 'remark', 'cover')
 
     def get_cover(self, obj):
-        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
-        return auth.private_download_url(obj.video + '?vframe/jpg/offset/1')
+        return obj.video + '?vframe/jpg/offset/1'
 
 
 class UserCreatorPutSerializer(serializers.ModelSerializer):
