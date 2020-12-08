@@ -178,9 +178,10 @@ class UsersForm(forms.ModelForm):
 
     def clean(self):
         username = self.cleaned_data.get('username')
-        phone_re = re.match(r"^1[35678]\d{9}$", username)
-        if not phone_re:
-            raise forms.ValidationError(u'请输入正确的手机号')
+        if username:
+            phone_re = re.match(r"^1[35678]\d{9}$", username)
+            if not phone_re:
+                raise forms.ValidationError(u'请输入正确的手机号')
         return self.cleaned_data
 
 
