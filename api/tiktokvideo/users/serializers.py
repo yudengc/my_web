@@ -159,7 +159,7 @@ class UserCreatorSerializer(serializers.ModelSerializer):
         fields = ('status', 'video', 'team_introduction', 'capability_introduction', 'remark', 'cover')
 
     def get_cover(self, obj):
-        return obj.video + '?vframe/jpg/offset/1'
+        return obj.video + '?vframe/jpg/offset/1' if obj.video else None
 
 
 class UserCreatorPutSerializer(serializers.ModelSerializer):
