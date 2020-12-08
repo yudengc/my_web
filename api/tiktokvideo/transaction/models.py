@@ -1,4 +1,5 @@
 from ckeditor.fields import RichTextField
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models import ImageField
 from django.utils.translation import ugettext_lazy as _
@@ -48,10 +49,6 @@ class OrderInfo(models.Model):
     parm_id = models.PositiveSmallIntegerField(
         _('购买的商品对应的id'),
     )
-    video_num = models.PositiveSmallIntegerField(
-        _('购买套餐时的赠送视频数'),
-        default=0,
-    )
     date_created = models.DateTimeField(
         _('订单生成时间'),
         auto_now_add=True,
@@ -63,6 +60,12 @@ class OrderInfo(models.Model):
         blank=True
     )
 
+    pkg_value = JSONField(
+        _('购买套餐那时候的套餐值'),
+        null=True,
+        default=None
+    )
+
     class Meta:
         verbose_name = '订单信息'
         verbose_name_plural = verbose_name
@@ -70,13 +73,12 @@ class OrderInfo(models.Model):
         ordering = ('-date_created',)
 
     @staticmethod
-    def create_order(user, amount, t_type, p_id, video_num=None):
+    def create_order(user, amount, t_type, p_id):
         order = OrderInfo.objects.create(
             uid=user,
             amount=amount,
             tran_type=t_type,
-            parm_id=p_id,
-            video_num=video_num if video_num else 0,
+            parm_id=p_id
         )
         return order
 
