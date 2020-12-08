@@ -246,6 +246,7 @@ class TeamUsersAdmin(admin.ModelAdmin):
                 )
                 leader = Team.objects.get(id=form.data.get('team')).leader
                 InviteRelationManager.objects.create(inviter=leader, invitee=user, level=1)
+                UserBusiness.objects.create(uid=user)
         super().save_model(request, obj, form, change)
 
     leader_username.short_description = '所属团队账号'
@@ -319,6 +320,7 @@ class TeamUsersAdmin(admin.ModelAdmin):
                     uid=user,
                     phone=user.username
                 )
+                UserBusiness.objects.create(uid=user)
         else:
             super().save_model(request, obj, form, change)
 
