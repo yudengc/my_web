@@ -433,7 +433,8 @@ class VideoCountView(APIView):
         total = VideoOrder.objects.exclude(status=VideoOrder.DONE).aggregate(sum=Sum('num_selected'))['sum']
         if not total:
             total = 0
-        return Response({'ongoing': total, 'Remaining': 5 - total if not obj.is_signed else '不限制'})
+        remaining = 5 - total if 5 - total > 0 else 0
+        return Response({'ongoing': total, 'Remaining': remaining if not obj.is_signed else '不限制'})
 
 
 class VideoOrderDetailViewSet(viewsets.ReadOnlyModelViewSet):
