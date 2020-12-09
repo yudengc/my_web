@@ -189,6 +189,13 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                     wait_return=order_qs.filter(status=VideoOrder.WAIT_RETURN).count())
         return Response(data)
 
+    @action(methods=['get', ], detail=True, permission_classes=[ManagerPermission])
+    def demand_detail(self, request, **kwargs):
+        instance = self.get_object()
+        if instance.uid != self.request.user:
+            return Response({"detail": "订单错误, 该订单你不能查看"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(instance.video_order_detail.demand_detail, status=status.HTTP_200_OK)
+
 
 class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [BusinessPermission, ]
@@ -204,6 +211,12 @@ class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
     #         return VideoApplicationRetrieveSerializer
     #     else:
     #         return BusVideoOrderSerializer
+    @action(methods=['get', ], detail=True, permission_classes=[ManagerPermission])
+    def demand_detail(self, request, **kwargs):
+        instance = self.get_object()
+        if instance.demand.uid != self.request.user:
+            return Response({"detail": "订单错误, 该订单你不能查看"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(instance.video_order_detail.demand_detail, status=status.HTTP_200_OK)
 
     @action(methods=['post', ], detail=True, permission_classes=[ManagerPermission])
     def commit_express(self, request, **kwargs):
