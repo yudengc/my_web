@@ -395,7 +395,7 @@ class BusVideoHomePageViewSet(viewsets.ModelViewSet):
     serializer_class = HomePageVideoSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_fields = ('video_size', 'clarity', 'model_needed', 'model_occur_rate',
-                     'model_age_range', 'model_figure')
+                     'model_age_range', 'model_figure', 'category')
 
 
 class test(APIView):
