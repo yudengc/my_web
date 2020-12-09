@@ -246,7 +246,13 @@ class TeamUsersAdmin(admin.ModelAdmin):
                     phone=user.username
                 )
                 leader = Team.objects.get(id=form.data.get('team')).leader
-                InviteRelationManager.objects.create(inviter=leader, invitee=user, level=1)
+                inviter_queryset = InviteRelationManager.objects.filter(invitee=leader)
+                if inviter_queryset.exists():
+                    inviter_obj = inviter_queryset.first()
+                    superior = f'{inviter_obj.superior}|{leader.id}'
+                else:
+                    superior = f'{leader.id}'
+                InviteRelationManager.objects.create(inviter=leader, invitee=user, level=1, superior=superior)
                 UserBusiness.objects.create(uid=user)
         super().save_model(request, obj, form, change)
 
