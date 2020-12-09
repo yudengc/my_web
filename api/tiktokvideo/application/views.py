@@ -192,7 +192,7 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
     @action(methods=['get', ], detail=True, permission_classes=[ManagerPermission])
     def demand_detail(self, request, **kwargs):
         instance = self.get_object()
-        if instance.uid != self.request.user:
+        if instance.user != self.request.user:
             return Response({"detail": "订单错误, 该订单你不能查看"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(instance.video_order_detail.demand_detail, status=status.HTTP_200_OK)
 
