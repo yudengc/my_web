@@ -86,7 +86,8 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     def get_phone(self, request):
         """获取手机号码"""
         if {'encrypted_data', 'iv', 'openid'}.issubset(set(request.data.keys())):
-            openid = request.data.get('get_phone  openid')
+            openid = request.data.get('openid')
+            logger.info('get_phone openid')
             logger.info(openid)
             session_key = redis_conn.get(openid)
             if not session_key:
