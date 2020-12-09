@@ -1,3 +1,4 @@
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 from libs.common.utils import get_application_order
@@ -121,6 +122,12 @@ class VideoOrderDetail(models.Model):
         related_name='video_order_detail',
         on_delete=models.CASCADE,
     )
+
+    demand_detail = JSONField(
+        verbose_name="申请那一刻的需求详情",
+        null=True
+    )
+
     # goods desc
     goods_title = models.CharField(
         verbose_name='标题',
