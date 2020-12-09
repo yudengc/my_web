@@ -305,6 +305,8 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
                                                           system_remark='后台系统派单'
                                                           )
                     VideoOrderDetail.objects.create(video_order=order_obj,
+                                                    demand_detail=dict(
+                                                        ClientVideoNeededDetailSerializer(need_obj).data),
                                                     goods_title=need_obj.goods_title,
                                                     goods_link=need_obj.goods_link,
                                                     goods_channel=need_obj.goods_channel,
