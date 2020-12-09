@@ -150,7 +150,7 @@ class VideoOrderDetailManagerSerializer(serializers.ModelSerializer):
         fields = (
             'receiver_name', 'receiver_phone', 'receiver_location', 'return_receiver_name', 'return_receiver_phone',
             'return_receiver_location', 'goods_title', 'goods_link', 'goods_images', 'goods_channel', 'category',
-            'company', 'express'
+            'company', 'express', 'demand_detail'
         )
 
     # def get_location(self, obj):

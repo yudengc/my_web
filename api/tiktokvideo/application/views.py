@@ -17,6 +17,7 @@ from application.serializers import VideoApplicationCreateSerializer, VideoAppli
     VideoApplicationRetrieveSerializer, BusApplicationSerializer, VideoApplicationManagerListSerializer, \
     VideoApplicationManagerRetrieveSerializer, VideoOrderDetailSerializer
 from demand.models import VideoNeeded
+from demand.serializers import ClientVideoNeededDetailSerializer
 from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission, ManagerPermission
 from libs.parser import Argument, JsonParser
 from users.models import Address, Users, UserCreator
@@ -62,7 +63,8 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
             if request.data['num_selected'] > 5 - video_sum:
                 return Response({'detail': '可拍摄视频数不足'}, status=status.HTTP_400_BAD_REQUEST)
 
-        need_obj = VideoNeeded.objects.get(id=request.data['demand'])
+        need_qs = VideoNeeded.objects.filter(id=request.data['demand'])
+        need_obj = need_qs.first()
         order_video_slice = need_obj.order_video_slice
         # e. [{'num': 10, 'remain': 1}, {'num': 20, 'remain': 1}]
         request.data['is_return'] = need_obj.is_return
@@ -89,6 +91,8 @@ class VideoApplicationViewSet(mixins.CreateModelMixin,
                 self.perform_create(serializer)
                 headers = self.get_success_headers(serializer.data)
                 VideoOrderDetail.objects.create(video_order_id=serializer.data['id'],
+                                                demand_detail=dict(
+                                                    ClientVideoNeededDetailSerializer(need_qs, many=True).data[0]),
                                                 goods_title=need_obj.goods_title,
                                                 goods_link=need_obj.goods_link,
                                                 goods_channel=need_obj.goods_channel,
