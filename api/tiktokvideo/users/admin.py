@@ -239,6 +239,7 @@ class TeamUsersAdmin(admin.ModelAdmin):
                 else:
                     superior = f'{leader.id}'
                 InviteRelationManager.objects.create(inviter=leader, invitee=user, level=1, superior=superior)
+                UserBusiness.objects.create(uid=user)
         super().save_model(request, obj, form, change)
 
     leader_username.short_description = '所属团队账号'
