@@ -87,6 +87,8 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         """获取手机号码"""
         if {'encrypted_data', 'iv', 'openid'}.issubset(set(request.data.keys())):
             openid = request.data.get('openid')
+            logger.info('get_phone openid')
+            logger.info(openid)
             session_key = redis_conn.get(openid)
             if not session_key:
                 return Response({'detail': '找不到session_key'}, status=status.HTTP_400_BAD_REQUEST)
@@ -110,7 +112,10 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         code = request.data.get('code', None)
         if code:
             openid, session_key = WeChatApi(APP_ID, SECRET).get_openid_and_session_key(code)
-            redis_conn.set(openid, session_key)
+            logger.info('get_openid  openid')
+            logger.info(openid)
+            res = redis_conn.set(openid, session_key)
+            logger.info(res)
             return Response({'openid': openid}, status=status.HTTP_200_OK)
         else:
             return Response({'detail': 'code不能为空'}, status=status.HTTP_400_BAD_REQUEST)
