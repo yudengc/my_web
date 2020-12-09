@@ -318,6 +318,8 @@ class VideoApplicationManagerViewSet(mixins.CreateModelMixin,
                                                           system_remark='后台系统派单'
                                                           )
                     VideoOrderDetail.objects.create(video_order=order_obj,
+                                                    demand_detail=dict(
+                                                        ClientVideoNeededDetailSerializer(need_obj).data),
                                                     goods_title=need_obj.goods_title,
                                                     goods_link=need_obj.goods_link,
                                                     goods_channel=need_obj.goods_channel,
@@ -447,10 +449,11 @@ class VideoCountView(APIView):
             obj = UserCreator.objects.get(uid=request.user)
         except UserCreator.DoesNotExist:
             obj = UserCreator.objects.create(uid=request.user)
-        total = VideoOrder.objects.exclude(status=VideoOrder.DONE).aggregate(sum=Sum('num_selected'))['sum']
+        total = VideoOrder.objects.filter(user=request.user).exclude(status=VideoOrder.DONE).aggregate(sum=Sum('num_selected'))['sum']
         if not total:
             total = 0
-        return Response({'ongoing': total, 'Remaining': 5 - total if not obj.is_signed else '不限制'})
+        remaining = 5 - total if 5 - total > 0 else 0
+        return Response({'ongoing': total, 'Remaining': remaining if not obj.is_signed else '不限制'})
 
 
 class VideoOrderDetailViewSet(viewsets.ReadOnlyModelViewSet):
