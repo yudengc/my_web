@@ -24,7 +24,7 @@ from libs.common.permission import ManagerPermission, AdminPermission, AllowAny
 from libs.pagination import StandardResultsSetPagination
 from libs.parser import JsonParser, Argument
 from libs.services import check_link_and_get_data, CheckLinkError, CheckLinkRequestError
-from transaction.models import OrderInfo
+from transaction.models import UserPackageRelation
 from users.models import Address
 
 logger = logging.getLogger()
@@ -179,9 +179,10 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
 
         with atomic():
             if form.status == VideoNeeded.TO_CHECK:
-                order_qs = OrderInfo.objects.filter(uid=self.request.user, status=OrderInfo.SUCCESS)
-                if order_qs.exists():
-                    return Response({"detail": "您未购买套餐", "err_code": 222},
+                order_qs = UserPackageRelation.objects.filter(uid=self.request.user,
+                                                              expiration_time__gte=datetime.datetime.now())
+                if not order_qs.exists():
+                    return Response({"detail": "您未购买套餐或套餐已过期", "err_code": 222},
                                     status=status.HTTP_206_PARTIAL_CONTENT)
                 user_business = self.request.user.user_business
                 if user_business.remain_video_num < form.video_num_needed:
@@ -220,8 +221,9 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             if form.action == 0:
                 if instance.status != VideoNeeded.TO_PUBLISH:
                     return Response({"detail": "不是待发布的订单"}, status=status.HTTP_400_BAD_REQUEST)
-                order_qs = OrderInfo.objects.filter(uid=self.request.user, status=OrderInfo.SUCCESS)
-                if order_qs.exists():
+                order_qs = UserPackageRelation.objects.filter(uid=self.request.user,
+                                                              expiration_time__gte=datetime.datetime.now())
+                if not order_qs.exists():
                     return Response({"detail": "您未购买套餐", "err_code": 222},
                                     status=status.HTTP_206_PARTIAL_CONTENT)
                 if user_business.remain_video_num < instance.video_num_needed:
@@ -395,7 +397,7 @@ class BusVideoHomePageViewSet(viewsets.ModelViewSet):
     serializer_class = HomePageVideoSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_fields = ('video_size', 'clarity', 'model_needed', 'model_occur_rate',
-                     'model_age_range', 'model_figure')
+                     'model_age_range', 'model_figure', 'category')
 
 
 class test(APIView):

@@ -62,12 +62,12 @@ class InviteCls:
     # 千万别乱改这个地方
     invite_char = [
         'x', 'v', 'f', 'u', 'c', 'k', '1', '3', '5', '0', 'a', 'q', 'm', '9', 'n', 'e', 's', '4', '2',
-        't', 'h', 'i', 'l', 'y', 'R', 'd', 'Q', 'F', 'w', 'o', 'p', 'g', 'j', 'A', '6', 'S', 'M', 'K'
+        't', 'h', 'i', 'l', 'y', 'd', 'w', 'o', 'p', 'g', 'j', '6', '8', 'b', 'r'
     ]
-    fill_char = '8'
     length = len(invite_char)
     invite_code_length = 6
-    max_id = length ** invite_code_length
+    # max_id = length ** invite_code_length
+    max_id = 15144936
     prime1 = 3
     slat = 58523
     prime2 = 11
