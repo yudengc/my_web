@@ -66,7 +66,8 @@ class InviteCls:
     ]
     length = len(invite_char)
     invite_code_length = 6
-    max_id = length ** invite_code_length
+    # max_id = length ** invite_code_length
+    max_id = 15144936
     prime1 = 3
     slat = 58523
     prime2 = 11
