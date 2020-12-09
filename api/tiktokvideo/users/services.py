@@ -62,7 +62,7 @@ class InviteCls:
     # 千万别乱改这个地方
     invite_char = [
         'x', 'v', 'f', 'u', 'c', 'k', '1', '3', '5', '0', 'a', 'q', 'm', '9', 'n', 'e', 's', '4', '2',
-        't', 'h', 'i', 'l', 'y', 'd', 'w', 'o', 'p', 'g', 'j', '6', '8', 'b'
+        't', 'h', 'i', 'l', 'y', 'd', 'w', 'o', 'p', 'g', 'j', '6', '8', 'b', 'r'
     ]
     length = len(invite_char)
     invite_code_length = 6
