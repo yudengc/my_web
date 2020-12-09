@@ -54,6 +54,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                      required=False,
                      filter=lambda x: Address.objects.filter(id=x, uid=request.user).exists(),
                      handler=lambda x: Address.objects.get(id=x)),
+            Argument('goods_link', required=False, help='请输入 goods_link(商品链接)', handler=lambda x: x.strip()),
             Argument('video_num_remained', required=False, type=int, help="请输入 video_num_remained(整型)"),
             Argument('status', required=False, filter=lambda x: x in [u'', '', None], help="修改的时候不能改状态, 要调用接口"),
             Argument('receiver_name', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
@@ -105,6 +106,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                 user_business.save()
                 flag = 1
                 request.data['status'] = VideoNeeded.TO_CHECK
+                request.data['non_publish_time'] = datetime.datetime.now()
             serializer = self.get_serializer(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
