@@ -248,7 +248,7 @@ class UserPackageRelation(BaseModel):
     # )
 
     class Meta:
-        verbose_name = '套餐购买记录'
+        verbose_name = '套餐和用户的关系记录表'
         verbose_name_plural = verbose_name
         db_table = 'UserPackageRelation'
         unique_together = ('uid', 'package')
