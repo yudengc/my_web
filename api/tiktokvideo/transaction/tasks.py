@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from celery import shared_task
 from django.db.transaction import atomic
 
-from transaction.models import OrderInfo, UserPackageRelation, Package
+from transaction.models import OrderInfo, UserPackageRelation, Package, UserPackageRecord
 from users.models import Users, UserBusiness
 
 logger = logging.getLogger()
@@ -48,6 +48,14 @@ def update_order_status(out_trade_no, gmt_payment, attach):
                     UserBusiness.objects.create(uid=this_man)
                 this_man.user_business.remain_video_num += p_obj.video_num + p_obj.buy_video_num
                 this_man.user_business.save()
+                UserPackageRecord.objects.create(uid=this_man,
+                                                 package_id=p_obj.id,
+                                                 package_title=p_obj.package_title,
+                                                 package_amount=p_obj.package_amount,
+                                                 package_content=p_obj.package_content,
+                                                 expiration=p_obj.expiration,
+                                                 buy_video_num=p_obj.buy_video_num,
+                                                 video_num=p_obj.video_num)
 
         # logger.info("======= Pay Success And Update Order Status!!!!!! =======")
         print("======= Pay Success And Update Order Status!!!!!! =======")

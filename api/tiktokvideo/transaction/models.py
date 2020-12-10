@@ -223,6 +223,7 @@ class Package(BaseModel):
 
 
 class UserPackageRelation(BaseModel):
+    """套餐和用户的关系记录表（重复购买同一个套餐只会修改expiration_time）"""
     uid = models.ForeignKey(
         "users.Users",
         to_field='uid',
@@ -236,6 +237,30 @@ class UserPackageRelation(BaseModel):
         _('套餐到期时间'),
         null=True
     )
+    # UNTREATED, PROCESSED = range(2)
+    # status = models.PositiveSmallIntegerField(
+    #     _('跟进状态'),
+    #     default=UNTREATED,
+    #     choices=(
+    #         (UNTREATED, '待跟进'),
+    #         (PROCESSED, '已跟进'),
+    #     )
+    # )
+
+    class Meta:
+        verbose_name = '套餐购买记录'
+        verbose_name_plural = verbose_name
+        db_table = 'UserPackageRelation'
+        unique_together = ('uid', 'package')
+
+
+class UserPackageRecord(BaseModel):
+    """套餐购买记录"""
+    uid = models.ForeignKey(
+        "users.Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+    )
     UNTREATED, PROCESSED = range(2)
     status = models.PositiveSmallIntegerField(
         _('跟进状态'),
@@ -245,9 +270,39 @@ class UserPackageRelation(BaseModel):
             (PROCESSED, '已跟进'),
         )
     )
+    package_id = models.IntegerField(
+        verbose_name='套餐的主键id',
+    )
+    package_title = models.CharField(
+        _('套餐名称'),
+        max_length=512,
+    )
+    package_amount = models.DecimalField(
+        _('套餐包金额'),
+        max_digits=18,
+        decimal_places=2,
+        default=0
+    )
+    buy_video_num = models.PositiveIntegerField(
+        verbose_name='购买(拍摄)视频数',
+        default=0
+    )
+    video_num = models.PositiveIntegerField(
+        verbose_name='赠送视频数',
+        default=0
+    )
+    package_content = ImageField(
+        verbose_name='套餐包内容图片',
+        upload_to='package',
+        null=True,
+        blank=True,
+    )
+    expiration = models.PositiveIntegerField(
+        _('套餐有效天数'),
+        default=0
+    )
 
     class Meta:
         verbose_name = '套餐购买记录'
         verbose_name_plural = verbose_name
-        db_table = 'UserPackageRelation'
-        unique_together = ('uid', 'package')
+        db_table = 'UserPackageRecord'

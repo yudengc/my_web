@@ -1,6 +1,6 @@
 import django_filters
 
-from transaction.models import UserPackageRelation
+from transaction.models import UserPackageRelation, UserPackageRecord
 
 
 class UserPackageRelationManagerFilter(django_filters.FilterSet):
@@ -8,7 +8,7 @@ class UserPackageRelationManagerFilter(django_filters.FilterSet):
     end_time = django_filters.DateTimeFilter(field_name='date_created__date', lookup_expr='lte')
 
     class Meta:
-        model = UserPackageRelation
+        model = UserPackageRecord
         fields = ('start_time', 'end_time', 'status')
 
 
