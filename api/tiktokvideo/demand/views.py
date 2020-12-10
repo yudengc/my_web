@@ -1,5 +1,6 @@
 import datetime
 import logging
+import time
 import traceback
 
 from django.db.transaction import atomic
@@ -7,7 +8,7 @@ from django_filters import rest_framework
 from django_redis import get_redis_connection
 from redis import StrictRedis
 
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, exceptions
 
 # Create your views here.
 from rest_framework.decorators import action
@@ -63,10 +64,11 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             Argument('receiver_city', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
             Argument('receiver_district', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
             Argument('receiver_location', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
-            Argument('video_num_needed', required=False, handler=lambda x: instance.video_num_needed),  # 不能改总数, 默认还是原来的
         ).parse(request.data, clear=True)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+        if 'video_num_needed' in request.data:
+            request.data.pop('video_num_needed')  # 不能改总数, 默认还是原来的
         if 'address' in form:
             request.data['receiver_name'] = form.address.name
             request.data['receiver_phone'] = form.address.phone
@@ -79,16 +81,11 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         # init key
         title_key, channel_key, images_key = [''] * 3
         if 'goods_link' in form:
-            hash_key = form.goods_link.__hash__()
-            images_key = f'images_{hash_key}_{self.request.user.id}'
-            channel_key = f'channel_{hash_key}_{self.request.user.id}'
-            title_key = f'title_{hash_key}_{self.request.user.id}'
-            if not conn.exists(title_key):
-                return Response({"detail": "该商品链接没有经过校验, 请先校验！"}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                form['goods_images'] = conn.get(images_key).decode('utf-8')
-                form['goods_channel'] = conn.get(channel_key).decode('utf-8')
-                form['goods_title'] = conn.get(title_key).decode('utf-8')
+            hash_key = hash(form.goods_link)
+            original_hash_key = hash(instance.goods_link)
+            if hash_key != original_hash_key:
+                form['goods_title'], form['goods_images'], form['goods_channel'] = self.validate_goods_data(
+                    form.goods_link)
 
         with atomic():
             reduce = 0
@@ -152,16 +149,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
 
-        hash_key = form.goods_link.__hash__()
-        images_key = f'images_{hash_key}_{self.request.user.id}'
-        channel_key = f'channel_{hash_key}_{self.request.user.id}'
-        title_key = f'title_{hash_key}_{self.request.user.id}'
-        if not conn.exists(title_key):
-            return Response({"detail": "该商品链接没有经过校验, 请先校验！"}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            form['goods_images'] = conn.get(images_key).decode('utf-8')
-            form['goods_channel'] = conn.get(channel_key).decode('utf-8')
-            form['goods_title'] = conn.get(title_key).decode('utf-8')
+        form['goods_title'], form['goods_images'], form['goods_channel'] = self.validate_goods_data(form.goods_link)
 
         if 'address' in form:
             form['receiver_name'] = form.address.name
@@ -193,7 +181,6 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                 user_business.remain_video_num -= form.video_num_needed
                 user_business.save()
             instance = VideoNeeded.objects.create(uid=self.request.user, **form)
-            conn.delete(title_key, channel_key, images_key)
             serializer = self.get_serializer(instance)
             headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -254,11 +241,15 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         form, error = JsonParser(
             Argument('goods_link', help='请输入 goods_link(商品链接)', handler=lambda x: x.strip()),
         ).parse(request.data)
+        hash_key = hash(form.goods_link)
+        validate_key = f"validate_{hash_key}_{self.request.user.id}"
+        conn.set(validate_key, 'ing', 60)
+        logger.info(validate_key + ':ing')
         try:
+            # 因为前端没有等待当前的接口完成就去调用创建接口, 所以这里要处理一下
             data = check_link_and_get_data(form.goods_link)
             if data == 444:
                 return Response({'detail': '抱歉，该商品不是淘宝联盟商品'}, status=status.HTTP_400_BAD_REQUEST)
-            hash_key = form.goods_link.__hash__()
             images_key = f'images_{hash_key}_{self.request.user.id}'
             channel_key = f'channel_{hash_key}_{self.request.user.id}'
             title_key = f'title_{hash_key}_{self.request.user.id}'
@@ -267,16 +258,22 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             title_value = data.get('itemtitle', None)
             if images_value is None or channel_value is None or title_value is None:
                 logger.info(data)
+                conn.set(validate_key, 'err', 60)
                 return Response({"detail": "抱歉, 无法获取该商品来源以及图片, 校验不通过"}, status=status.HTTP_400_BAD_REQUEST)
             conn.set(images_key, images_value, 3600)
             conn.set(channel_key, channel_value, 3600)
             conn.set(title_key, title_value, 3600)
+            logger.info(validate_key + ':done')
+            conn.set(validate_key, 'done', 3600)
             return Response(data, status=status.HTTP_200_OK)
         except CheckLinkError as e:
+            conn.set(validate_key, 'err', 60)
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except CheckLinkRequestError as e:
+            conn.set(validate_key, 'err', 60)
             return Response({'detail': str(e), 'code': 123}, status=status.HTTP_400_BAD_REQUEST)
         except:
+            conn.set(validate_key, 'err', 5)
             logger.info(traceback.format_exc())
             return Response({"detail": "校验接口报错了，请联系技术人员解决"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -289,6 +286,35 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             'to_publish': VideoNeeded.objects.filter(uid=request.user, status=VideoNeeded.TO_PUBLISH).count()
         }
         return Response(data, status=status.HTTP_200_OK)
+
+    def validate_goods_data(self, goods_link):
+        hash_key = hash(goods_link)
+        validate_key = f"validate_{hash_key}_{self.request.user.id}"
+        images_key = f'images_{hash_key}_{self.request.user.id}'
+        channel_key = f'channel_{hash_key}_{self.request.user.id}'
+        title_key = f'title_{hash_key}_{self.request.user.id}'
+        logger.info(validate_key + ':checking')
+        if not conn.exists(validate_key):
+            raise exceptions.APIException(detail="该商品链接没有经过校验, 请先校验！", code=status.HTTP_400_BAD_REQUEST)
+        else:
+            time_remained = conn.ttl(validate_key)
+            while time_remained > 0:
+                validate_status = conn.get(validate_key).decode('utf-8')
+                if validate_status == 'done':
+                    goods_images = conn.get(images_key).decode('utf-8')
+                    goods_channel = conn.get(channel_key).decode('utf-8')
+                    goods_title = conn.get(title_key).decode('utf-8')
+                    return goods_title, goods_images, goods_channel
+                elif validate_status == 'err':
+                    logger.info(validate_key + ':err and del')
+                    raise exceptions.APIException(detail="该商品链接校验有误, 无法创建需求!", code=status.HTTP_400_BAD_REQUEST)
+                elif validate_status == 'ing':
+                    logger.info(validate_key + ':waiting')
+                    time.sleep(0.05)
+                    time_remained = conn.ttl(validate_key)
+            else:
+                # 超时了还是没有完成
+                raise exceptions.APIException(detail="商品检测超时, 无法创建需求", code=status.HTTP_400_BAD_REQUEST)
 
 
 class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
@@ -405,14 +431,24 @@ class BusVideoHomePageViewSet(viewsets.ModelViewSet):
 class test(APIView):
     permission_classes = [AllowAny]
 
-    @FlowLimiter.limited_decorator(limited="10/day;")
+    # @FlowLimiter.limited_decorator(limited="10/day;")
     def post(self, request):
         # data = check_link_and_get_data(request.data.get('goods_link').strip())
-        return Response([{10: 1}, {20: 1}, {30: 0}], status=status.HTTP_200_OK)
+        hash_key = hash('askjhngkjadhfghiughkjfgnkjn234hiu2h98ry298y4234asdva')
+        conn_key = f'validate_{hash_key}'
+        conn.set(conn_key, 1)
+        return Response('ok')
 
     def get(self, request):
-        from qiniu import Auth
-        from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
-        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
-        return Response(auth.private_download_url(
-            'https://cdn.darentui.com/songshuVideo/video_1607072492210.mp4' + '?vframe/jpg/offset/1'))
+        # from qiniu import Auth
+        # from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
+        # auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+        # return Response(auth.private_download_url(
+        #     'https://cdn.darentui.com/songshuVideo/video_1607072492210.mp4' + '?vframe/jpg/offset/1'))
+        hash_key = hash('askjhngkjadhfghiughkjfgnkjn234hiu2h98ry298y4234asdva')
+        conn_key = f'validate_{hash_key}'
+        if not conn.exists(conn_key):
+            return Response(1, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            conn.delete(conn_key)
+            return Response(0, status=status.HTTP_200_OK)
