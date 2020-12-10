@@ -6,7 +6,7 @@ from application.models import VideoOrder
 from libs.common.utils import get_last_year_month, get_first_and_now
 from relations.models import InviteRelationManager
 from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
-from transaction.models import UserPackageRelation
+from transaction.models import UserPackageRelation, UserPackageRecord
 from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase, CelebrityStyle, ScriptType
 
 
@@ -71,11 +71,11 @@ class UserInfoSerializer(serializers.ModelSerializer):
     商家，业务员用户页
     """
     user_business = serializers.SerializerMethodField()
-    # package_info = serializers.SerializerMethodField()
+    package_info = serializers.SerializerMethodField()
 
     class Meta:
         model = Users
-        fields = ('username', 'identity', 'user_business',)
+        fields = ('username', 'identity', 'user_business', 'package_info')
 
     def get_user_business(self, obj):
         bus_obj = UserBusiness.objects.filter(uid=obj).first()
@@ -84,12 +84,14 @@ class UserInfoSerializer(serializers.ModelSerializer):
                         remain_video_num=bus_obj.remain_video_num)
         return None
 
-    # def get_package_info(self, obj):
-    #     r_ps = UserPackageRelation.objects.filter(uid=obj).order_by('-date_created')
-    #     lis = []
-    #     for r_obj in r_ps:
-    #         lis.append(dict(package_title=r_obj.package.package_title, expiration_time=r_obj.expiration_time))
-    #     return lis
+    def get_package_info(self, obj):
+        r_ps = UserPackageRecord.objects.filter(uid=obj).order_by('-date_created')
+        lis = []
+        for r_obj in r_ps:
+            relation_obj = UserPackageRelation.objects.filter(uid=obj, package_id=r_obj.package_id).first()
+            lis.append(dict(package_title=r_obj.package_title,
+                            expiration_time=relation_obj.expiration_time if relation_obj else None))
+        return lis
 
 
 class CreatorUserInfoSerializer(serializers.ModelSerializer):
