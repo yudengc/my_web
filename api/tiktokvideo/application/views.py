@@ -240,10 +240,10 @@ class BusVideoOrderViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(methods=['get', ], detail=False, permission_classes=[ManagerPermission])
     def video_order_status(self, request, **kwargs):
-        data = dict(wait_send=VideoOrder.objects.filter(demand__uid=request.user, status=0).count(),
-                    wait_commit=VideoOrder.objects.filter(demand__uid=request.user, status=1).count(),
-                    wait_return=VideoOrder.objects.filter(demand__uid=request.user, status=4).count(),
-                    done=VideoOrder.objects.filter(demand__uid=request.user, status=5).count())
+        data = dict(wait_send=VideoOrder.objects.filter(demand__uid=request.user, status=VideoOrder.WAIT_SEND).count(),
+                    wait_commit=VideoOrder.objects.filter(demand__uid=request.user, status=VideoOrder.WAIT_COMMIT).count(),
+                    wait_return=VideoOrder.objects.filter(demand__uid=request.user, status=VideoOrder.WAIT_RETURN).count(),
+                    done=VideoOrder.objects.filter(demand__uid=request.user, status=VideoOrder.DONE).count())
         return Response(data, status=status.HTTP_200_OK)
 
 
