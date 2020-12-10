@@ -393,6 +393,11 @@ class UserCreator(BaseModel):
         default=0
     )
 
+    class Meta:
+        verbose_name = '创作者信息'
+        verbose_name_plural = verbose_name
+        db_table = 'UserCreator'
+
 
 class CelebrityStyle(BaseModel):
     title = models.CharField(

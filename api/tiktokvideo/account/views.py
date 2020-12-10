@@ -20,6 +20,9 @@ class MyCreatorAccountViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         self.queryset = CreatorAccount.objects.filter(uid=self.request.user)
+        if not self.queryset.exists():
+            account_obj = CreatorAccount.objects.create(uid=self.request.user)
+            self.queryset = CreatorAccount.objects.filter(id=account_obj.id)
         return super().get_queryset()
 
     def list(self, request, *args, **kwargs):

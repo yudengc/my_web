@@ -449,7 +449,8 @@ class VideoCountView(APIView):
             obj = UserCreator.objects.get(uid=request.user)
         except UserCreator.DoesNotExist:
             obj = UserCreator.objects.create(uid=request.user)
-        total = VideoOrder.objects.filter(user=request.user).exclude(status=VideoOrder.DONE).aggregate(sum=Sum('num_selected'))['sum']
+        total = VideoOrder.objects.filter(user=request.user).exclude(status=VideoOrder.DONE).\
+            aggregate(sum=Sum('num_selected'))['sum']
         if not total:
             total = 0
         remaining = 5 - total if 5 - total > 0 else 0
