@@ -63,7 +63,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             Argument('receiver_city', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
             Argument('receiver_district', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
             Argument('receiver_location', required=False, filter=lambda x: x in [u'', '', None], help="修改地址传address"),
-            Argument('video_num_needed', required=False, filter=lambda x: x in [u'', '', None], help="视频总数不能改"),
+            Argument('video_num_needed', required=False, handler=lambda x: instance.video_num_needed),  # 不能改总数, 默认还是原来的
         ).parse(request.data, clear=True)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
@@ -298,6 +298,7 @@ class ManageVideoNeededViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('=uid__username', 'title')
     filter_class = ManageVideoNeededFilter
+
     # filter_fields = ('status', 'is_return', )
 
     def get_queryset(self):
@@ -379,11 +380,10 @@ class ManageVideoHomePageViewSet(viewsets.ModelViewSet):
     queryset = HomePageVideo.objects.all()
     pagination_class = StandardResultsSetPagination
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    search_fields = ('title', )
+    search_fields = ('title',)
     filter_class = ManageHomePageVideoFilter
 
     def list(self, request, *args, **kwargs):
-
         return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
@@ -414,5 +414,5 @@ class test(APIView):
         from qiniu import Auth
         from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
         auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
-        return Response(auth.private_download_url('https://cdn.darentui.com/songshuVideo/video_1607072492210.mp4' + '?vframe/jpg/offset/1'))
-
+        return Response(auth.private_download_url(
+            'https://cdn.darentui.com/songshuVideo/video_1607072492210.mp4' + '?vframe/jpg/offset/1'))
