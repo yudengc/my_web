@@ -41,7 +41,7 @@ SIMPLEUI_CONFIG = \
                     'app': 'transaction',
                     'name': '套餐购买记录',
                     'icon': 'el-icon-document',
-                    'url': '/admin/transaction/userpackagerelation/',
+                    'url': '/admin/transaction/userpackagerecord/',
                 },
                 {
                     'app': 'transaction',

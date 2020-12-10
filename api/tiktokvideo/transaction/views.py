@@ -16,10 +16,10 @@ from rest_framework.viewsets import GenericViewSet
 
 from transaction.filter import UserPackageRelationManagerFilter
 from transaction.serializers import PackageSerializer, MyPackageSerializer, OrderInfoSerializer, \
-    PackageManagerSerializer, UserPackageRelationManagerSerializer, UserPackageRelationManagerUpdateSerializer, \
-    PackageCommonSerializer
+    PackageManagerSerializer, \
+    PackageCommonSerializer, UserPackageRecordManagerSerializer, UserPackageRecordManagerUpdateSerializer
 from transaction.tasks import update_order_status
-from transaction.models import OrderInfo, UserPackageRelation
+from transaction.models import OrderInfo, UserPackageRelation, UserPackageRecord
 from libs.common.pay import WeChatPay
 from libs.common.permission import ManagerPermission, AllowAny, SalesmanPermission, AdminPermission
 from libs.common.utils import get_ip
@@ -153,14 +153,33 @@ class PackageManagerViewSet(mixins.CreateModelMixin,
     search_fields = ('package_title',)
 
 
-class UserPackageRelationManagerViewSet(mixins.RetrieveModelMixin,
-                                        mixins.UpdateModelMixin,
-                                        mixins.ListModelMixin,
-                                        GenericViewSet):
+# class UserPackageRelationManagerViewSet(mixins.RetrieveModelMixin,
+#                                         mixins.UpdateModelMixin,
+#                                         mixins.ListModelMixin,
+#                                         GenericViewSet):
+#     """套餐购买记录后台"""
+#     permission_classes = (AdminPermission,)
+#     serializer_class = UserPackageRelationManagerSerializer
+#     queryset = UserPackageRelation.objects.all()
+#     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+#     filter_class = UserPackageRelationManagerFilter
+#     search_fields = ('uid__username', 'uid__auth_base__nickname', 'uid__user_salesman__salesman__username',
+#                      'uid__user_salesman__salesman__salesman_name')
+#
+#     def get_serializer_class(self):
+#         if self.action in ['update', 'partial_update']:
+#             self.serializer_class = UserPackageRelationManagerUpdateSerializer
+#         return super().get_serializer_class()
+
+
+class UserPackageRecordManagerViewSet(mixins.RetrieveModelMixin,
+                                      mixins.UpdateModelMixin,
+                                      mixins.ListModelMixin,
+                                      GenericViewSet):
     """套餐购买记录后台"""
     permission_classes = (AdminPermission,)
-    serializer_class = UserPackageRelationManagerSerializer
-    queryset = UserPackageRelation.objects.all()
+    serializer_class = UserPackageRecordManagerSerializer
+    queryset = UserPackageRecord.objects.all()
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserPackageRelationManagerFilter
     search_fields = ('uid__username', 'uid__auth_base__nickname', 'uid__user_salesman__salesman__username',
@@ -168,7 +187,5 @@ class UserPackageRelationManagerViewSet(mixins.RetrieveModelMixin,
 
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update']:
-            self.serializer_class = UserPackageRelationManagerUpdateSerializer
+            self.serializer_class = UserPackageRecordManagerUpdateSerializer
         return super().get_serializer_class()
-
-

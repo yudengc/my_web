@@ -32,7 +32,7 @@ class CreatorAccount(BaseModel):
 
 
 class CreatorBill(models.Model):
-    """创作者每月账单(只记录已结算的，待结算的即时计算)"""
+    """创作者每月账单"""
     uid = models.ForeignKey(
         "users.Users",
         to_field='uid',

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from relations.models import InviteRelationManager
-from transaction.models import UserPackageRelation, OrderInfo, Package
+from transaction.models import UserPackageRelation, OrderInfo, Package, UserPackageRecord
 from users.models import Users, UserBusiness
 
 
@@ -19,13 +19,18 @@ class BusinessInfoSerializer(serializers.ModelSerializer):
         return obj.auth_base.nickname if obj.auth_base else ''
 
     def get_has_package(self, obj):
-        return UserPackageRelation.objects.filter(uid=obj).exists()
+        # return UserPackageRelation.objects.filter(uid=obj).exists()
+        return UserPackageRecord.objects.filter(uid=obj).exists()
 
     def get_status(self, obj):
-        if UserPackageRelation.objects.filter(uid=obj, status=UserPackageRelation.PROCESSED).exists():
-            return UserPackageRelation.PROCESSED
+        if UserPackageRecord.objects.filter(uid=obj, status=UserPackageRecord.PROCESSED).exists():
+            return UserPackageRecord.PROCESSED
         else:
-            return UserPackageRelation.UNTREATED
+            return UserPackageRecord.UNTREATED
+        # if UserPackageRelation.objects.filter(uid=obj, status=UserPackageRelation.PROCESSED).exists():
+        #     return UserPackageRelation.PROCESSED
+        # else:
+        #     return UserPackageRelation.UNTREATED
 
 
 class MyRelationSerializer(serializers.ModelSerializer):
