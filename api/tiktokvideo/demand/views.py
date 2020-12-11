@@ -306,7 +306,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                     goods_title = conn.get(title_key).decode('utf-8')
                     return goods_title, goods_images, goods_channel
                 elif validate_status == 'err':
-                    logger.info(validate_key + ':err and del')
+                    logger.info(validate_key + ':err')
                     raise exceptions.APIException(detail="该商品链接校验有误, 无法创建需求!", code=status.HTTP_400_BAD_REQUEST)
                 elif validate_status == 'ing':
                     logger.info(validate_key + ':waiting')
@@ -314,6 +314,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                     time_remained = conn.ttl(validate_key)
             else:
                 # 超时了还是没有完成
+                logger.info(validate_key + ':timeout')
                 raise exceptions.APIException(detail="商品检测超时, 无法创建需求", code=status.HTTP_400_BAD_REQUEST)
 
 
