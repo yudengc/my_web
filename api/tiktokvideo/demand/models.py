@@ -152,7 +152,8 @@ class VideoNeeded(models.Model):
     )
     model_needed = models.PositiveSmallIntegerField(
         verbose_name='模特需求类型',
-        default=0,
+        default=None,
+        null=True,
         choices=(
             (0, '无要求'),
             (1, '男模特'),
@@ -162,7 +163,8 @@ class VideoNeeded(models.Model):
     )
     model_occur_rate = models.PositiveSmallIntegerField(
         verbose_name='模特出场率',
-        default=0,
+        default=None,
+        null=True,
         choices=(
             (0, '无要求'),
             (1, '>10%'),
@@ -173,7 +175,8 @@ class VideoNeeded(models.Model):
     )
     model_age_range = models.PositiveSmallIntegerField(
         verbose_name='模特年龄范围',
-        default=0,
+        default=None,
+        null=True,
         choices=(
             (0, '无要求'),
             (1, '婴幼儿'),
@@ -184,7 +187,8 @@ class VideoNeeded(models.Model):
     )
     model_figure = models.PositiveSmallIntegerField(
         verbose_name='模特身材',
-        default=0,
+        default=None,
+        null=True,
         choices=(
             (0, '无要求'),
             (1, '偏瘦'),

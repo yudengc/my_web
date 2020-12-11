@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import time
 import traceback
@@ -127,10 +128,10 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             Argument('is_return', type=bool, help='请输入 is_return(是否返样)'),
             Argument('video_size', type=int, help='请输入 video_size(尺寸)'),
             Argument('clarity', type=int, help='请输入 clarity(清晰度'),
-            Argument('model_needed', type=int, help='请输入 model_needed(模特出镜)'),
-            Argument('model_occur_rate', type=int, help='请输入 model_occur_rate(模特出境比例)'),
-            Argument('model_age_range', type=int, help='请输入 model_age_range(模特年龄)'),
-            Argument('model_figure', type=int, help='请输入 model_figure(模特身材)'),
+            Argument('model_needed', required=False, type=int, help='请输入 model_needed(模特出镜)'),
+            Argument('model_occur_rate', required=False, type=int, help='请输入 model_occur_rate(模特出境比例)'),
+            Argument('model_age_range', required=False, type=int, help='请输入 model_age_range(模特年龄)'),
+            Argument('model_figure', required=False, type=int, help='请输入 model_figure(模特身材)'),
             Argument('desc', type=str, required=False, help='请输入 desc(其他说明)'),
             Argument('example1', type=str, required=False, help='请输入 example1(参考视频1)'),
             Argument('example2', type=str, required=False, help='请输入 example2(参考视频2)'),
@@ -245,14 +246,29 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         validate_key = f"validate_{hash_key}_{self.request.user.id}"
         conn.set(validate_key, 'ing', 60)
         logger.info(validate_key + ':ing')
+
+        data_cache = f"goods_data_{hash_key}"
+        images_key = f'images_{hash_key}_{self.request.user.id}'
+        channel_key = f'channel_{hash_key}_{self.request.user.id}'
+        title_key = f'title_{hash_key}_{self.request.user.id}'
+        if conn.exists(data_cache):
+            data = json.loads(conn.get(data_cache).decode('utf-8'))
+            channel_value = data.get('channel', None)
+            images_value = data.get('itempic', None)
+            title_value = data.get('itemtitle', None)
+            if channel_value is not None and images_value is not None and title_value is not None:
+                conn.set(images_key, images_value, 3600)
+                conn.set(channel_key, channel_value, 3600)
+                conn.set(title_key, title_value, 3600)
+                logger.info(validate_key + ':using cache')
+                conn.set(validate_key, 'done', 3600)
+                return Response(data, status=status.HTTP_200_OK)
+
         try:
             # 因为前端没有等待当前的接口完成就去调用创建接口, 所以这里要处理一下
             data = check_link_and_get_data(form.goods_link)
             if data == 444:
                 return Response({'detail': '抱歉，该商品不是淘宝联盟商品'}, status=status.HTTP_400_BAD_REQUEST)
-            images_key = f'images_{hash_key}_{self.request.user.id}'
-            channel_key = f'channel_{hash_key}_{self.request.user.id}'
-            title_key = f'title_{hash_key}_{self.request.user.id}'
             channel_value = data.get('channel', None)
             images_value = data.get('itempic', None)
             title_value = data.get('itemtitle', None)
@@ -265,6 +281,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             conn.set(title_key, title_value, 3600)
             logger.info(validate_key + ':done')
             conn.set(validate_key, 'done', 3600)
+            conn.set(data_cache, json.dumps(data), 3600)
             return Response(data, status=status.HTTP_200_OK)
         except CheckLinkError as e:
             conn.set(validate_key, 'err', 60)
@@ -306,14 +323,15 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                     goods_title = conn.get(title_key).decode('utf-8')
                     return goods_title, goods_images, goods_channel
                 elif validate_status == 'err':
-                    logger.info(validate_key + ':err and del')
+                    logger.info(validate_key + ':err')
                     raise exceptions.APIException(detail="该商品链接校验有误, 无法创建需求!", code=status.HTTP_400_BAD_REQUEST)
                 elif validate_status == 'ing':
                     logger.info(validate_key + ':waiting')
-                    time.sleep(0.05)
+                    time.sleep(0.1)
                     time_remained = conn.ttl(validate_key)
             else:
                 # 超时了还是没有完成
+                logger.info(validate_key + ':timeout')
                 raise exceptions.APIException(detail="商品检测超时, 无法创建需求", code=status.HTTP_400_BAD_REQUEST)
 
 
