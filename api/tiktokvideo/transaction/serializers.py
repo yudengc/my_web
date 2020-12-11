@@ -36,7 +36,7 @@ class MyPackageSerializer(serializers.ModelSerializer):
         exclude = ('package_id', 'date_updated', 'buy_video_num', 'video_num', 'status')
 
     def get_expiration_time(self, obj):
-        r_obj = UserPackageRelation.objects.filter(package_id=obj.package_id).first()
+        r_obj = UserPackageRelation.objects.filter(package_id=obj.package_id, uid=self.context['request'].user).first()
         if r_obj:
             return r_obj.expiration_time
         return None
