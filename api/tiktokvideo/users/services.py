@@ -62,44 +62,62 @@ class InviteCls:
     # 千万别乱改这个地方
     invite_char = [
         'x', 'v', 'f', 'u', 'c', 'k', '1', '3', '5', '0', 'a', 'q', 'm', '9', 'n', 'e', 's', '4', '2',
-        't', 'h', 'i', 'l', 'y', 'R', 'd', 'Q', 'F', 'w', 'o', 'p', 'g', 'j', 'A', '6', 'S', 'M', 'K'
+        't', 'h', 'i', 'l', 'y', 'd', 'w', 'o', 'p', 'g', 'j', '6', '8', 'b', 'r'
     ]
-    fill_char = '8'
     length = len(invite_char)
-    invite_code_length = 4
+    invite_code_length = 6
     max_id = length ** invite_code_length
+    prime1 = 3
+    slat = 58523
+    prime2 = 11
 
     @classmethod
-    def encode_invite_code(cls, user_id: int):
+    def encode_invite_code(cls, user_id: int) -> str:
         if not isinstance(user_id, int):
             raise ValueError('用户id不是一个int')
         if user_id >= cls.max_id or user_id <= 0:
             raise ValueError(f'id范围:(0, {cls.max_id})')
-        this_int = user_id
-        invite_code = []
-        while this_int / cls.length > 0:
-            mod = this_int % cls.length
-            this_int = this_int // cls.length
-            invite_code.insert(0, cls.invite_char[mod])
-        invite_code = ''.join(invite_code)
-        now_len = len(invite_code)
-        sub_len = cls.invite_code_length - now_len
-        if sub_len > 0:
-            invite_code = cls.fill_char * sub_len + invite_code
-        return invite_code
+        user_id = user_id * cls.prime1 + cls.slat
+        b = [0] * cls.invite_code_length
+        b[0] = user_id
+        for i in range(5):
+            b[i + 1] = b[i] // cls.length
+            b[i] = (b[i] + b[0] * i) % cls.length
+        b[5] = (b[0] + b[1] + b[3] + b[4]) * cls.prime1 % cls.length
+        index_lst = [''] * cls.invite_code_length
+        for i in range(6):
+            idx = i * cls.prime2 % cls.invite_code_length
+            index_lst[i] = cls.invite_char[b[idx]]
+        return ''.join(index_lst)
 
     @classmethod
-    def decode_invite_code(cls, invite_code: str):
-        if not isinstance(invite_code, str):
-            raise ValueError('邀请码要是字符串')
+    def decode_invite_code(cls, invite_code: str) -> int:
         if len(invite_code) != cls.invite_code_length:
-            raise ValueError(f'邀请码长度不对: 要{cls.invite_code_length}位')
-        invite_code = invite_code.replace(cls.fill_char, '')
-        user_id = 0
-        i = 0
-        for c in invite_code[::-1]:
-            if c not in cls.invite_char:
-                raise ValueError('无法解码, 请确认邀请码正确')
-            user_id += cls.invite_char.index(c) * cls.length ** i
-            i += 1
-        return user_id
+            raise ValueError('邀请码错误')
+
+        res = 0
+        feature_idx = [0] * cls.invite_code_length
+        real_idx = [0] * cls.invite_code_length
+        char_lst = [''] * cls.invite_code_length
+        for i in range(cls.invite_code_length):
+            feature_idx[(i * cls.prime2) % cls.invite_code_length] = i
+
+        for i in range(cls.invite_code_length):
+            char_lst[i] = invite_code[feature_idx[i]]
+
+        for i in range(cls.invite_code_length):
+            feature_idx[i] = cls.invite_char.index(char_lst[i])
+
+        real_idx[5] = (feature_idx[0] + feature_idx[1] + feature_idx[3] + feature_idx[4]) * cls.prime1 % cls.length
+        if real_idx[5] != feature_idx[5]:
+            raise ValueError('邀请码错误')
+
+        for i in range(4, -1, -1):
+            real_idx[i] = (feature_idx[i] - feature_idx[0] * i + cls.length * i) % cls.length
+
+        for i in range(4, 0, -1):
+            res += real_idx[i]
+            res *= cls.length
+
+        res = ((res + real_idx[0]) - cls.slat) // cls.prime1
+        return res
