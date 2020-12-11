@@ -36,7 +36,7 @@ class GoodsCategoryViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
-            self.permission_classes = (ManagerPermission,)
+            self.permission_classes = (AllowAny,)
         return super().get_permissions()
 
     def get_serializer_class(self):
