@@ -18,7 +18,7 @@ from application.serializers import VideoApplicationCreateSerializer, VideoAppli
     VideoApplicationManagerRetrieveSerializer, VideoOrderDetailSerializer
 from demand.models import VideoNeeded
 from demand.serializers import ClientVideoNeededDetailSerializer
-from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission, ManagerPermission
+from libs.common.permission import CreatorPermission, AdminPermission, BusinessPermission, ManagerPermission, AllowAny
 from libs.parser import Argument, JsonParser
 from users.models import Address, Users, UserCreator
 
@@ -477,3 +477,4 @@ class VideoOrderDetailViewSet(viewsets.ReadOnlyModelViewSet):
         else:
             self.queryset = VideoOrder.objects.all()
         return super().get_queryset()
+
