@@ -284,7 +284,7 @@ def check_link_and_get_data(goods_link):
                                itemtitle=goods_data.get('title'),
                                itempic=goods_data.get('cover_url'), itemsale=goods_data.get('sales'),
                                channel=VideoNeeded.DY,
-                               itemprice=Decimal(str(goods_data.get('price'))) * Decimal(str(0.01)), )
+                               itemprice=float(Decimal(str(goods_data.get('price'))) * Decimal(str(0.01))), )
                     return dic
                 else:
                     raise CheckLinkError('获取商品信息失败了')
