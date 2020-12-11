@@ -34,6 +34,9 @@ def save_invite_relation(code, phone):
     if invitee_user.identity in [Users.SUPERVISOR, Users.SALESMAN]:
         logger.info('被邀请者为主管或业务员不记录邀请关系（主管邀请业务员在后台创建的时候记录）')
         return
+    if inviter_user.id == invitee_user.id:
+        logger.info(f'{inviter_user.username}  自己邀请自己不用记录')
+        return
 
     # 查询邀请者是否拥有上级
     inviter_queryset = InviteRelationManager.objects.filter(invitee=inviter_user)
