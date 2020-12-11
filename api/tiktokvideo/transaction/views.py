@@ -119,13 +119,23 @@ class PackageViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
+# class MyPackageViewSet(viewsets.ModelViewSet):
+#     """我的套餐"""
+#     permission_classes = (ManagerPermission,)
+#     serializer_class = MyPackageSerializer
+#
+#     def get_queryset(self):
+#         self.queryset = UserPackageRelation.objects.filter(uid=self.request.user).select_related('package')
+#         return super().get_queryset()
+
+
 class MyPackageViewSet(viewsets.ModelViewSet):
     """我的套餐"""
     permission_classes = (ManagerPermission,)
     serializer_class = MyPackageSerializer
 
     def get_queryset(self):
-        self.queryset = UserPackageRelation.objects.filter(uid=self.request.user).select_related('package')
+        self.queryset = UserPackageRecord.objects.filter(uid=self.request.user)
         return super().get_queryset()
 
 

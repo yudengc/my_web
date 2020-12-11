@@ -6,7 +6,7 @@ from application.models import VideoOrder
 from libs.common.utils import get_last_year_month, get_first_and_now
 from relations.models import InviteRelationManager
 from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
-from transaction.models import UserPackageRelation
+from transaction.models import UserPackageRelation, UserPackageRecord
 from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase, CelebrityStyle, ScriptType
 
 
@@ -85,10 +85,12 @@ class UserInfoSerializer(serializers.ModelSerializer):
         return None
 
     def get_package_info(self, obj):
-        r_ps = UserPackageRelation.objects.filter(uid=obj).order_by('-date_created')
+        r_ps = UserPackageRecord.objects.filter(uid=obj).order_by('-date_created')
         lis = []
         for r_obj in r_ps:
-            lis.append(dict(package_title=r_obj.package.package_title, expiration_time=r_obj.expiration_time))
+            relation_obj = UserPackageRelation.objects.filter(uid=obj, package_id=r_obj.package_id).first()
+            lis.append(dict(package_title=r_obj.package_title,
+                            expiration_time=relation_obj.expiration_time if relation_obj else None))
         return lis
 
 
