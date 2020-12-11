@@ -310,7 +310,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
                     raise exceptions.APIException(detail="该商品链接校验有误, 无法创建需求!", code=status.HTTP_400_BAD_REQUEST)
                 elif validate_status == 'ing':
                     logger.info(validate_key + ':waiting')
-                    time.sleep(0.05)
+                    time.sleep(0.1)
                     time_remained = conn.ttl(validate_key)
             else:
                 # 超时了还是没有完成
