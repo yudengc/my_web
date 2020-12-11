@@ -437,7 +437,7 @@ class ManageVideoHomePageViewSet(viewsets.ModelViewSet):
 
 
 class BusVideoHomePageViewSet(viewsets.ModelViewSet):
-    permission_classes = [ManagerPermission]
+    permission_classes = [AllowAny, ]
     queryset = HomePageVideo.objects.filter(is_show=True)
     pagination_class = StandardResultsSetPagination
     serializer_class = HomePageVideoSerializer
