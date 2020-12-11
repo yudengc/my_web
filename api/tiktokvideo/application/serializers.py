@@ -94,11 +94,12 @@ class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
         if obj.is_return and obj.status == VideoOrder.WAIT_RETURN:
             # location = obj.return_receiver_province + obj.return_receiver_city + \
             #            obj.return_receiver_district + obj.return_receiver_location
-            return dict(return_receiver_name=obj.return_receiver_name,
-                        return_receiver_phone=obj.return_receiver_phone,
-                        return_location=obj.return_receiver_location,
-                        return_company=obj.return_company,
-                        return_express=obj.return_express)
+            video_order_detail = obj.video_order_detail
+            return dict(return_receiver_name=video_order_detail.return_receiver_name,
+                        return_receiver_phone=video_order_detail.return_receiver_phone,
+                        return_location=video_order_detail.return_receiver_location,
+                        return_company=video_order_detail.return_company,
+                        return_express=video_order_detail.return_express)
         return None
 
 
