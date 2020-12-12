@@ -208,7 +208,7 @@ class AView(APIView):
         u_qs = UserPackageRelation.objects.all()
         for u_obj in u_qs:
             package_obj = u_obj.package
-            if not UserPackageRecord.objects.filter(package_id=package_obj.id).exists():
+            if not UserPackageRecord.objects.filter(package_id=package_obj.id, uid=u_obj.uid).exists():
                 UserPackageRecord.objects.create(uid=u_obj.uid,
                                                  package_id=package_obj.id,
                                                  package_title=package_obj.package_title,
@@ -218,3 +218,4 @@ class AView(APIView):
                                                  package_content=package_obj.package_content,
                                                  expiration=package_obj.expiration,
                                                  date_created=u_obj.date_created)
+        return Response('ok')
