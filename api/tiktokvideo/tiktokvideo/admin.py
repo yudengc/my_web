@@ -23,30 +23,30 @@ SIMPLEUI_CONFIG = \
                 {
                     'app': 'users',
                     'name': '用户管理',
-                    'icon': 'fa fa-users',
+                    'icon': 'el-icon-user-solid',
                     'models': [
                         {
                             'name': '用户管理',
                             'url': '/admin/users/users/',
-                            'icon': 'fas fa-baby'
+                            'icon': 'el-icon-user-solid'
                         },
                         {
                             'name': '商家信息',
                             'url': '/admin/users/userbusiness/',
-                            'icon': 'fas fa-baby'
+                            'icon': 'el-icon-user'
                         },
                     ]
                 },
                 {
                     'app': 'transaction',
                     'name': '套餐购买记录',
-                    'icon': 'fa fa-users',
-                    'url': '/admin/transaction/userpackagerelation/',
+                    'icon': 'el-icon-document',
+                    'url': '/admin/transaction/userpackagerecord/',
                 },
                 {
                     'app': 'transaction',
                     'name': '商家套餐',
-                    'icon': 'fa fa-users',
+                    'icon': 'fa fa-folder-open',
                     'url': '/admin/transaction/package/',
                 },
                 {
@@ -57,46 +57,46 @@ SIMPLEUI_CONFIG = \
                         {
                             'name': '团队信息',
                             'url': '/admin/users/team/',
-                            'icon': 'fas fa-baby'
+                            'icon': 'fa fa-users'
                         },
                         {
                             'name': '团队主管',
                             'url': '/admin/users/teamleader/',
-                            'icon': 'fas fa-baby'
+                            'icon': 'fa fa-user-secret'
                         },
                         {
                             'name': '团队成员',
                             'url': '/admin/users/teamusers/',
-                            'icon': 'fas fa-baby'
+                            'icon': 'fa fa-user'
                         },
                     ]
                 },
                 {
                     'app': 'relations',
                     'name': '邀请关系记录',
-                    'icon': 'fa fa-users',
+                    'icon': 'el-icon-tickets',
                     'url': '/admin/relations/inviterelationmanager/'
                 },
                 {
                     'app': 'config',
                     'name': '联系客服',
-                    'icon': 'fa fa-users',
+                    'icon': 'fa fa-phone',
                     'url': '/admin/config/customerservice/',
                 },
                 {
                     'app': 'users',
                     'name': '配置',
-                    'icon': 'fa fa-users',
+                    'icon': 'el-icon-setting',
                     'models': [
                         {
                             'name': '风格标题',
                             'url': '/admin/users/celebritystyle/',
-                            'icon': 'fas fa-baby'
+                            'icon': 'fa fa-american-sign-language-interpreting'
                         },
                         {
                             'name': '脚本类别',
                             'url': '/admin/users/scripttype/',
-                            'icon': 'fas fa-baby'
+                            'icon': 'fa fa-blind'
                         },
 
                     ]

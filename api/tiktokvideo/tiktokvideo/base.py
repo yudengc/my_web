@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 import datetime
 import os
+
+from celery.schedules import crontab
+
 from tiktokvideo.admin import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -24,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'a+42^l7a=^y=!b#kmcls)os2q5@36wz&)3-l%pwzi07h8s_ko2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True if int(os.environ.get('DEBUG')) else False
 
 ALLOWED_HOSTS = ['*']
 
@@ -39,26 +42,35 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'django_filters',
     'safedelete',
     'ckeditor',
+    'flow_limiter',
 
     # app
     'users',
     'transaction',
     'config',
     'relations',
+    'demand',
+    'application',
+    'account',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'libs.middleware.FrozenCheckMiddleware',
+    'libs.middleware.FlowLimitMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'libs.middleware.ResponseMiddleware',
 ]
 
 ROOT_URLCONF = 'tiktokvideo.urls'
@@ -94,6 +106,17 @@ DATABASES = {
         'HOST': os.environ.get('DATABASE_HOST'),
         'PORT': os.environ.get('DATABASE_PORT'),
     }
+}
+
+
+# 限流器
+FLOW_LIMITER = {
+    # 超限后是否使用最近一次的请求结果
+    'use_latest': bool(os.environ.get("USE_LATEST", 0)),
+    'global': {
+        'user': '100000/day;',
+        'nonuser': '10000/day;',
+    },
 }
 
 
@@ -198,6 +221,18 @@ CELERY_SEND_TASK_SENT_EVENT = True
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 
+# ################### Celery 定时任务 SETTINGS ##########################
+
+
+CELERY_BEAT_SCHEDULE = {
+    'create_bill': {
+        # 每月8号产生上个月创作者账单
+        'task': 'account.tasks.task_create_bill',
+        'schedule': crontab(minute=1, hour=1, day_of_month=8),
+        # 'schedule': crontab(minute=35, hour=10),
+    },
+}
+
 
 # Json web token 设置/ 登陆凭证设置
 JWT_AUTH = {
@@ -220,3 +255,44 @@ QINIU_SECRET_KEY = os.environ.get('QINIU_SECRET_KEY')
 QINIU_BUCKET_NAME = os.environ.get('QINIU_BUCKET_NAME')
 QINIU_BUCKET_DOMAIN = os.environ.get('QINIU_BUCKET_DOMAIN')
 IMG_QINIU_BUCKET_NAME = os.environ.get('IMG_QINIU_BUCKET_NAME')
+
+# 好单库配置(详情：https://www.haodanku.com/api/detail/show/19.html)
+HDK_API_KEY = os.environ.get('HDK_API_KEY')
+
+# ################### DouYin SETTINGS ##########################
+DY_CLIENT_KEY = os.environ.get('CLIENT_KEY')
+DY_CLIENT_SECRET = os.environ.get('CLIENT_SECRET')
+DY_CHECK_HOME_URL = 'http://120.78.203.56:10088/api/check/shop'
+DY_GET_USER_URL = 'http://120.78.203.56:10666/api/web/user'
+# DY_CHECK_HOME_URL = 'http://119.23.109.99:10088/api/check/shop',  # 备用的，用的测试服
+DY_CHECK_GOODS_URL = 'http://120.78.203.56:10088/api/check/commission'
+DY_CHECK_SHOP_URL = 'http://120.78.203.56:10088/api/check/xiaodian'
+DY_COUPON_MSG_URL = 'http://120.78.203.56:10088/api/query/shop_coupon'
+
+
+# ################### Cross Domain SETTINGS ##########################
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = ()
+
+CORS_ALLOW_METHODS = (
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+    'VIEW',
+)
+
+CORS_ALLOW_HEADERS = (
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+)

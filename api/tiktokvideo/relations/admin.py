@@ -5,7 +5,7 @@ from relations.models import InviteRelationManager
 
 @admin.register(InviteRelationManager)
 class RelationAdmin(admin.ModelAdmin):
-    """用户管理"""
+    """邀请关系"""
     # 定义admin总览里每行的显示信息
     list_display = ('invitee_username', 'invitee_nickname', 'invitee_role', 'inviter_username', 'inviter_nickname',
                     'salesman_username', 'salesman_nickname', 'time')

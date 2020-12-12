@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from relations.models import InviteRelationManager
-from transaction.models import UserPackageRelation, OrderInfo, Package
+from transaction.models import UserPackageRelation, OrderInfo, Package, UserPackageRecord
 from users.models import Users, UserBusiness
 
 
@@ -19,13 +19,18 @@ class BusinessInfoSerializer(serializers.ModelSerializer):
         return obj.auth_base.nickname if obj.auth_base else ''
 
     def get_has_package(self, obj):
-        return UserPackageRelation.objects.filter(uid=obj).exists()
+        # return UserPackageRelation.objects.filter(uid=obj).exists()
+        return UserPackageRecord.objects.filter(uid=obj).exists()
 
     def get_status(self, obj):
-        if UserPackageRelation.objects.filter(uid=obj, status=UserPackageRelation.PROCESSED).exists():
-            return UserPackageRelation.PROCESSED
+        if UserPackageRecord.objects.filter(uid=obj, status=UserPackageRecord.PROCESSED).exists():
+            return UserPackageRecord.PROCESSED
         else:
-            return UserPackageRelation.UNTREATED
+            return UserPackageRecord.UNTREATED
+        # if UserPackageRelation.objects.filter(uid=obj, status=UserPackageRelation.PROCESSED).exists():
+        #     return UserPackageRelation.PROCESSED
+        # else:
+        #     return UserPackageRelation.UNTREATED
 
 
 class MyRelationSerializer(serializers.ModelSerializer):
@@ -89,3 +94,26 @@ class MyRecordsSerializer(serializers.ModelSerializer):
 
     def get_package_title(self, obj):
         return Package.objects.get(id=obj.parm_id).package_title
+
+
+class MyRelationInfoManagerSerializer(serializers.ModelSerializer):
+    """
+    我的邀请
+    """
+    invitee_username = serializers.CharField(source='invitee.username')
+    invitee_nickname = serializers.CharField(source='invitee.auth_base.nickname')
+    inviter_username = serializers.CharField(source='inviter.username')
+    inviter_nickname = serializers.CharField(source='inviter.auth_base.nickname')
+    salesman_username = serializers.SerializerMethodField()
+    salesman_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InviteRelationManager
+        fields = ('invitee_username', 'invitee_nickname', 'inviter_username', 'inviter_nickname',
+                  'salesman_username', 'salesman_name', 'date_created')
+
+    def get_salesman_username(self, obj):
+        return obj.salesman.username if obj.salesman else None
+
+    def get_salesman_name(self, obj):
+        return obj.salesman.salesman_name if obj.salesman else None

@@ -6,7 +6,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
-from safedelete.models import SafeDeleteModel
 
 
 class BaseModel(models.Model):
@@ -111,6 +110,11 @@ class Users(AbstractUser):
         null=True,
         verbose_name='所属团队'
     )
+    has_power = models.BooleanField(
+        # 业务员才使用该字段
+        _('能否邀请创作者'),
+        default=False
+    )
     date_created = models.DateTimeField(
         _('注册时间'),
         auto_now_add=True
@@ -198,7 +202,6 @@ class UserBase(BaseModel):
         verbose_name = '用户基础信息'
         verbose_name_plural = verbose_name
         db_table = 'UserBase'
-        unique_together = ('phone',)
 
     def __str__(self):
         return self.nickname if self.nickname else ''
@@ -330,11 +333,70 @@ class UserBusiness(BaseModel):
         null=True,
         blank=True
     )
+    remain_video_num = models.PositiveIntegerField(
+        _('剩余视频数'),
+        default=0
+    )
 
     class Meta:
         verbose_name = '商家信息'
         verbose_name_plural = verbose_name
         db_table = 'UserBusiness'
+
+
+class UserCreator(BaseModel):
+    """
+    创作者信息
+    """
+    uid = models.OneToOneField(
+        "Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+        related_name='user_creator',
+    )
+    NOT_CERTIFIED, PENDING, APPROVED, REJECTED = range(4)
+    status = models.PositiveSmallIntegerField(
+        default=NOT_CERTIFIED,
+        choices=(
+            (NOT_CERTIFIED, '未认证'),
+            (PENDING, '待审核'),
+            (APPROVED, '已认证'),
+            (REJECTED, '审核不通过'),
+        )
+    )
+    remark = models.CharField(
+        verbose_name='工作人员备注(异常备注)',
+        max_length=1024,
+        null=True,
+        blank=True
+    )
+    video = models.URLField(
+        verbose_name="介绍视频",
+        max_length=1000,
+        null=True
+    )
+    team_introduction = models.TextField(
+        verbose_name="团队介绍",
+        null=True
+    )
+    capability_introduction = models.TextField(
+        verbose_name="能力介绍",
+        null=True
+    )
+    is_signed = models.BooleanField(
+        verbose_name="是否签约创作者",
+        default=False
+    )
+    contract_reward = models.IntegerField(
+        # 合同上签订的酬劳当默认配置，具体订单酬劳可在申请订单表reward字段修改
+        _('合同上签订的每条视频可得酬劳'),
+        default=0
+    )
+
+    class Meta:
+        verbose_name = '创作者信息'
+        verbose_name_plural = verbose_name
+        db_table = 'UserCreator'
 
 
 class CelebrityStyle(BaseModel):
@@ -373,7 +435,6 @@ class Team(BaseModel):
         on_delete=models.DO_NOTHING,
         related_name='user_team',
         null=True,
-        unique=True,
         verbose_name='团队主管'
     )
     name = models.CharField(

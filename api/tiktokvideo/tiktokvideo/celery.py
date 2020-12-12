@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 
 import dotenv
-from celery import Celery
+from celery import Celery, platforms
 
 dotenv.read_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
 
@@ -23,7 +23,6 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
-
 
 # app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
