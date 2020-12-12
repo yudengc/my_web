@@ -91,7 +91,7 @@ class VideoApplicationRetrieveSerializer(serializers.ModelSerializer):
 
     def get_return_sample(self, obj):
         # 返样信息
-        if obj.is_return and obj.status == VideoOrder.WAIT_RETURN:
+        if obj.is_return and obj.status in [VideoOrder.WAIT_RETURN, VideoOrder.DONE]:
             # location = obj.return_receiver_province + obj.return_receiver_city + \
             #            obj.return_receiver_district + obj.return_receiver_location
             video_order_detail = obj.video_order_detail
