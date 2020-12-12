@@ -205,8 +205,8 @@ class AView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        for i in Users.objects.filter(identity__in=[0, 1, 2]).all():
-            from users.models import UserBusiness
-            if not UserBusiness.objects.filter(uid=i).exists():
-                UserBusiness.objects.create(uid=i)
+        # for i in Users.objects.filter(identity__in=[0, 1, 2]).all():
+        #     from users.models import UserBusiness
+        #     if not UserBusiness.objects.filter(uid=i).exists():
+        #         UserBusiness.objects.create(uid=i)
         return Response('ok')
