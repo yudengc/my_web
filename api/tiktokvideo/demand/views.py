@@ -92,7 +92,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             reduce = 0
             flag = 0
             if 'video_num_remained' in form:
-                reduce = form.video_num_remained - instance.video_num_needed
+                reduce = instance.video_num_remained - form.video_num_remained
                 if reduce < 0:
                     return Response({"detail": "修改剩余数不能大于现在的哦"}, status=status.HTTP_400_BAD_REQUEST)
                 instance.video_num_needed -= reduce
