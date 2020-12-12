@@ -205,17 +205,8 @@ class AView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        u_qs = UserPackageRelation.objects.all()
-        for u_obj in u_qs:
-            package_obj = u_obj.package
-            if not UserPackageRecord.objects.filter(package_id=package_obj.id, uid=u_obj.uid).exists():
-                UserPackageRecord.objects.create(uid=u_obj.uid,
-                                                 package_id=package_obj.id,
-                                                 package_title=package_obj.package_title,
-                                                 package_amount=package_obj.package_amount,
-                                                 buy_video_num=package_obj.buy_video_num,
-                                                 video_num=package_obj.video_num,
-                                                 package_content=package_obj.package_content,
-                                                 expiration=package_obj.expiration,
-                                                 date_created=u_obj.date_created)
+        for i in Users.objects.filter(identity__in=[0, 1, 2]).all():
+            from users.models import UserBusiness
+            if not UserBusiness.objects.filter(uid=i).exists():
+                UserBusiness.objects.create(uid=i)
         return Response('ok')
