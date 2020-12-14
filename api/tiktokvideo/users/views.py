@@ -1,10 +1,13 @@
 import logging
 import re
 import threading
+from xml.etree.ElementTree import tostring
 
 from celery import shared_task
+from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.db.transaction import atomic
+from django.http import HttpResponse
 from django_filters import rest_framework
 from django_filters.rest_framework import DjangoFilterBackend
 from django_redis import get_redis_connection
@@ -15,10 +18,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
+from wechatpy.exceptions import InvalidSignatureException
+from wechatpy.utils import check_signature
 
 from account.models import CreatorAccount
 from libs.common.permission import AllowAny, ManagerPermission, CreatorPermission, AdminPermission
 from libs.parser import JsonParser, Argument
+from libs.utils import trans_xml_to_dict, trans_dict_to_xml
 from relations.models import InviteRelationManager
 from relations.tasks import save_invite_relation
 
@@ -37,7 +43,7 @@ from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializ
     TeamUserLeaderManagerSerializer, TeamUserManagerUpdateSerializer, TeamLeaderManagerSerializer, \
     TeamLeaderManagerUpdateSerializer, CelebrityStyleSerializer, ScriptTypeSerializer
 
-from users.services import WXBizDataCrypt, WeChatApi, InviteCls
+from users.services import WXBizDataCrypt, WeChatApi, InviteCls, WeChatOfficial
 
 redis_conn = get_redis_connection('default')  # type: StrictRedis
 logger = logging.getLogger()
@@ -593,3 +599,42 @@ class ScriptTypeViewSet(mixins.ListModelMixin,
     queryset = ScriptType.objects.order_by('-date_created')
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('title', )
+
+
+class PublicWeChat(APIView):
+    """公众号微信方回调接受"""
+
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        signature = request.GET.get('signature', '')
+        timestamp = request.GET.get('timestamp', '')
+        nonce = request.GET.get('nonce', '')
+        echo_str = request.GET.get('echostr', '')
+        try:
+            check_signature(settings.DSJ_WECHAT_TOKEN, signature, timestamp, nonce)
+        except InvalidSignatureException:
+            echo_str = 'error'
+        response = HttpResponse(echo_str, content_type="text/plain")
+        return response
+
+    def post(self, request):
+        data = trans_xml_to_dict(request.body)
+        logger.info(data)
+        if data.get('Event', None) == 'subscribe':
+            open_id = data.get('FromUserName', 'err')
+            uid = data.get('EventKey').split('qrscene_')[-1]
+            self.handle_subscribe(data)
+        elif data.get('Event', None) == 'unsubscribe':
+            self.handle_unsubscribe(data)
+        return HttpResponse("success")
+
+    def handle_subscribe(self, data):
+        open_id = data.get('FromUserName', None)
+        user_info = WeChatOfficial().get_user_info(open_id)
+        logger.info(user_info)
+
+    def handle_unsubscribe(self, data):
+        open_id = data.get('FromUserName', None)
+        user_info = WeChatOfficial().get_user_info(open_id)
+        logger.info(user_info)

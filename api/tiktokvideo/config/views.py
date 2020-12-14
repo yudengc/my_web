@@ -11,7 +11,6 @@ from config.serializers import CustomerServiceSerializer, GoodsCategorySerialize
     VideoCreateSerializer, CarouselServiceSerializer
 from libs.common.permission import ManagerPermission, SalesmanPermission, AllowAny, AdminPermission, is_admin
 from libs.services import get_qi_niu_token
-from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
 from users.models import Users
 
 
@@ -113,7 +112,7 @@ class CarouselServiceViewSet(viewsets.ModelViewSet):
     """
     轮播图管理
     """
-    queryset = Carousel.objects.filter(is_open=True)
+    queryset = Carousel.objects.filter(is_show=True)
     serializer_class = CarouselServiceSerializer
     permission_classes = (AdminPermission,)
 
@@ -125,4 +124,5 @@ class CarouselServiceViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             self.permission_classes = (AllowAny,)
-        return super(CarouselServiceViewSet, self).get_permissions()
+        return super().get_permissions()
+

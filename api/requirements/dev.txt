@@ -49,3 +49,5 @@ simpleui
 Pillow
 
 demjson
+
+wechatpy
