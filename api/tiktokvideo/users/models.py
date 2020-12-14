@@ -51,6 +51,12 @@ class Users(AbstractUser):
         null=True
     )
 
+    union_id = models.CharField(
+        _("松鼠体系的unionid"),
+        max_length=128,
+        null=True
+    )
+
     APPROVED, FROZEN = range(2)
     STATUS = (
         (APPROVED, '正常'),
