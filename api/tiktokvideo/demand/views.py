@@ -438,7 +438,7 @@ class ManageVideoHomePageViewSet(viewsets.ModelViewSet):
 
 class BusVideoHomePageViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny, ]
-    queryset = HomePageVideo.objects.filter(is_show=True)
+    queryset = HomePageVideo.objects.filter(is_show=True).order_by('?')
     pagination_class = StandardResultsSetPagination
     serializer_class = HomePageVideoSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
