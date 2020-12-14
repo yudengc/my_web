@@ -248,6 +248,11 @@ SECRET = os.environ.get('SECRET')
 MCH_ID = os.environ.get('MCH_ID')
 MCH_KEY = os.environ.get('MCH_KEY')
 PAY_NOTIFY_URL = os.environ.get('PAY_NOTIFY_URL')
+# 微信公众号配置
+WECHAT_OFFICIAL_APPID = os.environ.get('WECHAT_OFFICIAL_APPID')
+WECHAT_OFFICIAL_APPSECRET = os.environ.get('WECHAT_OFFICIAL_APPSECRET')
+DSJ_WECHAT_TOKEN = 'oqzMoHFT7PWOPU9h3zstHpMCKqxLuKfn'
+
 
 # 七牛云存储配置
 QINIU_ACCESS_KEY = os.environ.get('QINIU_ACCESS_KEY')

@@ -1,10 +1,13 @@
 import logging
 import re
 import threading
+from xml.etree.ElementTree import tostring
 
 from celery import shared_task
+from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.db.transaction import atomic
+from django.http import HttpResponse
 from django_filters import rest_framework
 from django_filters.rest_framework import DjangoFilterBackend
 from django_redis import get_redis_connection
@@ -15,10 +18,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
+from wechatpy.exceptions import InvalidSignatureException
+from wechatpy.utils import check_signature
 
 from account.models import CreatorAccount
 from libs.common.permission import AllowAny, ManagerPermission, CreatorPermission, AdminPermission
 from libs.parser import JsonParser, Argument
+from libs.utils import trans_xml_to_dict, trans_dict_to_xml
 from relations.models import InviteRelationManager
 from relations.tasks import save_invite_relation
 
@@ -593,3 +599,55 @@ class ScriptTypeViewSet(mixins.ListModelMixin,
     queryset = ScriptType.objects.order_by('-date_created')
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('title', )
+
+
+class PublicWeChat(APIView):
+    """公众号微信方回调接受"""
+
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        signature = request.GET.get('signature', '')
+        timestamp = request.GET.get('timestamp', '')
+        nonce = request.GET.get('nonce', '')
+        echo_str = request.GET.get('echostr', '')
+        try:
+            check_signature(settings.DSJ_WECHAT_TOKEN, signature, timestamp, nonce)
+        except InvalidSignatureException:
+            echo_str = 'error'
+        response = HttpResponse(echo_str, content_type="text/plain")
+        return response
+
+    def post(self, request):
+        data = trans_xml_to_dict(request.body)
+        logger.info(data)
+        # if data.get('Event', None) == 'subscribe' or data.get('Event', None) == 'SCAN':
+        #     # 扫描了公众号二维码，并关注了或原来就关注了
+        #     open_id = data.get('FromUserName', 'err')
+        #     uid = data.get('EventKey').split('qrscene_')[-1]
+        #     key = f'openid_{uid}'
+        #     if conn.exists(key):
+        #         expired_time = conn.ttl(key)
+        #         conn.set(key, open_id, expired_time)
+        #     if data.get('Event', None) == 'subscribe':
+        #         result = {
+        #             'ToUserName': data.get('FromUserName'),
+        #             'FromUserName': data.get('ToUserName'),
+        #             'CreateTime': int(time.time()),
+        #             'MsgType': 'text',
+        #             'Content': '【达人推】严选APP上线啦📢📢📢达人推携手大牌样品上线🐿️三只松鼠💄迪奥[月亮]蓝月亮等大牌邀您一起来卖货💥💥💥\n'
+        #                        '下载达人推APP即可申请大牌样品，APP详情点击：http://i7q.cn/66tgnT更多大牌样品资讯请添加达人推工作微信号💕💕💕\n'
+        #                        '【进专属带货社群➕送达人推APP会员】🚀🚀🚀\n'
+        #                        '工作微信号：shan2ii\n'
+        #                        '添加备注：带货达人\n'
+        #                        '同大牌一起来赚钱吧[勾引]\n'
+        #                        '点击查看达人推部分样品：\n'
+        #                        'https://haohuo.jinritemai.com/views/product/detail?id=3435004983295244712&origin_type=604\n'
+        #                        'https://haohuo.jinritemai.com/views/product/detail?id=3403618205770607144&origin_type=604'
+        #             # 'Image': {
+        #             #     'MediaId': "MuVtCcQJZhTIhWvBUgxEuJjoXZS2HwhCGMpQMjhd5QI"
+        #             # }
+        #         }
+        #         xml = trans_dict_to_xml(result)
+        #         return HttpResponse(tostring(xml, encoding='unicode'))
+        return HttpResponse("success")

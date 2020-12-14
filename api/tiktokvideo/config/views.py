@@ -11,7 +11,6 @@ from config.serializers import CustomerServiceSerializer, GoodsCategorySerialize
     VideoCreateSerializer
 from libs.common.permission import ManagerPermission, SalesmanPermission, AllowAny, AdminPermission, is_admin
 from libs.services import get_qi_niu_token
-from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
 
 
 class CustomerServiceViewSet(viewsets.ModelViewSet):
@@ -106,4 +105,3 @@ class VideoViewSet(mixins.CreateModelMixin, GenericViewSet):
         data['cover'] = data['video_url'] + '?vframe/jpg/offset/1'
         data['video_url'] = data['video_url']
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
-
