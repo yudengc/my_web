@@ -126,7 +126,8 @@ class CreatorBillDetailSerializer(serializers.ModelSerializer):
         return obj.reward * obj.num_selected
 
     def get_demand_title(self, obj):
-        return obj.video_order_detail.demand_detail.get('title')
+        detail_json = obj.video_order_detail.demand_detail
+        return detail_json.get('title') if detail_json else obj.demand.title
 
     def get_bus(self, obj):
         bus_user_obj = obj.demand.uid
