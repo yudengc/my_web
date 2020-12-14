@@ -6,12 +6,13 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from application.models import Video
-from config.models import CustomerService, GoodsCategory
+from config.models import CustomerService, GoodsCategory, Carousel
 from config.serializers import CustomerServiceSerializer, GoodsCategorySerializer, ManageGoodsCategorySerializer, \
-    VideoCreateSerializer
+    VideoCreateSerializer, CarouselServiceSerializer
 from libs.common.permission import ManagerPermission, SalesmanPermission, AllowAny, AdminPermission, is_admin
 from libs.services import get_qi_niu_token
 from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
+from users.models import Users
 
 
 class CustomerServiceViewSet(viewsets.ModelViewSet):
@@ -107,3 +108,21 @@ class VideoViewSet(mixins.CreateModelMixin, GenericViewSet):
         data['video_url'] = data['video_url']
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
+
+class CarouselServiceViewSet(viewsets.ModelViewSet):
+    """
+    轮播图管理
+    """
+    queryset = Carousel.objects.filter(is_open=True)
+    serializer_class = CarouselServiceSerializer
+    permission_classes = (AdminPermission,)
+
+    def get_queryset(self):
+        if self.request.user.sys_role in [Users.SUPER_ADMIN, Users.ADMIN]:
+            self.queryset = Carousel.objects.all()
+        return super().get_queryset()
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = (AllowAny,)
+        return super(CarouselServiceViewSet, self).get_permissions()

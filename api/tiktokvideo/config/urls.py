@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from config.views import CustomerServiceViewSet, GoodsCategoryViewSet, QiNiuTokenView, VideoViewSet
+from config.views import CustomerServiceViewSet, GoodsCategoryViewSet, QiNiuTokenView, VideoViewSet, \
+    CarouselServiceViewSet
 
 app_name = "config"
 
@@ -10,6 +11,7 @@ router = DefaultRouter()
 router.register(r'customer-service', CustomerServiceViewSet, basename='login')
 router.register(r'goods-category', GoodsCategoryViewSet, basename='category')
 router.register(r'upload-video', VideoViewSet, basename='upload_video')
+router.register(r'carousel', CarouselServiceViewSet, basename='carousel')
 
 
 urlpatterns = [
