@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from application.models import Video
-from config.models import CustomerService, GoodsCategory
+from config.models import CustomerService, GoodsCategory, Carousel
 
 
 class CustomerServiceSerializer(serializers.ModelSerializer):
@@ -28,3 +28,13 @@ class VideoCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
         fields = ('video_url', 'id')
+
+
+class CarouselServiceSerializer(serializers.ModelSerializer):
+    """
+    轮播图
+    """
+
+    class Meta:
+        model = Carousel
+        fields = '__all__'

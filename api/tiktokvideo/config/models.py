@@ -55,3 +55,32 @@ class GoodsCategory(BaseModel):
         verbose_name_plural = verbose_name
         db_table = 'GoodsCategory'
         ordering = ('-date_created',)
+
+
+class Carousel(BaseModel):
+    """
+    首页轮播图
+    """
+    name = models.CharField(
+        _('名称'),
+        max_length=30,
+    )
+    link = models.URLField(
+        _("轮播图地址"),
+        null=True,
+        blank=True
+    )
+    is_show = models.BooleanField(
+        _("是否展示"),
+        default=False
+    )
+    sort_code = models.PositiveSmallIntegerField(
+        _("排序码"),
+        unique=True
+    )
+
+    class Meta:
+        verbose_name = "轮播图"
+        verbose_name_plural = verbose_name
+        db_table = 'Carousel'
+        ordering = ['-sort_code']

@@ -73,3 +73,61 @@ class MyBalanceRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = BalanceRecord
         fields = ('id', 'operation_type', 'amount', 'balance', 'date_created')
+
+
+class CreatorBillManagerSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='uid.username', read_only=True)
+    nickname = serializers.CharField(source='uid.auth_base.nickname', read_only=True)
+    avatar = serializers.CharField(source='uid.auth_base.avatars', read_only=True)
+    order_count = serializers.SerializerMethodField()
+    video_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CreatorBill
+        exclude = ('date_updated', 'uid')
+
+    def get_order_count(self, obj):
+        order_count = VideoOrder.objects.filter(user=obj.uid,
+                                                status=VideoOrder.DONE,
+                                                done_time__year=obj.bill_year,
+                                                done_time__month=obj.bill_month).count()
+        return order_count
+
+    def get_video_count(self, obj):
+        video_count = VideoOrder.objects.filter(user=obj.uid,
+                                                status=VideoOrder.DONE,
+                                                done_time__year=obj.bill_year,
+                                                done_time__month=obj.bill_month).aggregate(
+            total=Sum('num_selected'))['total']
+        return video_count if video_count else 0
+
+
+class CreatorBillUpdateManagerSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CreatorBill
+        exclude = ('status', 'remark', 'check_time')
+
+
+class CreatorBillDetailSerializer(serializers.ModelSerializer):
+    """账单详情"""
+    demand_title = serializers.SerializerMethodField()
+    total_reward = serializers.SerializerMethodField()
+    bus = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VideoOrder
+        fields = (
+            'id', 'demand_title', 'status', 'bus', 'total_reward', 'num_selected', 'reward', 'date_created', 'done_time'
+        )
+
+    def get_total_reward(self, obj):
+        # 订单可得松子
+        return obj.reward * obj.num_selected
+
+    def get_demand_title(self, obj):
+        return obj.video_order_detail.demand_detail.get('title')
+
+    def get_bus(self, obj):
+        bus_user_obj = obj.demand.uid
+        return {'username': bus_user_obj.username, 'nickname': bus_user_obj.auth_base.nickname}
