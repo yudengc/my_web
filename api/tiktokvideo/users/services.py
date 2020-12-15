@@ -16,6 +16,7 @@ from django_redis import get_redis_connection
 from redis import StrictRedis
 
 from libs.utils import trans_dict_to_xml
+from users.models import Users
 
 conn = get_redis_connection('default')  # type: StrictRedis
 logger = logging.getLogger()
@@ -236,6 +237,10 @@ class HandleOfficialAccount:
     def handle_event_subscribe(data: dict) -> None:
         open_id = data.get('FromUserName', None)
         user_info = WeChatOfficial().get_user_info(open_id)
+        union_id = user_info.get('unionid')
+        qs = Users.objects.filter(union_id=union_id)
+        if qs.exists():
+            pass
         logger.info(user_info)
 
     @staticmethod

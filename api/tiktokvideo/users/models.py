@@ -54,13 +54,15 @@ class Users(AbstractUser):
     pub_openid = models.CharField(
         _("松鼠营销(公众号)openid"),
         max_length=128,
-        null=True
+        null=True,
+        db_index=True
     )
 
     union_id = models.CharField(
         _("松鼠体系的unionid"),
         max_length=128,
-        null=True
+        null=True,
+        db_index=True
     )
 
     APPROVED, FROZEN = range(2)
