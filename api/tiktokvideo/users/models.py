@@ -51,6 +51,12 @@ class Users(AbstractUser):
         null=True
     )
 
+    pub_openid = models.CharField(
+        _("松鼠营销(公众号)openid"),
+        max_length=128,
+        null=True
+    )
+
     union_id = models.CharField(
         _("松鼠体系的unionid"),
         max_length=128,
@@ -222,6 +228,11 @@ class UserExtra(BaseModel):
         to_field='uid',
         on_delete=models.DO_NOTHING,
         related_name='user_extra',
+    )
+
+    is_subscribed = models.BooleanField(
+        _("是否已关注公众号"),
+        default=False
     )
 
     is_blacklist = models.BooleanField(
