@@ -177,7 +177,7 @@ class WeChatOfficial:
             conn.set('wx_access_token', access_token, self.expired_time)
         return access_token
 
-    def get_ticket(self, uid):
+    def get_ticket(self, uid: str):
         url = f"https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token={self.get_access_token()}"
         header = {
             "Content-Type": "application/json"
@@ -187,7 +187,7 @@ class WeChatOfficial:
             "action_name": "QR_STR_SCENE",
             "action_info": {
                 "scene": {
-                    "scene_id": uid
+                    "scene_str": uid
                 }
             }
         }
@@ -195,7 +195,7 @@ class WeChatOfficial:
         ticket = req_content.get('ticket', None)
         return ticket, req_content
 
-    def get_qr_url(self, uid=123):
+    def get_qr_url(self, uid: str = '123'):
         ticket, req_content = self.get_ticket(uid)
         if not ticket:
             if str(req_content.get('errcode')) == '40001':
