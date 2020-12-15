@@ -167,16 +167,6 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             return Response(data={'code': 1, 'phone': data.get('purePhoneNumber'), 'is_exists': is_exists})
         return Response({'detail': '缺少参数'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
-    # def get_unionid(self, request):
-    #     form, error = JsonParser(
-    #         Argument("encryptedData", handler=lambda x: decode_encrypted_data(x), help="请输入加密信息")
-    #     )
-    #     if error:
-    #         return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-    #     union_id = None
-    #     return Response({"detail": union_id})
-
     @action(methods=['post', ], detail=False, permission_classes=[AllowAny])
     def get_openid(self, request):
         """获取openid"""
