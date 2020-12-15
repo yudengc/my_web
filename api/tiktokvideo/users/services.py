@@ -184,7 +184,7 @@ class WeChatOfficial:
         }
         arg = {
             "expire_seconds": 180,  # 3分钟超时
-            "action_name": "QR_SCENE",
+            "action_name": "QR_STR_SCENE",
             "action_info": {
                 "scene": {
                     "scene_id": uid
@@ -237,14 +237,22 @@ class HandleOfficialAccount:
     def handle_event_subscribe(data: dict) -> None:
         open_id = data.get('FromUserName', None)
         user_info = WeChatOfficial().get_user_info(open_id)
-        union_id = user_info.get('unionid')
-        qs = Users.objects.filter(union_id=union_id)
-        if qs.exists():
-            pass
+        # union_id = user_info.get('unionid')
+        # qs = Users.objects.filter(union_id=union_id)
+        # if qs.exists():
+        #     this_man = qs.first()
+        #     this_man.user_extra.is_subscribed = True
+        #     this_man.user_extra.save()
         logger.info(user_info)
 
     @staticmethod
     def handle_event_unsubscribe(data: dict):
         open_id = data.get('FromUserName', None)
         user_info = WeChatOfficial().get_user_info(open_id)
+        # 取消订阅拿不到union id用open_id
+        qs = Users.objects.filter(pub_openid=open_id)
+        if qs.exists():
+            this_man = qs.first()
+            this_man.user_extra.is_subscribed = False
+            this_man.user_extra.save()
         logger.info(user_info)
