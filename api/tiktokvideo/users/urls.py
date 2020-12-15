@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from users.views import LoginViewSet, UserBusinessViewSet, UserInfoViewSet, BusInfoOtherView, AddressViewSet, \
     UserCreatorViewSet, ManageAddressViewSet, UserInfoManagerViewSet, UserCreatorInfoManagerViewSet, \
     UserBusinessInfoManagerViewSet, BusinessInfoManagerViewSet, TeamManagerViewSet, TeamUsersManagerViewSet, \
-    TeamLeaderManagerViewSet, ScriptTypeViewSet, CelebrityStyleViewSet, PublicWeChat
+    TeamLeaderManagerViewSet, ScriptTypeViewSet, CelebrityStyleViewSet, PublicWeChat, GetQrCode
 
 app_name = "users"
 login_router = DefaultRouter()
@@ -32,4 +32,5 @@ urlpatterns = [
     path(r'manager/', include(manager_router.urls)),
     path(r'bus-info-other/', BusInfoOtherView.as_view()),
     path(r'wechat-public/', PublicWeChat.as_view()),  # 公众号回调
+    path(r'get-qrcode/', GetQrCode.as_view()),  # 公众号回调
 ]
