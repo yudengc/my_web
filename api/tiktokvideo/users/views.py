@@ -44,7 +44,7 @@ from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializ
     TeamUserLeaderManagerSerializer, TeamUserManagerUpdateSerializer, TeamLeaderManagerSerializer, \
     TeamLeaderManagerUpdateSerializer, CelebrityStyleSerializer, ScriptTypeSerializer
 
-from users.services import WXBizDataCrypt, WeChatApi, InviteCls, WeChatOfficial
+from users.services import WXBizDataCrypt, WeChatApi, InviteCls, WeChatOfficial, HandleOfficialAccount
 
 redis_conn = get_redis_connection('default')  # type: StrictRedis
 logger = logging.getLogger()
@@ -182,9 +182,11 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         """获取openid"""
         code = request.data.get('code', None)
         if code:
-            openid, session_key = WeChatApi(APP_ID, SECRET).get_openid_and_session_key(code)
-            logger.info('get_openid  openid')
-            logger.info(openid)
+            obj = WeChatApi(APP_ID, SECRET)
+            openid, session_key = obj.get_openid_and_session_key(code)
+            union_id = obj.get_union_id()
+            logger.info('get_openid  openid union_id')
+            logger.info(openid, union_id)
             res = redis_conn.set(openid, session_key)
             logger.info(res)
             return Response({'openid': openid}, status=status.HTTP_200_OK)
@@ -623,13 +625,20 @@ class PublicWeChat(APIView):
         data = trans_xml_to_dict(request.body)
         logger.info(data)
         try:
-            event = data.get('Event', None)
-            if event is not None:
-                func_name = f'handle_{event}'
-                if hasattr(self, func_name) and callable(getattr(self, func_name)):
-                    result = getattr(self, func_name)(data)
-                    if result is not None:
-                        return HttpResponse(result)
+            msg_type = data.get('MsgType', None)
+            if msg_type == 'event':
+                event = data.get('Event', None)
+                if event is not None:
+                    func_name = f'handle_event_{event}'
+                    if hasattr(HandleOfficialAccount, func_name) and \
+                            callable(getattr(HandleOfficialAccount, func_name)):
+                        result = getattr(HandleOfficialAccount, func_name)(data)
+                        if result is not None:
+                            return HttpResponse(result)
+            elif msg_type == 'text':
+                result = HandleOfficialAccount.handle_msg(data)
+                if result is not None:
+                    return HttpResponse(result)
         except:
             logger.error('======handle err!=======')
             logger.error(data)
@@ -637,12 +646,3 @@ class PublicWeChat(APIView):
         else:
             return HttpResponse("success")
 
-    def handle_subscribe(self, data):
-        open_id = data.get('FromUserName', None)
-        user_info = WeChatOfficial().get_user_info(open_id)
-        logger.info(user_info)
-
-    def handle_unsubscribe(self, data):
-        open_id = data.get('FromUserName', None)
-        user_info = WeChatOfficial().get_user_info(open_id)
-        logger.info(user_info)

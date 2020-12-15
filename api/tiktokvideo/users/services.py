@@ -6,6 +6,8 @@
 """
 import base64
 import json
+import logging
+from xml.etree.ElementTree import tostring
 
 import requests
 from Crypto.Cipher import AES
@@ -13,7 +15,10 @@ from django.conf import settings
 from django_redis import get_redis_connection
 from redis import StrictRedis
 
+from libs.utils import trans_dict_to_xml
+
 conn = get_redis_connection('default')  # type: StrictRedis
+logger = logging.getLogger()
 
 
 class WeChatApi:
@@ -21,6 +26,9 @@ class WeChatApi:
     def __init__(self, appid, secret):
         self.app_id = appid
         self.secret = secret
+        self.union_id = None
+        self.openid = None
+        self.session_key = None
 
     def get_openid_and_session_key(self, code):
         params = {
@@ -32,8 +40,12 @@ class WeChatApi:
         url = 'https://api.weixin.qq.com/sns/jscode2session'
         r = requests.get(url, params=params)
         openid = r.json().get('openid', '')
+        self.union_id = r.json().get('unionid')
         session_key = r.json().get('session_key', '')
         return openid, session_key
+
+    def get_union_id(self):
+        return self.union_id
 
 
 class WXBizDataCrypt:
@@ -207,3 +219,27 @@ class WeChatOfficial:
         # if not union_id:
         #     raise ValueError(f"unionid获取失败:{req_content}")
         return req_content
+
+
+class HandleOfficialAccount:
+    """
+    公众号消息处理
+    """
+
+    @staticmethod
+    def handle_msg(data: dict) -> str:
+        # xml = trans_dict_to_xml()
+        # return tostring(xml, encoding='unicode')
+        pass
+
+    @staticmethod
+    def handle_event_subscribe(data: dict) -> None:
+        open_id = data.get('FromUserName', None)
+        user_info = WeChatOfficial().get_user_info(open_id)
+        logger.info(user_info)
+
+    @staticmethod
+    def handle_event_unsubscribe(data: dict):
+        open_id = data.get('FromUserName', None)
+        user_info = WeChatOfficial().get_user_info(open_id)
+        logger.info(user_info)
