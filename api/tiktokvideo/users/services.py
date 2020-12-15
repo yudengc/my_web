@@ -88,7 +88,9 @@ class InviteCls:
     ]
     length = len(invite_char)
     invite_code_length = 6
-    # max_id = length ** invite_code_length
+    # 大于这个数会导致邀请码重复, 无法逆向解密, 可以调整prime1, prime2, slat更改上限【但是会导致邀请码更变】
+    # prime1 prime2 两个互质， prime1和进制互质, prime2和邀请码长度互质
+    # 问题可能是 邀请码长度和prime1不互质？有时间看看
     max_id = 15144936
     prime1 = 3
     slat = 58523
@@ -269,7 +271,7 @@ class HandleOfficialAccount:
                     nickname=user_info.get('nickname'), avatar=user_info.get('headimgurl'),
                     is_activated=True, is_subscribed=True
                 )
-                conn.set(f'to_subscribe_{uid.hex}', 1, 300)
+                conn.set(f'subscribe_{uid.hex}', 1, 300)
         else:
             logger.warning('没有这个人:')
             logger.warning(data)

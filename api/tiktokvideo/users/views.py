@@ -68,7 +68,8 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         ).parse(request.data)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-        user = Users.objects.filter(username=form.username, status=0, sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN]).last()
+        user = Users.objects.filter(username=form.username, status=0,
+                                    sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN]).last()
         if not user:
             return Response({"detail": "用户不存在"}, status=status.HTTP_400_BAD_REQUEST)
         if not check_password(form.password, user.password):
@@ -486,7 +487,7 @@ class TeamLeaderManagerViewSet(mixins.ListModelMixin,
         has_power = request.data.get('has_power', False)
         if not username or not password or not salesman_name:
             return Response({'detail': '参数缺失'}, status=status.HTTP_400_BAD_REQUEST)
-        phone_re = re.match(r"^1[35678]\d{9}$", username)
+        phone_re = re.match(r"^1[356789]\d{9}$", username)
         if not phone_re:
             return Response({'detail': '创建失败，用户账号请输入正确的手机号'}, status=status.HTTP_400_BAD_REQUEST)
         if Users.objects.filter(username=username).exists():
@@ -585,7 +586,7 @@ class CelebrityStyleViewSet(mixins.ListModelMixin,
     serializer_class = CelebrityStyleSerializer
     queryset = CelebrityStyle.objects.order_by('-date_created')
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    search_fields = ('title', )
+    search_fields = ('title',)
 
 
 class ScriptTypeViewSet(mixins.ListModelMixin,
@@ -598,7 +599,7 @@ class ScriptTypeViewSet(mixins.ListModelMixin,
     serializer_class = ScriptTypeSerializer
     queryset = ScriptType.objects.order_by('-date_created')
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    search_fields = ('title', )
+    search_fields = ('title',)
 
 
 class PublicWeChat(APIView):
@@ -643,3 +644,44 @@ class PublicWeChat(APIView):
         else:
             return HttpResponse("success")
 
+
+class GetQrCode(APIView):
+    """
+    二维码
+    """
+    permission_classes = (ManagerPermission,)
+    action_lst = ['subscribe', 'login']
+
+    def get(self, request):
+        # 校验二维码是否执行完毕
+        form, error = JsonParser(
+            Argument('action', filter=lambda x: x in GetQrCode.action_lst, help="请输入正确的行为")
+        ).parse(request.query_params)
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+
+        if form.action == 'subscribe':
+            key = f'subscribe_{self.request.user.uid.hex}'
+            if redis_conn.exists(key):
+                value = redis_conn.get(key).decode('utf-8')
+                if str(value) == '0':
+                    return Response({"detail": 'waiting'}, status=status.HTTP_200_OK)
+                elif str(value) == '1':
+                    return Response({"detail": 'done'}, status=status.HTTP_200_OK)
+            else:
+                return Response({"detail": 'timeout'}, status=status.HTTP_200_OK)
+        elif form.action == 'login':
+            return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request):
+        form, error = JsonParser(
+            Argument('action', filter=lambda x: x in GetQrCode.action_lst, help="请输入正确的行为")
+        ).parse(request.data)
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+        if form.action == 'subscribe':
+            qr_url = WeChatOfficial().get_qr_url(self.request.user.uid.hex)
+            redis_conn.set(f'subscribe_{self.request.user.uid.hex}', 0, 300)
+            return Response({"url": qr_url}, status=status.HTTP_200_OK)
+        elif form.action == 'login':
+            return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
