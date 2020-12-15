@@ -178,6 +178,8 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             logger.info('get_openid  openid union_id')
             logger.info(openid, union_id)
             res = redis_conn.set(openid, session_key)
+            if union_id:
+                redis_conn.set(f'{openid}_union_id', union_id, 3600)
             logger.info(res)
             return Response({'openid': openid}, status=status.HTTP_200_OK)
         else:
@@ -220,6 +222,11 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         if user.openid != openid:
             user.openid = openid
             user.save()
+        if redis_conn.exists(f"{openid}_union_id"):
+            union_id = redis_conn.get(f"{openid}_union_id").decode('utf-8')
+            if user.union_id == union_id:
+                user.union_id = union_id
+                user.save()
         return user
 
 
