@@ -341,3 +341,25 @@ class ScriptTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScriptType
         exclude = ('date_updated',)
+
+
+class ManagerUserSerializer(serializers.ModelSerializer):
+    nickname = serializers.CharField(source='auth_base.nickname')
+    permission_group = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Users
+        fields = ('id', 'nickname', 'username', 'status', 'reason', 'permission_group')
+
+    def get_permission_group(self, obj):
+        permission_obj = obj.permission_group
+        if permission_obj:
+            return {'id': permission_obj.id, 'title': permission_obj.title}
+        return None
+
+
+class ManagerUserUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Users
+        fields = ('status', 'reason', 'permission_group')

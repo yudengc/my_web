@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from users.views import LoginViewSet, UserBusinessViewSet, UserInfoViewSet, BusInfoOtherView, AddressViewSet, \
     UserCreatorViewSet, ManageAddressViewSet, UserInfoManagerViewSet, UserCreatorInfoManagerViewSet, \
     UserBusinessInfoManagerViewSet, BusinessInfoManagerViewSet, TeamManagerViewSet, TeamUsersManagerViewSet, \
-    TeamLeaderManagerViewSet, ScriptTypeViewSet, CelebrityStyleViewSet, PublicWeChat, GetQrCode
+    TeamLeaderManagerViewSet, ScriptTypeViewSet, CelebrityStyleViewSet, PublicWeChat, ManagerUserViewSet, GetQrCode
 
 app_name = "users"
 login_router = DefaultRouter()
@@ -25,6 +25,7 @@ manager_router.register(r'team-users', TeamUsersManagerViewSet, basename='team_u
 manager_router.register(r'team-leader', TeamLeaderManagerViewSet, basename='team_leader')
 manager_router.register(r'celebrity-style', CelebrityStyleViewSet, basename='celebrity_style')
 manager_router.register(r'script-type', ScriptTypeViewSet, basename='script_type')
+manager_router.register(r'manager-user', ManagerUserViewSet, basename='manager_user')
 
 
 urlpatterns = [

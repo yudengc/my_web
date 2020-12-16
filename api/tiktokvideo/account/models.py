@@ -60,6 +60,16 @@ class CreatorBill(models.Model):
         _('本期账单月'),
         null=True,
     )
+    check_time = models.DateTimeField(
+        _('审核时间'),
+        null=True,
+    )
+    remark = models.CharField(
+        verbose_name='审核个备注',
+        max_length=1024,
+        null=True,
+        blank=True,
+    )
     date_created = models.DateTimeField(
         _('账单记录时间'),
         auto_now_add=True

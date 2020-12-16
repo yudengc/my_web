@@ -121,6 +121,12 @@ class Users(AbstractUser):
         _('能否邀请创作者'),
         default=False
     )
+    permission_group = models.ForeignKey(
+        "permissions.UserGroups",
+        null=True,
+        related_name='member',
+        on_delete=models.SET_NULL,
+    )
     date_created = models.DateTimeField(
         _('注册时间'),
         auto_now_add=True
