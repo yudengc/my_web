@@ -50,7 +50,7 @@ def content_shape(content: str) -> List[dict]:
                 # 单输入框
                 result.append({
                     "field": "",
-                    "field_name": _list[0]
+                    "field_name": _list[1].split('}}')[0].split('.')[0]
                 })
             else:
                 # 左字段右输入框
