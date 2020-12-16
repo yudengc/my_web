@@ -384,6 +384,7 @@ class OfficialAccountMsg(WeChatOfficial):
         if str(response.get('errcode')) == '40001':
             # 删掉token缓存再执行一次
             conn.delete('wx_access_token')
+            query_url = f"https://api.weixin.qq.com/cgi-bin/template/get_all_private_template?access_token={self.get_access_token()}"
             rep = requests.get(query_url)
             response = rep.json()
         template_list = response.get('template_list')
