@@ -383,6 +383,7 @@ class OfficialAccountMsg(WeChatOfficial):
         response = rep.json()
         template_list = response.get('template_list')
         if template_list is None:
+            logger.info(rep.text)
             raise ValueError("模板列表获取失败~")
         return template_list
 
