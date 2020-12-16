@@ -26,12 +26,13 @@ from account.models import CreatorAccount
 from libs.common.permission import AllowAny, ManagerPermission, CreatorPermission, AdminPermission
 from libs.parser import JsonParser, Argument
 from libs.utils import trans_xml_to_dict, trans_dict_to_xml
+from permissions.models import UserGroups
 from relations.models import InviteRelationManager
 from relations.tasks import save_invite_relation
 
 from tiktokvideo.base import APP_ID, SECRET
 from users.filter import TeamFilter, UserInfoManagerFilter, UserCreatorInfoManagerFilter, UserBusinessInfoManagerFilter, \
-    TeamUsersManagerTeamFilter
+    TeamUsersManagerTeamFilter, ManagerUserFilter
 from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address, \
     UserCreator
 from libs.jwt.serializers import CusTomSerializer
@@ -42,7 +43,8 @@ from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializ
     UserCreatorInfoUpdateManagerSerializer, UserBusinessInfoManagerSerializer, UserBusinessInfoUpdateManagerSerializer, \
     BusinessInfoManagerSerializer, TeamManagerSerializer, TeamManagerCreateUpdateSerializer, TeamUserManagerSerializer, \
     TeamUserLeaderManagerSerializer, TeamUserManagerUpdateSerializer, TeamLeaderManagerSerializer, \
-    TeamLeaderManagerUpdateSerializer, CelebrityStyleSerializer, ScriptTypeSerializer
+    TeamLeaderManagerUpdateSerializer, CelebrityStyleSerializer, ScriptTypeSerializer, ManagerUserSerializer, \
+    ManagerUserUpdateSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls, WeChatOfficial
 
@@ -231,6 +233,80 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         return user
 
 
+class ManagerUserViewSet(mixins.CreateModelMixin,
+                         mixins.UpdateModelMixin,
+                         mixins.RetrieveModelMixin,
+                         mixins.ListModelMixin,
+                         GenericViewSet):
+    """后台账号管理"""
+    permission_classes = (AdminPermission, )
+    queryset = Users.objects.filter(sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN], is_superuser=False)
+    serializer_class = ManagerUserSerializer
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_class = ManagerUserFilter
+    search_fields = ('username', '=auth_base__phone')
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            self.serializer_class = ManagerUserUpdateSerializer
+        return super().get_serializer_class()
+
+    def create(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        user_status = request.data.get('status')
+        reason = request.data.get('reason')
+        password = request.data.get('password')
+        nickname = request.data.get('nickname')
+        permission_group = request.data.get('permission_group')
+
+        form, error = JsonParser(
+            Argument('username', help="缺少用户名"),
+            Argument('status', help="缺少状态"),
+            Argument('reason', help="缺少备注"),
+            Argument('password', help="缺少密码"),
+            Argument('nickname', help="缺少名称"),
+            Argument('permission_group', help="缺少所属权险组")
+        ).parse(request.data)
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            Users.objects.get(username=username)
+            return Response({'detail': '该账号已存在'}, status=status.HTTP_400_BAD_REQUEST)
+        except Users.DoesNotExist:
+            group_obj = UserGroups.objects.filter(id=permission_group).first()
+            if not group_obj:
+                return Response({"detail": "没有这个权限组"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                with atomic():
+                    new_user_obj = Users(username=username, sys_role=Users.ADMIN, reason=reason,
+                                         permission_group=group_obj, status=user_status)
+                    new_user_base = UserBase(uid=new_user_obj, nickname=nickname)
+                    new_user_extra = UserExtra(uid=new_user_obj)
+                    new_user_obj.set_password(password)
+                    new_user_obj.save()
+                    new_user_base.save()
+                    new_user_extra.save()
+            except Exception as e:
+                logger.info(e)
+                return Response({'detail': '创建失败'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': '创建成功'}, status=status.HTTP_200_OK)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        if request.data.get('nickname') is not None:
+            UserBase.objects.filter(uid=instance).update(nickname=request.data.get('nickname'))
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+
 class UserBusinessViewSet(mixins.CreateModelMixin,
                           mixins.UpdateModelMixin,
                           mixins.RetrieveModelMixin,
@@ -366,7 +442,7 @@ class UserInfoManagerViewSet(mixins.ListModelMixin,
     """用户管理"""
     permission_classes = (AdminPermission,)
     serializer_class = UserInfoManagerSerializer
-    queryset = Users.objects.exclude(is_superuser=True,
+    queryset = Users.objects.exclude(is_superuser=True, sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN],
                                      identity__in=[Users.SALESMAN, Users.SUPERVISOR]).order_by('-date_created')
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserInfoManagerFilter
@@ -405,7 +481,8 @@ class UserBusinessInfoManagerViewSet(mixins.ListModelMixin,
     permission_classes = (AdminPermission,)
     serializer_class = UserBusinessInfoManagerSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    queryset = Users.objects.exclude(is_superuser=True).filter(identity=Users.BUSINESS, sys_role=Users.COMMON)
+    queryset = Users.objects.exclude(is_superuser=True, sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN],).\
+        filter(identity=Users.BUSINESS, sys_role=Users.COMMON)
     filter_class = UserBusinessInfoManagerFilter
     search_fields = ('=username', 'auth_base__nickname', '=user_invitee__salesman__username',
                      'user_invitee__salesman__salesman_name')
