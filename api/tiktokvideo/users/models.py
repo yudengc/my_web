@@ -52,8 +52,8 @@ class Users(AbstractUser):
     )
 
     union_id = models.CharField(
-        _("松鼠体系的unionid"),
-        max_length=128,
+        _("本微信的松鼠体系的unionid"),  # 登录的时候刷新的本微信号unionid(这微信号关注了公众号才有)
+        max_length=128,  # 若找到别的接口可以不需要关注公众号接口也能获取到unionid的话就换了
         null=True
     )
 
@@ -228,6 +228,11 @@ class UserExtra(BaseModel):
         to_field='uid',
         on_delete=models.DO_NOTHING,
         related_name='user_extra',
+    )
+
+    is_subscribed = models.BooleanField(
+        _("是否已关注公众号"),
+        default=False
     )
 
     is_blacklist = models.BooleanField(
@@ -454,6 +459,7 @@ class Team(BaseModel):
         max_length=100,
         null=True
     )
+
     # number = models.PositiveSmallIntegerField(
     #     _('团队人数'),
     #     default=1,
@@ -522,3 +528,57 @@ class Address(BaseModel):
         verbose_name = '地址'
         verbose_name_plural = verbose_name
         ordering = ['-date_created']
+
+
+class OfficialAccount(models.Model):
+    """
+    记录公众号扫过的微信账号
+    """
+    uid = models.ForeignKey(
+        "Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+        related_name='official_account',
+    )
+
+    is_activated = models.BooleanField(
+        _('是否激活：即是否使用这个微信订阅消息'),
+        default=True
+    )
+
+    is_subscribed = models.BooleanField(
+        default=True
+    )
+
+    openid = models.CharField(
+        _("公众号的openid"),
+        max_length=128,
+        null=True
+    )
+
+    union_id = models.CharField(
+        _("松鼠体系的unionid"),
+        max_length=128,
+        null=True
+    )
+
+    nickname = models.CharField(
+        max_length=128,
+        null=True
+    )
+
+    avatar = models.URLField(
+        _('头像'),
+        max_length=1000
+    )
+
+    subscribed_time = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    unsubscribed_time = models.DateTimeField(
+        null=True
+    )
+
+    class Meta:
+        verbose_name = "订阅公众号的微信账号"
