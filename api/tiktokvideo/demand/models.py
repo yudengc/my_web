@@ -85,6 +85,7 @@ class VideoNeeded(models.Model):
     )
     return_ways = models.PositiveSmallIntegerField(
         verbose_name='返回方式',
+        default=0
     )
 
     # 需要在订单流程中维护这几个字段
