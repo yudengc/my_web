@@ -783,7 +783,7 @@ class PublicWeChat(APIView):
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
 
-    @custom_check_permission([AdminPermission, ], union=False)
+    @custom_check_permission([ManagerPermission, ], union=False)
     def template(self, request, **kwargs):
         """公众号模板消息"""
         this_method = self.request.method.lower()
