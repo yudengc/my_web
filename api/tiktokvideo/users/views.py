@@ -26,7 +26,7 @@ from account.models import CreatorAccount
 from libs.common.permission import AllowAny, ManagerPermission, CreatorPermission, AdminPermission, \
     custom_check_permission
 from libs.parser import JsonParser, Argument
-from libs.utils import trans_xml_to_dict, trans_dict_to_xml
+from libs.utils import trans_xml_to_dict, trans_dict_to_xml, content_shape
 from permissions.models import UserGroups
 from relations.models import InviteRelationManager
 from relations.tasks import save_invite_relation
@@ -47,7 +47,8 @@ from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializ
     TeamLeaderManagerUpdateSerializer, CelebrityStyleSerializer, ScriptTypeSerializer, ManagerUserSerializer, \
     ManagerUserUpdateSerializer
 
-from users.services import WXBizDataCrypt, WeChatApi, InviteCls, WeChatOfficial, HandleOfficialAccount
+from users.services import WXBizDataCrypt, WeChatApi, InviteCls, WeChatOfficial, HandleOfficialAccount, \
+    OfficialAccountMsg
 
 redis_conn = get_redis_connection('default')  # type: StrictRedis
 logger = logging.getLogger()
@@ -782,12 +783,26 @@ class PublicWeChat(APIView):
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
 
-    @custom_check_permission([AdminPermission, ], union=False)
+    @custom_check_permission([ManagerPermission, ], union=False)
     def template(self, request, **kwargs):
         """公众号模板消息"""
         this_method = self.request.method.lower()
         if this_method == 'get':
-            return Response({"detail": 1}, status=status.HTTP_200_OK)
+            try:
+                template_list = OfficialAccountMsg().get_template_list()
+            except Exception as e:
+                logger.info(traceback.format_exc())
+                return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            result = list()
+            for template in template_list:
+                result.append({
+                    "id": template.get('template_id'),
+                    "title": template.get("title"),
+                    "example": template.get("example"),
+                    "content": content_shape(template.get("content")),
+                })
+            return Response(result, status=status.HTTP_200_OK)
         elif this_method == 'post':
             return Response({"detail": 11}, status=status.HTTP_200_OK)
         else:
