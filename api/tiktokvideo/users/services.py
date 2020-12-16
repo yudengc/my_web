@@ -10,7 +10,7 @@ import json
 import logging
 import re
 import uuid
-from typing import Union
+from typing import Union, List
 from xml.etree.ElementTree import tostring
 
 import requests
@@ -377,9 +377,15 @@ class OfficialAccountMsg(WeChatOfficial):
     #     }
     # }
 
-    def get_template_list(self):
-        s = f"https://api.weixin.qq.com/cgi-bin/template/get_all_private_template?access_token={self.get_access_token()}"
-        pass
+    def get_template_list(self) -> List:
+        query_url = f"https://api.weixin.qq.com/cgi-bin/template/get_all_private_template?access_token={self.get_access_token()}"
+        rep = requests.get(query_url)
+        response = rep.json()
+        template_list = response.get('template_list')
+        if template_list is None:
+            raise ValueError("模板列表获取失败~")
+        return template_list
+
 
     @staticmethod
     def template_send(this_man: Users, **data) -> Union[bool, str]:
