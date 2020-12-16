@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'demand',
     'application',
     'account',
+    'permissions',
 ]
 
 MIDDLEWARE = [

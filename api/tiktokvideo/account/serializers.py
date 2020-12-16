@@ -131,8 +131,6 @@ class CreatorBillDetailSerializer(serializers.ModelSerializer):
 
     def get_bus(self, obj):
         bus_user_obj = obj.demand.uid
-        logger.info(bus_user_obj)
-        logger.info(bus_user_obj.auth_base,33333333333333)
         return {
             'username': bus_user_obj.username,
             'nickname': bus_user_obj.auth_base.nickname

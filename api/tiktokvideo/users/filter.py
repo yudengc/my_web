@@ -53,3 +53,11 @@ class TeamUsersManagerTeamFilter(django_filters.FilterSet):
     class Meta:
         model = Users
         fields = ('team', 'has_power')
+
+
+class ManagerUserFilter(django_filters.FilterSet):
+    permission = django_filters.NumberFilter(field_name='permission_group__id', lookup_expr='exact')
+
+    class Meta:
+        model = Users
+        fields = ('status', 'permission')
