@@ -380,7 +380,7 @@ class OfficialAccountMsg(WeChatOfficial):
     def get_template_list(self) -> List:
         conn_key = 'wx_public_template'
         if conn.exists(conn_key):
-            return conn.get(conn_key).decode('utf-8')
+            return json.loads(conn.get(conn_key).decode('utf-8'))
         query_url = f"https://api.weixin.qq.com/cgi-bin/template/get_all_private_template?access_token={self.get_access_token()}"
         rep = requests.get(query_url)
         response = rep.json()
