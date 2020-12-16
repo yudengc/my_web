@@ -23,7 +23,8 @@ from wechatpy.exceptions import InvalidSignatureException
 from wechatpy.utils import check_signature
 
 from account.models import CreatorAccount
-from libs.common.permission import AllowAny, ManagerPermission, CreatorPermission, AdminPermission
+from libs.common.permission import AllowAny, ManagerPermission, CreatorPermission, AdminPermission, \
+    custom_check_permission
 from libs.parser import JsonParser, Argument
 from libs.utils import trans_xml_to_dict, trans_dict_to_xml
 from permissions.models import UserGroups
@@ -227,7 +228,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             user.save()
         if redis_conn.exists(f"{openid}_union_id"):
             union_id = redis_conn.get(f"{openid}_union_id").decode('utf-8')
-            if user.union_id == union_id:
+            if user.union_id != union_id:
                 user.union_id = union_id
                 user.save()
         return user
@@ -239,7 +240,7 @@ class ManagerUserViewSet(mixins.CreateModelMixin,
                          mixins.ListModelMixin,
                          GenericViewSet):
     """后台账号管理"""
-    permission_classes = (AdminPermission, )
+    permission_classes = (AdminPermission,)
     queryset = Users.objects.filter(sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN], is_superuser=False)
     serializer_class = ManagerUserSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
@@ -481,7 +482,7 @@ class UserBusinessInfoManagerViewSet(mixins.ListModelMixin,
     permission_classes = (AdminPermission,)
     serializer_class = UserBusinessInfoManagerSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    queryset = Users.objects.exclude(is_superuser=True, sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN],).\
+    queryset = Users.objects.exclude(is_superuser=True, sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN], ). \
         filter(identity=Users.BUSINESS, sys_role=Users.COMMON)
     filter_class = UserBusinessInfoManagerFilter
     search_fields = ('=username', 'auth_base__nickname', '=user_invitee__salesman__username',
@@ -680,85 +681,114 @@ class ScriptTypeViewSet(mixins.ListModelMixin,
 
 
 class PublicWeChat(APIView):
-    """公众号微信方回调接受"""
+    """公众号相关"""
 
     permission_classes = (AllowAny,)
 
-    def get(self, request):
-        signature = request.GET.get('signature', '')
-        timestamp = request.GET.get('timestamp', '')
-        nonce = request.GET.get('nonce', '')
-        echo_str = request.GET.get('echostr', '')
-        try:
-            check_signature(settings.DSJ_WECHAT_TOKEN, signature, timestamp, nonce)
-        except InvalidSignatureException:
-            echo_str = 'error'
-        response = HttpResponse(echo_str, content_type="text/plain")
-        return response
+    def get(self, request, **kwargs):
+        _action = kwargs.get('_action', 'default')
+        if not hasattr(self, _action):
+            print(1)
+            raise exceptions.NotFound()
+        return getattr(self, _action)(request, **kwargs)
 
-    def post(self, request):
-        data = trans_xml_to_dict(request.body)
-        logger.info(data)
-        try:
-            msg_type = data.get('MsgType', None)
-            if msg_type == 'event':
-                event = data.get('Event', None)
-                if event is not None:
-                    func_name = f'handle_event_{event}'
-                    if hasattr(HandleOfficialAccount, func_name) and \
-                            callable(getattr(HandleOfficialAccount, func_name)):
-                        result = getattr(HandleOfficialAccount, func_name)(data)
-                        if result is not None:
-                            return HttpResponse(result)
-            elif msg_type == 'text':
-                result = HandleOfficialAccount.handle_msg(data)
-                if result is not None:
-                    return HttpResponse(result)
-        except:
-            logger.error('======handle err!=======')
-            logger.error(data)
-            logger.error(traceback.format_exc())
-        else:
-            return HttpResponse("success")
+    def post(self, request, **kwargs):
+        _action = kwargs.get('_action', 'default')
+        if not hasattr(self, _action):
+            raise exceptions.NotFound()
+        return getattr(self, _action)(request, **kwargs)
 
-
-class GetQrCode(APIView):
-    """
-    二维码
-    """
-    permission_classes = (ManagerPermission,)
-    action_lst = ['subscribe', 'login']
-
-    def get(self, request):
-        # 校验二维码是否执行完毕
-        form, error = JsonParser(
-            Argument('action', filter=lambda x: x in GetQrCode.action_lst, help="请输入正确的行为")
-        ).parse(request.query_params)
-        if error:
-            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-
-        if form.action == 'subscribe':
-            key = f'subscribe_{self.request.user.uid.hex}'
-            if redis_conn.exists(key):
-                value = redis_conn.get(key).decode('utf-8')
-                if str(value) == '0':
-                    return Response({"detail": 'waiting'}, status=status.HTTP_200_OK)
-                elif str(value) == '1':
-                    return Response({"detail": 'done'}, status=status.HTTP_200_OK)
+    def default(self, request, **kwargs):
+        """
+        微信公众号回调处理
+        """
+        this_method = self.request.method.lower()
+        if this_method == 'get':
+            signature = request.GET.get('signature', '')
+            timestamp = request.GET.get('timestamp', '')
+            nonce = request.GET.get('nonce', '')
+            echo_str = request.GET.get('echostr', '')
+            try:
+                check_signature(settings.DSJ_WECHAT_TOKEN, signature, timestamp, nonce)
+            except InvalidSignatureException:
+                echo_str = 'error'
+            response = HttpResponse(echo_str, content_type="text/plain")
+            return response
+        elif this_method == 'post':
+            data = trans_xml_to_dict(request.body)
+            logger.info(data)
+            try:
+                msg_type = data.get('MsgType', None)
+                if msg_type == 'event':
+                    event = data.get('Event', None)
+                    if event is not None:
+                        func_name = f'handle_event_{event}'
+                        if hasattr(HandleOfficialAccount, func_name) and \
+                                callable(getattr(HandleOfficialAccount, func_name)):
+                            result = getattr(HandleOfficialAccount, func_name)(data)
+                            if result is not None:
+                                return HttpResponse(result)
+                elif msg_type == 'text':
+                    result = HandleOfficialAccount.handle_msg(data)
+                    if result is not None:
+                        return HttpResponse(result)
+            except:
+                logger.error('======handle err!=======')
+                logger.error(data)
+                logger.error(traceback.format_exc())
             else:
-                return Response({"detail": 'timeout'}, status=status.HTTP_200_OK)
-        elif form.action == 'login':
-            return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
+                return HttpResponse("success")
+        else:
+            raise exceptions.MethodNotAllowed(this_method.upper())
 
-    def post(self, request):
-        form, error = JsonParser(
-            Argument('action', filter=lambda x: x in GetQrCode.action_lst, help="请输入正确的行为")
-        ).parse(request.data)
-        if error:
-            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-        if form.action == 'subscribe':
-            qr_url = WeChatOfficial().get_qr_url(self.request.user.uid.hex)
-            redis_conn.set(f'subscribe_{self.request.user.uid.hex}', 0, 300)
-            return Response({"url": qr_url}, status=status.HTTP_200_OK)
-        elif form.action == 'login':
-            return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
+    @custom_check_permission([ManagerPermission, ])
+    def qrcode(self, request, **kwargs):
+        """
+        公众号二维码处理
+        """
+        action_lst = ['subscribe', 'login']
+        this_method = self.request.method.lower()
+        if this_method == 'get':
+            form, error = JsonParser(
+                Argument('action', filter=lambda x: x in action_lst, help="请输入正确的行为")
+            ).parse(request.query_params)
+            if error:
+                return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+            if form.action == 'subscribe':
+                key = f'subscribe_{self.request.user.uid.hex}'
+                if redis_conn.exists(key):
+                    value = redis_conn.get(key).decode('utf-8')
+                    if str(value) == '0':
+                        return Response({"detail": 'waiting'}, status=status.HTTP_200_OK)
+                    elif str(value) == '1':
+                        return Response({"detail": 'done'}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"detail": 'timeout'}, status=status.HTTP_200_OK)
+            elif form.action == 'login':
+                return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
+        elif this_method == 'post':
+            form, error = JsonParser(
+                Argument('action', filter=lambda x: x in action_lst, help="请输入正确的行为")
+            ).parse(request.data)
+            if error:
+                return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+            if form.action == 'subscribe':
+                qr_url = WeChatOfficial().get_qr_url(self.request.user.uid.hex)
+                redis_conn.set(f'subscribe_{self.request.user.uid.hex}', 0, 300)
+                return Response({"url": qr_url}, status=status.HTTP_200_OK)
+            elif form.action == 'login':
+                return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            raise exceptions.MethodNotAllowed(this_method.upper())
+
+    @custom_check_permission([AdminPermission, ], union=False)
+    def template(self, request, **kwargs):
+        """公众号模板消息"""
+        this_method = self.request.method.lower()
+        if this_method == 'get':
+            return Response({"detail": 1}, status=status.HTTP_200_OK)
+        elif this_method == 'post':
+            return Response({"detail": 11}, status=status.HTTP_200_OK)
+        else:
+            raise exceptions.MethodNotAllowed(this_method.upper())

@@ -10,6 +10,7 @@ import json
 import logging
 import re
 import uuid
+from typing import Union, List
 from xml.etree.ElementTree import tostring
 
 import requests
@@ -150,7 +151,7 @@ class InviteCls:
 
 class WeChatOfficial:
     """
-    公众号
+    公众号获取信息
     """
     _instance = None
 
@@ -228,7 +229,7 @@ class WeChatOfficial:
         return req_content
 
 
-class HandleOfficialAccount:
+class HandleOfficialAccount(WeChatOfficial):
     """
     公众号消息处理
     """
@@ -335,3 +336,57 @@ class HandleOfficialAccount:
                     HandleOfficialAccount.action_login(uid, user_info, data)
         else:
             pass
+
+
+class OfficialAccountMsg(WeChatOfficial):
+    """
+    公众号消息发送
+    """
+    s = "ufmuN9WPpCwAMJK6128mlk_0jAVYxi5R9s4R4Fw8EF0"
+    v = "gcbKpdZ92v1Ybqr8NarUEPTAjsWZT-8nkmjS8XqY-vM"
+
+    # {
+    #     "touser": "OPENID",
+    #     "template_id": "ngqIpbwh8bUfcSsECmogfXcV14J0tQlEpBO27izEYtY",
+    #     "url": "http://weixin.qq.com/download",
+    #     "miniprogram": {
+    #         "appid": "xiaochengxuappid12345",
+    #         "pagepath": "index?foo=bar"
+    #     },
+    #     "data": {
+    #         "first": {
+    #             "value": "恭喜你购买成功！",
+    #             "color": "#173177"
+    #         },
+    #         "keyword1": {
+    #             "value": "巧克力",
+    #             "color": "#173177"
+    #         },
+    #         "keyword2": {
+    #             "value": "39.8元",
+    #             "color": "#173177"
+    #         },
+    #         "keyword3": {
+    #             "value": "2014年9月22日",
+    #             "color": "#173177"
+    #         },
+    #         "remark": {
+    #             "value": "欢迎再次购买！",
+    #             "color": "#173177"
+    #         }
+    #     }
+    # }
+
+    def get_template_list(self) -> List:
+        query_url = f"https://api.weixin.qq.com/cgi-bin/template/get_all_private_template?access_token={self.get_access_token()}"
+        rep = requests.get(query_url)
+        response = rep.json()
+        template_list = response.get('template_list')
+        if template_list is None:
+            raise ValueError("模板列表获取失败~")
+        return template_list
+
+
+    @staticmethod
+    def template_send(this_man: Users, **data) -> Union[bool, str]:
+        return True

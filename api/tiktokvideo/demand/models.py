@@ -83,6 +83,10 @@ class VideoNeeded(models.Model):
         verbose_name='是否返样',
         default=False
     )
+    return_ways = models.PositiveSmallIntegerField(
+        verbose_name='返回方式',
+        default=0
+    )
 
     # 需要在订单流程中维护这几个字段
     # order desc
@@ -283,7 +287,7 @@ class HomePageVideo(models.Model):
         default=True
     )
     like = models.PositiveIntegerField(
-        verbose_name='评论数',
+        verbose_name='点赞数数',
         default=0
     )
     comment = models.PositiveIntegerField(

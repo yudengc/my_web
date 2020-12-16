@@ -7,7 +7,8 @@ from libs.common.utils import get_last_year_month, get_first_and_now
 from relations.models import InviteRelationManager
 from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
 from transaction.models import UserPackageRelation, UserPackageRecord
-from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase, CelebrityStyle, ScriptType
+from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase, CelebrityStyle, ScriptType, \
+    UserExtra
 
 
 class UsersLoginSerializer(serializers.ModelSerializer):
@@ -16,13 +17,21 @@ class UsersLoginSerializer(serializers.ModelSerializer):
     """
 
     # remain_video_num = serializers.SerializerMethodField(read_only=True)
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Users
-        fields = ('username', 'iCode', 'identity')
+        fields = ('username', 'iCode', 'identity', 'is_subscribed')
         extra_kwargs = {
             'password': {'write_only': True}
         }
+
+    def get_is_subscribed(self, obj):
+        try:
+            return obj.user_extra.is_subscribed
+        except UserExtra.DoesNotExist:
+            UserExtra.objects.create(uid=obj)
+            return False
 
     # def get_remain_video_num(self, obj):
     #     try:
@@ -284,7 +293,6 @@ class TeamManagerSerializer(serializers.ModelSerializer):
 
 
 class TeamManagerCreateUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Team
         fields = ('name', 'leader')
@@ -306,35 +314,30 @@ class TeamUserManagerSerializer(serializers.ModelSerializer):
 
 
 class TeamUserManagerUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Users
         fields = ('salesman_name', 'team', 'has_power')
 
 
 class TeamLeaderManagerSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Users
         fields = ('id', 'username', 'salesman_name', 'date_created', 'has_power')
 
 
 class TeamLeaderManagerUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Users
         fields = ('salesman_name', 'has_power')
 
 
 class CelebrityStyleSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = CelebrityStyle
         exclude = ('date_updated',)
 
 
 class ScriptTypeSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = ScriptType
         exclude = ('date_updated',)
