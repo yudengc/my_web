@@ -225,7 +225,7 @@ class LoginViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             user.save()
         if redis_conn.exists(f"{openid}_union_id"):
             union_id = redis_conn.get(f"{openid}_union_id").decode('utf-8')
-            if user.union_id == union_id:
+            if user.union_id != union_id:
                 user.union_id = union_id
                 user.save()
         return user
