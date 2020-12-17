@@ -413,7 +413,7 @@ class UserBusinessDeliveryManagerSerializer(serializers.ModelSerializer):
             else:
                 status = '已完成'
         else:
-            status = ''
+            status = '异常'
 
         return {'status': status, 'total': total, 'done_num': done_num,
                 'ongoing_video_num': ongoing_video_num, 'pending_video_num': pending_video_num}

@@ -106,7 +106,7 @@ class CreatorBillUpdateManagerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CreatorBill
-        exclude = ('status', 'remark', 'check_time')
+        fields = ('status', 'remark', 'check_time')
 
 
 class CreatorBillDetailSerializer(serializers.ModelSerializer):

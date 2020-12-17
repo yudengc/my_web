@@ -69,5 +69,4 @@ class UserBusinessDeliveryManagerFilter(django_filters.FilterSet):
 
     class Meta:
         model = Users
-        fields = ('start_time', 'end_time',)
-
+        fields = ('start_time', 'end_time')
