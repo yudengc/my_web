@@ -848,7 +848,8 @@ class PublicWeChat(APIView):
 
 class UserBusinessDeliveryManagerViewSet(viewsets.ReadOnlyModelViewSet):
     """商家交付数据管理"""
-    queryset = Users.objects.filter(identity=Users.BUSINESS, sys_role=Users.COMMON, is_superuser=False)
+    queryset = Users.objects.filter(identity=Users.BUSINESS, sys_role=Users.COMMON,
+                                    is_superuser=False).order_by('-date_created')
     permission_classes = (AdminPermission,)
     serializer_class = UserBusinessDeliveryManagerSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
