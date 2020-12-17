@@ -782,7 +782,7 @@ class PublicWeChat(APIView):
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
 
-    @custom_check_permission([ManagerPermission, ], union=False)
+    @custom_check_permission([AdminPermission, ], union=False)
     def template(self, request, **kwargs):
         """公众号模板消息"""
         this_method = self.request.method.lower()
@@ -818,10 +818,29 @@ class PublicWeChat(APIView):
                 ).parse(request.data)
                 if error:
                     return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+                user_qs = Users.objects.filter(id__in=form.user_list).only('id').prefetch_related('official_account')
+                form.pop("user_list")
+                record_id_list = []
+                for user in user_qs:
+                    try:
+                        OfficialAccountMsg.template_send(user, **form)
+                    except Exception as e:
+                        record_id_list.append(
+                            {
+                                'id': user.id,
+                                'status': 'error',
+                                'reason': str(e)
+                            }
+                        )
+                    else:
+                        record_id_list.append(
+                            {
+                                'id': user.id,
+                                'status': 'ok',
+                                'reason': '成功发送'
+                            }
+                        )
 
-                user_qs = Users.objects.filter(id__in=form.user_list).only('id', 'official_account')
-
-                OfficialAccountMsg.template_send()
             except Exception as e:
                 logger.info(traceback.format_exc())
                 return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractUser
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
@@ -582,3 +583,38 @@ class OfficialAccount(models.Model):
 
     class Meta:
         verbose_name = "订阅公众号的微信账号"
+
+
+class OfficialTemplateMsg(models.Model):
+    """
+    记录公众号模板消息的记录
+    """
+
+    uid = models.ForeignKey(
+        "Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+        related_name='official_template_msg',
+    )
+
+    msg_struct = JSONField(
+        _('发送给微信的json消息记录'),
+        null=True
+    )
+
+    DOING, DONE, ERR = range(3)
+    status = models.PositiveSmallIntegerField(
+        _('消息状态'),
+        choices=(
+            (DOING, '发送中'),
+            (DONE, '发送成功'),
+            (ERR, '发送失败'),
+        )
+    )
+
+    send_time = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = "公众号模板消息记录"
