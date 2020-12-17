@@ -469,9 +469,9 @@ class test(APIView):
         # u_lis = []
         for v in HomePageVideo.objects.all():
             import random
-            v.like = random.randint(1000, 50000)
-            v.comment = random.randint(1000, 50000)
-            v.share_num = random.randint(1000, 50000)
+            v.like = random.randint(5000, 50000)
+            v.comment = random.randint(1000, 20000)
+            v.share_num = random.randint(1000, 8888)
             v.save()
             # u_lis.append(v)
         # HomePageVideo.objects.bulk_update(u_lis, ['like', 'comment', 'share_num'])
