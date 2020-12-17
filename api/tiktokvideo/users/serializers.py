@@ -3,6 +3,7 @@ from rest_framework import serializers, exceptions
 
 from account.models import CreatorBill
 from application.models import VideoOrder
+from demand.models import VideoNeeded
 from libs.common.utils import get_last_year_month, get_first_and_now
 from relations.models import InviteRelationManager
 from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
@@ -360,3 +361,67 @@ class ManagerUserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = ('status', 'reason', 'permission_group')
+
+
+class UserBusinessDeliveryManagerSerializer(serializers.ModelSerializer):
+    nickname = serializers.CharField(source='auth_base.nickname')
+    num_data = serializers.SerializerMethodField()
+    package = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Users
+        fields = ('id', 'username', 'nickname', 'date_created', 'num_data', 'package')
+
+    def get_num_data(self, obj):
+        record_qs = UserPackageRecord.objects.filter(uid=obj)
+        demand_qs = VideoNeeded.objects.filter(uid=obj)
+
+        # 商家总视频数（商家购买套餐后，套餐内拍摄视频数总和）
+        total = record_qs.aggregate(total=Sum(F('buy_video_num') + F('video_num')))['total']
+        if not total:
+            total = 0
+
+        # 已完成视频数（商家发布的需求订单，订单状态为已完成的视频数总和）
+        done_num = demand_qs.video_orders.filter(status=VideoOrder.DONE).aggregate(total=Sum('num_selected'))['total']
+        if not done_num:
+            done_num = 0
+
+        # 进行中的视频数（需求订单拍摄视频数-已完成订单视频数）
+        need_video_num = demand_qs.aggregate(total=Sum('video_num_needed'))['total']
+        if not need_video_num:
+            need_video_num = 0
+        ongoing_video_num = need_video_num - done_num
+
+        # 待交付视频数（商家总拍摄视频数-商家发布的需求拍摄视频数）
+        pending_video_num = total - need_video_num
+
+        # 交付状态为：未购买、待交付、进行中、已完成；
+        # 未购买：总拍摄视频数为0时，状态为未购买；
+        # 待交付：总拍摄视频数＞0，待交付视频数＞0时，状态为【待交付】；
+        # 进行中；总拍摄视频数＞0，待交付视频数=0，进行中视频数＞0时，状态为【进行中】；
+        # 已完成：总拍摄视频数＞0，待交付视频数=0，进行中视频数=0时，状态为【已完成】；
+        if total == 0:
+            status = '未购买'
+        elif total > 0 and pending_video_num > 0:
+            status = '待交付'
+        elif total > 0 and pending_video_num == 0:
+            if ongoing_video_num > 0:
+                status = '进行中'
+            else:
+                status = '已完成'
+        else:
+            status = ''
+
+        return {'status': status, 'total': total, 'done_num': done_num,
+                'ongoing_video_num': ongoing_video_num, 'pending_video_num': pending_video_num}
+
+    def get_package(self, obj):
+        lis = []
+        relation_qs = UserPackageRelation.objects.filter(uid=obj).select_related('package').order_by('-expiration_time')
+        for relation_obj in relation_qs:
+            lis.append({
+                'package_id': relation_obj.package.id,
+                'package_title': relation_obj.package.package_title,
+                'expiration_time': relation_obj.expiration_time
+            })
+        return lis

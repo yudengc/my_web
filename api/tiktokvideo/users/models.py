@@ -582,3 +582,30 @@ class OfficialAccount(models.Model):
 
     class Meta:
         verbose_name = "订阅公众号的微信账号"
+
+
+class BusStatistical(models.Model):
+    """商家交付数据统计记录表（只保留30条数据吧）"""
+    total_video = models.IntegerField(
+        _('总拍摄视频数'),
+    )
+    done_video = models.IntegerField(
+        _('已完成视频数'),
+    )
+    pending_video = models.IntegerField(
+        _('待交付视频数'),
+    )
+    date = models.DateField(
+        _('日期'),
+        unique=True
+    )
+    date_created = models.DateTimeField(
+        _('创建时间'),
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = '商家交付数据统计记录表'
+        verbose_name_plural = verbose_name
+        db_table = 'BusStatistical'
+        ordering = ['-date']

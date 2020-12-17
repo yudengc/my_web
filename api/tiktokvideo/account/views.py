@@ -89,14 +89,14 @@ class CreatorBillViewSet(mixins.RetrieveModelMixin,
         instance = self.get_object()
         if instance.status == CreatorBill.DONE:
             return Response({'detail': '请不要重复审核账单'}, status=status.HTTP_400_BAD_REQUEST)
-        if request.data['status'] == CreatorBill.DONE:
+        if request.data.get('status') == CreatorBill.DONE:
             request.data['check_time'] = datetime.now()
 
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         with atomic():
             self.perform_update(serializer)
-            if serializer.data['status'] == CreatorBill.DONE:
+            if serializer.data.get('status') == CreatorBill.DONE:
                 account_obj = CreatorAccount.objects.get(uid=instance.uid)
                 BalanceRecord.objects.create(uid=instance.uid,
                                              operation_type=BalanceRecord.SETTLEMENT,

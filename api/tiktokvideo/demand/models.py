@@ -283,7 +283,7 @@ class HomePageVideo(models.Model):
         default=True
     )
     like = models.PositiveIntegerField(
-        verbose_name='评论数',
+        verbose_name='点赞数',
         default=0
     )
     comment = models.PositiveIntegerField(
