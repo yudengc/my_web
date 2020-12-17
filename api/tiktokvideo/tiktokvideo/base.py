@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django_filters',
     'safedelete',
     'ckeditor',
+    'django_extensions',
     'flow_limiter',
 
     # app

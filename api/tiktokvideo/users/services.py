@@ -10,6 +10,7 @@ import json
 import logging
 import re
 import uuid
+from typing import Union, List
 from xml.etree.ElementTree import tostring
 
 import requests
@@ -150,7 +151,7 @@ class InviteCls:
 
 class WeChatOfficial:
     """
-    公众号
+    公众号获取信息
     """
     _instance = None
 
@@ -171,7 +172,7 @@ class WeChatOfficial:
             'secret': settings.WECHAT_OFFICIAL_APPSECRET
         }
         base_url = "https://api.weixin.qq.com/cgi-bin/token"
-        access_token = conn.get('wx_access_token')
+        access_token = conn.get('wx_access_token').decode('utf-8')
         if access_token:
             return access_token
 
@@ -228,7 +229,7 @@ class WeChatOfficial:
         return req_content
 
 
-class HandleOfficialAccount:
+class HandleOfficialAccount(WeChatOfficial):
     """
     公众号消息处理
     """
@@ -335,3 +336,66 @@ class HandleOfficialAccount:
                     HandleOfficialAccount.action_login(uid, user_info, data)
         else:
             pass
+
+
+class OfficialAccountMsg(WeChatOfficial):
+    """
+    公众号消息发送
+    """
+    s = "ufmuN9WPpCwAMJK6128mlk_0jAVYxi5R9s4R4Fw8EF0"
+    v = "gcbKpdZ92v1Ybqr8NarUEPTAjsWZT-8nkmjS8XqY-vM"
+
+    def get_template_list(self) -> List:
+        conn_key = 'wx_public_template'
+        if conn.exists(conn_key):
+            return json.loads(conn.get(conn_key).decode('utf-8'))
+        query_url = f"https://api.weixin.qq.com/cgi-bin/template/get_all_private_template?access_token={self.get_access_token()}"
+        rep = requests.get(query_url)
+        response = rep.json()
+        if str(response.get('errcode')) == '40001':
+            # 删掉token缓存再执行一次
+            conn.delete('wx_access_token')
+            query_url = f"https://api.weixin.qq.com/cgi-bin/template/get_all_private_template?access_token={self.get_access_token()}"
+            rep = requests.get(query_url)
+            response = rep.json()
+        template_list = response.get('template_list')
+        if template_list is None:
+            logger.info(rep.text)
+            raise ValueError("模板列表获取失败~")
+        conn.set(conn_key, json.dumps(template_list, ensure_ascii=False), 86400)
+        return template_list
+
+    @staticmethod
+    def template_send(this_man: Users, **data) -> Union[bool, str]:
+        pass
+# {
+#     "touser": "OPENID",
+#     "template_id": "ngqIpbwh8bUfcSsECmogfXcV14J0tQlEpBO27izEYtY",
+#     "url": "http://weixin.qq.com/download",
+#     "miniprogram": {
+#         "appid": "xiaochengxuappid12345",
+#         "pagepath": "index?foo=bar"
+#     },
+#     "data": {
+#         "first": {
+#             "value": "恭喜你购买成功！",
+#             "color": "#173177"
+#         },
+#         "keyword1": {
+#             "value": "巧克力",
+#             "color": "#173177"
+#         },
+#         "keyword2": {
+#             "value": "39.8元",
+#             "color": "#173177"
+#         },
+#         "keyword3": {
+#             "value": "2014年9月22日",
+#             "color": "#173177"
+#         },
+#         "remark": {
+#             "value": "欢迎再次购买！",
+#             "color": "#173177"
+#         }
+#     }
+# }
