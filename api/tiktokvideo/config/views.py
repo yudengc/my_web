@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from application.models import Video
-from config.models import CustomerService, GoodsCategory
+from config.models import CustomerService, GoodsCategory, Version
 from config.serializers import CustomerServiceSerializer, GoodsCategorySerializer, ManageGoodsCategorySerializer, \
     VideoCreateSerializer
 from libs.common.permission import ManagerPermission, SalesmanPermission, AllowAny, AdminPermission, is_admin
@@ -107,3 +107,10 @@ class VideoViewSet(mixins.CreateModelMixin, GenericViewSet):
         data['video_url'] = data['video_url']
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
+
+class VersionView(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        v_obj = Version.objects.all().first()
+        return Response({'version': v_obj.version, 'is_active': v_obj.is_active})
