@@ -172,7 +172,7 @@ class WeChatOfficial:
             'secret': settings.WECHAT_OFFICIAL_APPSECRET
         }
         base_url = "https://api.weixin.qq.com/cgi-bin/token"
-        access_token = conn.get('wx_access_token')
+        access_token = conn.get('wx_access_token').decode('utf-8')
         if access_token:
             return access_token
 
@@ -345,38 +345,6 @@ class OfficialAccountMsg(WeChatOfficial):
     s = "ufmuN9WPpCwAMJK6128mlk_0jAVYxi5R9s4R4Fw8EF0"
     v = "gcbKpdZ92v1Ybqr8NarUEPTAjsWZT-8nkmjS8XqY-vM"
 
-    # {
-    #     "touser": "OPENID",
-    #     "template_id": "ngqIpbwh8bUfcSsECmogfXcV14J0tQlEpBO27izEYtY",
-    #     "url": "http://weixin.qq.com/download",
-    #     "miniprogram": {
-    #         "appid": "xiaochengxuappid12345",
-    #         "pagepath": "index?foo=bar"
-    #     },
-    #     "data": {
-    #         "first": {
-    #             "value": "恭喜你购买成功！",
-    #             "color": "#173177"
-    #         },
-    #         "keyword1": {
-    #             "value": "巧克力",
-    #             "color": "#173177"
-    #         },
-    #         "keyword2": {
-    #             "value": "39.8元",
-    #             "color": "#173177"
-    #         },
-    #         "keyword3": {
-    #             "value": "2014年9月22日",
-    #             "color": "#173177"
-    #         },
-    #         "remark": {
-    #             "value": "欢迎再次购买！",
-    #             "color": "#173177"
-    #         }
-    #     }
-    # }
-
     def get_template_list(self) -> List:
         conn_key = 'wx_public_template'
         if conn.exists(conn_key):
@@ -394,10 +362,40 @@ class OfficialAccountMsg(WeChatOfficial):
         if template_list is None:
             logger.info(rep.text)
             raise ValueError("模板列表获取失败~")
-        conn.set(conn_key, json.dumps(template_list, ensure_ascii=False), 3600)
+        conn.set(conn_key, json.dumps(template_list, ensure_ascii=False), 86400)
         return template_list
-
 
     @staticmethod
     def template_send(this_man: Users, **data) -> Union[bool, str]:
-        return True
+        pass
+# {
+#     "touser": "OPENID",
+#     "template_id": "ngqIpbwh8bUfcSsECmogfXcV14J0tQlEpBO27izEYtY",
+#     "url": "http://weixin.qq.com/download",
+#     "miniprogram": {
+#         "appid": "xiaochengxuappid12345",
+#         "pagepath": "index?foo=bar"
+#     },
+#     "data": {
+#         "first": {
+#             "value": "恭喜你购买成功！",
+#             "color": "#173177"
+#         },
+#         "keyword1": {
+#             "value": "巧克力",
+#             "color": "#173177"
+#         },
+#         "keyword2": {
+#             "value": "39.8元",
+#             "color": "#173177"
+#         },
+#         "keyword3": {
+#             "value": "2014年9月22日",
+#             "color": "#173177"
+#         },
+#         "remark": {
+#             "value": "欢迎再次购买！",
+#             "color": "#173177"
+#         }
+#     }
+# }
