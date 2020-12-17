@@ -779,7 +779,6 @@ class PublicWeChat(APIView):
                 return Response({"url": qr_url}, status=status.HTTP_200_OK)
             elif form.action == 'login':
                 return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
-
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
 
@@ -797,13 +796,34 @@ class PublicWeChat(APIView):
             result = list()
             for template in template_list:
                 result.append({
-                    "id": template.get('template_id'),
+                    "template_id": template.get('template_id'),
                     "title": template.get("title"),
                     "example": template.get("example"),
                     "content": content_shape(template.get("content")),
                 })
             return Response(result, status=status.HTTP_200_OK)
         elif this_method == 'post':
-            return Response({"detail": 11}, status=status.HTTP_200_OK)
+            try:
+                template_list = OfficialAccountMsg().get_template_list()
+                id_dict = {i.get('template_id'): i for i in template_list}
+                form, error = JsonParser(
+                    Argument("template_id", help="要输入模板的id噢", filter=lambda x: x in id_dict),
+                    Argument("user_list", help="请输入用户列表", type=list),
+                    *[
+                        Argument(i.get("field_name"), help=f"请输入{i.get('field')}{i.get('field_name')}")
+                        for i in content_shape(
+                            id_dict.get(request.data.get('id')).get("content")
+                        ) if i.get("field_name")
+                    ]
+                ).parse(request.data)
+                if error:
+                    return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+
+                user_qs = Users.objects.filter(id__in=form.user_list).only('id', 'official_account')
+
+                OfficialAccountMsg.template_send()
+            except Exception as e:
+                logger.info(traceback.format_exc())
+                return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
