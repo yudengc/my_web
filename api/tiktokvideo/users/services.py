@@ -172,9 +172,10 @@ class WeChatOfficial:
             'secret': settings.WECHAT_OFFICIAL_APPSECRET
         }
         base_url = "https://api.weixin.qq.com/cgi-bin/token"
-        access_token = conn.get('wx_access_token').decode('utf-8')
-        if access_token:
-            return access_token
+        if conn.exists('wx_access_token'):
+            access_token = conn.get('wx_access_token').decode('utf-8')
+            if access_token:
+                return access_token
 
         req_obj = requests.get(base_url, params=arg)
         access_token = json.loads(req_obj.content).get('access_token', None)
