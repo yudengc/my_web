@@ -33,7 +33,7 @@ from relations.tasks import save_invite_relation
 
 from tiktokvideo.base import APP_ID, SECRET
 from users.filter import TeamFilter, UserInfoManagerFilter, UserCreatorInfoManagerFilter, UserBusinessInfoManagerFilter, \
-    TeamUsersManagerTeamFilter, ManagerUserFilter
+    TeamUsersManagerTeamFilter, ManagerUserFilter, UserBusinessDeliveryManagerFilter
 from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address, \
     UserCreator
 from libs.jwt.serializers import CusTomSerializer
@@ -45,7 +45,7 @@ from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializ
     BusinessInfoManagerSerializer, TeamManagerSerializer, TeamManagerCreateUpdateSerializer, TeamUserManagerSerializer, \
     TeamUserLeaderManagerSerializer, TeamUserManagerUpdateSerializer, TeamLeaderManagerSerializer, \
     TeamLeaderManagerUpdateSerializer, CelebrityStyleSerializer, ScriptTypeSerializer, ManagerUserSerializer, \
-    ManagerUserUpdateSerializer
+    ManagerUserUpdateSerializer, UserBusinessDeliveryManagerSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls, WeChatOfficial, HandleOfficialAccount, \
     OfficialAccountMsg
@@ -483,8 +483,7 @@ class UserBusinessInfoManagerViewSet(mixins.ListModelMixin,
     permission_classes = (AdminPermission,)
     serializer_class = UserBusinessInfoManagerSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    queryset = Users.objects.exclude(is_superuser=True, sys_role__in=[Users.ADMIN, Users.SUPER_ADMIN], ). \
-        filter(identity=Users.BUSINESS, sys_role=Users.COMMON)
+    queryset = Users.objects.filter(identity=Users.BUSINESS, sys_role=Users.COMMON, is_superuser=False)
     filter_class = UserBusinessInfoManagerFilter
     search_fields = ('=username', 'auth_base__nickname', '=user_invitee__salesman__username',
                      'user_invitee__salesman__salesman_name')
@@ -689,7 +688,6 @@ class PublicWeChat(APIView):
     def get(self, request, **kwargs):
         _action = kwargs.get('_action', 'default')
         if not hasattr(self, _action):
-            print(1)
             raise exceptions.NotFound()
         return getattr(self, _action)(request, **kwargs)
 
@@ -846,3 +844,13 @@ class PublicWeChat(APIView):
                 return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
+
+
+class UserBusinessDeliveryManagerViewSet(viewsets.ReadOnlyModelViewSet):
+    """商家交付数据管理"""
+    queryset = Users.objects.filter(identity=Users.BUSINESS, sys_role=Users.COMMON, is_superuser=False)
+    permission_classes = (AdminPermission,)
+    serializer_class = UserBusinessDeliveryManagerSerializer
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_class = UserBusinessDeliveryManagerFilter
+    search_fields = ('=username', 'auth_base__nickname')

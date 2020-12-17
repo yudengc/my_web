@@ -233,6 +233,11 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute=1, hour=1, day_of_month=8),
         # 'schedule': crontab(minute=35, hour=10),
     },
+    'save_bus_video_data': {
+        # "商家交付数据周统计(凌晨12点统计前一天数据)
+        'task': 'users.tasks.task_save_bus_video_data',
+        'schedule': crontab(minute=0, hour=0),
+    },
 }
 
 
