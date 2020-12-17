@@ -127,4 +127,8 @@ class CreatorBillViewSet(mixins.RetrieveModelMixin,
             return self.get_paginated_response(serializer.data)
 
         serializer = CreatorBillDetailSerializer(order_qs, many=True)
-        return Response(serializer.data)
+        data = serializer.data
+        bill_data = CreatorBillManagerSerializer(instance).data
+        data['user_Data'] = bill_data
+        print(data)
+        return Response(data)
