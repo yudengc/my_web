@@ -36,7 +36,7 @@ from tiktokvideo.base import APP_ID, SECRET
 from users.filter import TeamFilter, UserInfoManagerFilter, UserCreatorInfoManagerFilter, UserBusinessInfoManagerFilter, \
     TeamUsersManagerTeamFilter, ManagerUserFilter, UserBusinessDeliveryManagerFilter
 from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address, \
-    UserCreator, OfficialTemplateMsg
+    UserCreator, OfficialTemplateMsg, BusStatistical
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, UserInfoSerializer, \
@@ -867,9 +867,23 @@ class TemplateMsgViewSet(viewsets.ReadOnlyModelViewSet):
 
 class UserBusinessDeliveryManagerViewSet(viewsets.ReadOnlyModelViewSet):
     """商家交付数据管理"""
-    queryset = Users.objects.filter(identity=Users.BUSINESS, sys_role=Users.COMMON, is_superuser=False)
+    queryset = Users.objects.filter(identity=Users.BUSINESS, sys_role=Users.COMMON,
+                                    is_superuser=False).order_by('-date_created')
     permission_classes = (AdminPermission,)
     serializer_class = UserBusinessDeliveryManagerSerializer
     filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filter_class = UserBusinessDeliveryManagerFilter
     search_fields = ('=username', 'auth_base__nickname')
+
+
+class BusStatisticalView(APIView):
+    """商家交付数据图表"""
+    permission_classes = (AdminPermission,)
+
+    def get(self, request):
+        lis = []
+        s_qs = BusStatistical.objects.all()[:7]
+        for s in s_qs:
+            lis.append({'total_video': s.total_video, 'done_video': s.done_video,
+                        'pending_video': s.pending_video, 'date': s.date})
+        return Response(lis)

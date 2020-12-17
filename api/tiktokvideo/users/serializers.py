@@ -377,7 +377,6 @@ class UserBusinessDeliveryManagerSerializer(serializers.ModelSerializer):
 
     def get_num_data(self, obj):
         record_qs = UserPackageRecord.objects.filter(uid=obj)
-        demand_qs = VideoNeeded.objects.filter(uid=obj)
 
         # 商家总视频数（商家购买套餐后，套餐内拍摄视频数总和）
         total = record_qs.aggregate(total=Sum(F('buy_video_num') + F('video_num')))['total']
@@ -385,12 +384,13 @@ class UserBusinessDeliveryManagerSerializer(serializers.ModelSerializer):
             total = 0
 
         # 已完成视频数（商家发布的需求订单，订单状态为已完成的视频数总和）
-        done_num = demand_qs.video_orders.filter(status=VideoOrder.DONE).aggregate(total=Sum('num_selected'))['total']
+        done_num = VideoOrder.objects.filter(status=VideoOrder.DONE,
+                                             demand__uid=obj).aggregate(total=Sum('num_selected'))['total']
         if not done_num:
             done_num = 0
 
         # 进行中的视频数（需求订单拍摄视频数-已完成订单视频数）
-        need_video_num = demand_qs.aggregate(total=Sum('video_num_needed'))['total']
+        need_video_num = VideoNeeded.objects.filter(uid=obj).aggregate(total=Sum('video_num_needed'))['total']
         if not need_video_num:
             need_video_num = 0
         ongoing_video_num = need_video_num - done_num
@@ -413,7 +413,7 @@ class UserBusinessDeliveryManagerSerializer(serializers.ModelSerializer):
             else:
                 status = '已完成'
         else:
-            status = ''
+            status = '异常'
 
         return {'status': status, 'total': total, 'done_num': done_num,
                 'ongoing_video_num': ongoing_video_num, 'pending_video_num': pending_video_num}
