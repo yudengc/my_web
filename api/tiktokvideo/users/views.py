@@ -25,6 +25,7 @@ from wechatpy.utils import check_signature
 from account.models import CreatorAccount
 from libs.common.permission import AllowAny, ManagerPermission, CreatorPermission, AdminPermission, \
     custom_check_permission
+from libs.pagination import StandardResultsSetPagination
 from libs.parser import JsonParser, Argument
 from libs.utils import trans_xml_to_dict, trans_dict_to_xml, content_shape
 from permissions.models import UserGroups
@@ -35,7 +36,7 @@ from tiktokvideo.base import APP_ID, SECRET
 from users.filter import TeamFilter, UserInfoManagerFilter, UserCreatorInfoManagerFilter, UserBusinessInfoManagerFilter, \
     TeamUsersManagerTeamFilter, ManagerUserFilter, UserBusinessDeliveryManagerFilter
 from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address, \
-    UserCreator
+    UserCreator, OfficialTemplateMsg
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, UserInfoSerializer, \
@@ -45,7 +46,7 @@ from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializ
     BusinessInfoManagerSerializer, TeamManagerSerializer, TeamManagerCreateUpdateSerializer, TeamUserManagerSerializer, \
     TeamUserLeaderManagerSerializer, TeamUserManagerUpdateSerializer, TeamLeaderManagerSerializer, \
     TeamLeaderManagerUpdateSerializer, CelebrityStyleSerializer, ScriptTypeSerializer, ManagerUserSerializer, \
-    ManagerUserUpdateSerializer, UserBusinessDeliveryManagerSerializer
+    ManagerUserUpdateSerializer, UserBusinessDeliveryManagerSerializer, TemplateMsgSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls, WeChatOfficial, HandleOfficialAccount, \
     OfficialAccountMsg
@@ -785,6 +786,7 @@ class PublicWeChat(APIView):
         """公众号模板消息"""
         this_method = self.request.method.lower()
         if this_method == 'get':
+            # 获取所有模板
             try:
                 template_list = OfficialAccountMsg().get_template_list()
             except Exception as e:
@@ -801,6 +803,7 @@ class PublicWeChat(APIView):
                 })
             return Response(result, status=status.HTTP_200_OK)
         elif this_method == 'post':
+            # 发送模板消息
             try:
                 template_list = OfficialAccountMsg().get_template_list()
                 id_dict = {i.get('template_id'): i for i in template_list}
@@ -838,12 +841,28 @@ class PublicWeChat(APIView):
                                 'reason': '成功发送'
                             }
                         )
-
             except Exception as e:
                 logger.info(traceback.format_exc())
                 return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
+
+
+class TemplateMsgViewSet(viewsets.ReadOnlyModelViewSet):
+    """历史公众号模板消息"""
+    permission_classes = (AdminPermission,)
+    queryset = OfficialTemplateMsg.objects.all()
+    serializer_class = TemplateMsgSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class UserBusinessDeliveryManagerViewSet(viewsets.ReadOnlyModelViewSet):

@@ -9,7 +9,7 @@ from relations.models import InviteRelationManager
 from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
 from transaction.models import UserPackageRelation, UserPackageRecord
 from users.models import Users, Team, UserBusiness, Address, UserCreator, UserBase, CelebrityStyle, ScriptType, \
-    UserExtra
+    UserExtra, OfficialTemplateMsg
 
 
 class UsersLoginSerializer(serializers.ModelSerializer):
@@ -428,3 +428,15 @@ class UserBusinessDeliveryManagerSerializer(serializers.ModelSerializer):
                 'expiration_time': relation_obj.expiration_time
             })
         return lis
+
+
+class TemplateMsgSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OfficialTemplateMsg
+        fields = '__all__'
+
+    def __init__(self, obj_list, *args, **kwargs):
+        for obj in obj_list:
+            if obj.status == OfficialTemplateMsg.DOING:
+                pass
+        super(TemplateMsgSerializer, self).__init__(obj_list, *args, **kwargs)

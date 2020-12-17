@@ -585,6 +585,30 @@ class OfficialAccount(models.Model):
         verbose_name = "订阅公众号的微信账号"
 
 
+class ManagerOperateTemplateMsg(models.Model):
+    """
+    管理员操作模板消息的记录
+    """
+
+    uid = models.ForeignKey(
+        "Users",
+        to_field='uid',
+        on_delete=models.DO_NOTHING,
+        related_name='operate_template_msg',
+    )
+
+    user_list = JSONField(
+        verbose_name='发送的用户列表'
+    )
+
+    create_time = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = '管理员模板消息操作记录'
+
+
 class OfficialTemplateMsg(models.Model):
     """
     记录公众号模板消息的记录
@@ -598,6 +622,7 @@ class OfficialTemplateMsg(models.Model):
     )
 
     account = models.ForeignKey(
+        # 未必是这个人的本号
         "OfficialAccount",
         on_delete=models.DO_NOTHING,
         related_name='official_template_msg'
@@ -618,8 +643,28 @@ class OfficialTemplateMsg(models.Model):
         )
     )
 
+    template_id = models.CharField(
+        verbose_name='微信模板id',
+        max_length=512
+    )
+
+    title = models.CharField(
+        verbose_name='标题(内容的首行)',
+        max_length=128
+    )
+
+    content = models.CharField(
+        verbose_name='消息内容',
+        max_length=1024
+    )
+
+    fail_reason = models.CharField(
+        verbose_name='失败原因',
+        max_length=1024
+    )
+
     send_time = models.DateTimeField(
-        _('发送时间'),
+        _('发送时间(也就是创建时间)'),
         auto_now_add=True
     )
 

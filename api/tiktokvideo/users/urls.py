@@ -28,6 +28,10 @@ manager_router.register(r'script-type', ScriptTypeViewSet, basename='script_type
 manager_router.register(r'manager-user', ManagerUserViewSet, basename='manager_user')
 
 
+official_router = DefaultRouter()
+official_router.register(r'', UserInfoManagerViewSet, basename='user_info_man')
+
+
 urlpatterns = [
     path(r'', include(login_router.urls)),
     path(r'manager/', include(manager_router.urls)),
@@ -35,5 +39,6 @@ urlpatterns = [
 
     # 公众号相关
     path(r'wechat-public/', PublicWeChat.as_view()),
+    path(r'wechat-public/msg/', include(official_router.urls)),
     path(r'wechat-public/<str:_action>/', PublicWeChat.as_view()),
 ]
