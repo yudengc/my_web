@@ -597,6 +597,12 @@ class OfficialTemplateMsg(models.Model):
         related_name='official_template_msg',
     )
 
+    account = models.ForeignKey(
+        "OfficialAccount",
+        on_delete=models.DO_NOTHING,
+        related_name='official_template_msg'
+    )
+
     msg_struct = JSONField(
         _('发送给微信的json消息记录'),
         null=True
