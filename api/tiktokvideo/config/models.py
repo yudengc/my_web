@@ -55,3 +55,14 @@ class GoodsCategory(BaseModel):
         verbose_name_plural = verbose_name
         db_table = 'GoodsCategory'
         ordering = ('-date_created',)
+
+
+class Version(models.Model):
+    version = models.CharField(
+        _('版本'),
+        max_length=30,
+    )
+    is_active = models.BooleanField(
+        _("是否使用"),
+        default=False
+    )
