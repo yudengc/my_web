@@ -688,7 +688,6 @@ class PublicWeChat(APIView):
     def get(self, request, **kwargs):
         _action = kwargs.get('_action', 'default')
         if not hasattr(self, _action):
-            print(1)
             raise exceptions.NotFound()
         return getattr(self, _action)(request, **kwargs)
 
@@ -741,20 +740,6 @@ class PublicWeChat(APIView):
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
 
-
-    def post(self, request):
-        form, error = JsonParser(
-            Argument('action', filter=lambda x: x in GetQrCode.action_lst, help="请输入正确的行为")
-        ).parse(request.data)
-        if error:
-            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-        if form.action == 'subscribe':
-            qr_url = WeChatOfficial().get_qr_url(self.request.user.uid.hex)
-            redis_conn.set(f'subscribe_{self.request.user.uid.hex}', 0, 300)
-            return Response({"url": qr_url}, status=status.HTTP_200_OK)
-        elif form.action == 'login':
-            return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
-
     @custom_check_permission([ManagerPermission, ])
     def qrcode(self, request, **kwargs):
         """
@@ -795,7 +780,7 @@ class PublicWeChat(APIView):
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
 
-    @custom_check_permission([ManagerPermission, ], union=False)
+    @custom_check_permission([AdminPermission, ], union=False)
     def template(self, request, **kwargs):
         """公众号模板消息"""
         this_method = self.request.method.lower()
@@ -831,10 +816,29 @@ class PublicWeChat(APIView):
                 ).parse(request.data)
                 if error:
                     return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+                user_qs = Users.objects.filter(id__in=form.user_list).only('id').prefetch_related('official_account')
+                form.pop("user_list")
+                record_id_list = []
+                for user in user_qs:
+                    try:
+                        OfficialAccountMsg.template_send(user, **form)
+                    except Exception as e:
+                        record_id_list.append(
+                            {
+                                'id': user.id,
+                                'status': 'error',
+                                'reason': str(e)
+                            }
+                        )
+                    else:
+                        record_id_list.append(
+                            {
+                                'id': user.id,
+                                'status': 'ok',
+                                'reason': '成功发送'
+                            }
+                        )
 
-                user_qs = Users.objects.filter(id__in=form.user_list).only('id', 'official_account')
-
-                OfficialAccountMsg.template_send()
             except Exception as e:
                 logger.info(traceback.format_exc())
                 return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
