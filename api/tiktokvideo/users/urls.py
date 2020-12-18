@@ -5,7 +5,7 @@ from users.views import LoginViewSet, UserBusinessViewSet, UserInfoViewSet, BusI
     UserCreatorViewSet, ManageAddressViewSet, UserInfoManagerViewSet, UserCreatorInfoManagerViewSet, \
     UserBusinessInfoManagerViewSet, BusinessInfoManagerViewSet, TeamManagerViewSet, TeamUsersManagerViewSet, \
     TeamLeaderManagerViewSet, ScriptTypeViewSet, CelebrityStyleViewSet, PublicWeChat, ManagerUserViewSet, \
-    BusStatisticalView, UserBusinessDeliveryManagerViewSet
+    BusStatisticalView, UserBusinessDeliveryManagerViewSet, TemplateMsgViewSet
 
 app_name = "users"
 login_router = DefaultRouter()
@@ -31,7 +31,7 @@ manager_router.register(r'bus-delivery', UserBusinessDeliveryManagerViewSet, bas
 
 
 official_router = DefaultRouter()
-official_router.register(r'', UserInfoManagerViewSet, basename='user_info_man')
+official_router.register(r'', TemplateMsgViewSet, basename='user_info_man')
 
 
 urlpatterns = [
