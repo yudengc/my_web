@@ -228,7 +228,6 @@ class UserPackageRelation(BaseModel):
         "users.Users",
         to_field='uid',
         on_delete=models.DO_NOTHING,
-        related_name='package_relation'
     )
     package = models.ForeignKey(
         "Package",
