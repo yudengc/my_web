@@ -854,15 +854,8 @@ class TemplateMsgViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = OfficialTemplateMsg.objects.all()
     serializer_class = TemplateMsgSerializer
     pagination_class = StandardResultsSetPagination
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ('=uid__username', 'uid__auth_base__nickname')
 
 
 class UserBusinessDeliveryManagerViewSet(viewsets.ReadOnlyModelViewSet):
