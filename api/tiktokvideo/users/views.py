@@ -963,7 +963,7 @@ class BusStatisticalView(APIView):
                     ],
                 }
                 """
-                data['total_video'].append({'date': i['date'], 'num': i['total_video'], 'name': '总拍摄视频数'})
-                data['done_video'].append({'date': i['date'], 'num': i['done_video'], 'name': '已完成视频数'})
-                data['pending_video'].append({'date': i['date'], 'num': i['pending_video'], 'name': '待交付视频数'})
+                data['total_video'].insert({'date': i['date'], 'num': i['total_video'], 'name': '总拍摄视频数'})
+                data['done_video'].insert({'date': i['date'], 'num': i['done_video'], 'name': '已完成视频数'})
+                data['pending_video'].insert({'date': i['date'], 'num': i['pending_video'], 'name': '待交付视频数'})
         return Response(data)
