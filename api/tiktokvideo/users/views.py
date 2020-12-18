@@ -750,7 +750,7 @@ class PublicWeChat(APIView):
         this_method = self.request.method.lower()
         if this_method == 'get':
             form, error = JsonParser(
-                Argument('action', filter=lambda x: x in action_lst, help="请输入正确的行为")
+                Argument('action', filter=lambda x: x in action_lst, help=f"请输入正确的行为(action): {action_lst}")
             ).parse(request.query_params)
             if error:
                 return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
@@ -768,12 +768,15 @@ class PublicWeChat(APIView):
                 return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
         elif this_method == 'post':
             form, error = JsonParser(
-                Argument('action', filter=lambda x: x in action_lst, help="请输入正确的行为")
+                Argument('action', filter=lambda x: x in action_lst, help=f"请输入正确的行为(action): {action_lst}")
             ).parse(request.data)
             if error:
                 return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+
+            # qr_secret格式: action_user.uid.hex[解析在HandleOfficialAccount中]
+            qr_secret = f"{form.action}_{self.request.user.uid.hex}"
             if form.action == 'subscribe':
-                qr_url = WeChatOfficial().get_qr_url(self.request.user.uid.hex)
+                qr_url = WeChatOfficial().get_qr_url(qr_secret)
                 redis_conn.set(f'subscribe_{self.request.user.uid.hex}', 0, 300)
                 return Response({"url": qr_url}, status=status.HTTP_200_OK)
             elif form.action == 'login':
