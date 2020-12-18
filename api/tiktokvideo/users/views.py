@@ -700,7 +700,7 @@ class PublicWeChat(APIView):
 
     def default(self, request, **kwargs):
         """
-        微信公众号回调处理
+        微信公众号回调处理(要启用了微信公众号服务器地址才生效)
         """
         this_method = self.request.method.lower()
         if this_method == 'get':
