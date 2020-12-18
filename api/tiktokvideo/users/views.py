@@ -923,6 +923,47 @@ class BusStatisticalView(APIView):
         lis = []
         s_qs = BusStatistical.objects.all()[:7]
         for s in s_qs:
+            """
+            表 给前端的格式
+             [
+                {
+                    "total_video": 10,
+                    "done_video": 1,
+                    "pending_video": 9,
+                    "date": "2020-12-17"
+                },
+                {
+                    "total_video": 9,
+                    "done_video": 1,
+                    "pending_video": 8,
+                    "date": "2020-12-16"
+                }
+            ]
+            """
             lis.append({'total_video': s.total_video, 'done_video': s.done_video,
                         'pending_video': s.pending_video, 'date': s.date})
-        return Response(lis)
+        data = lis
+        if request.query_params.get('q'):
+            data = {'total_video': [], 'done_video': [], 'pending_video': []}
+            for i in lis:
+                """
+                图 前端要的格式
+                {
+                    'total_video': [
+                        {'date': '2020-9-09', 'num': '12', 'name': '总拍摄视频数'},
+                        {'date': '2020-9-09', 'num': '12', 'name': '总拍摄视频数'}
+                    ],
+                    'done_video': [
+                        {'date': '2020-9-09', 'num': '12', 'name': '已完成视频数'},
+                        {'date': '2020-9-09', 'num': '12', 'name': '已完成视频数'}
+                    ],
+                    'pending_video': [
+                        {'date': '2020-9-09', 'num': '12', 'name': '待交付视频数'},
+                        {'date': '2020-9-09', 'num': '12', 'name': '待交付视频数'}
+                    ],
+                }
+                """
+                data['total_video'].append({'date': i['date'], 'num': i['total_video'], 'name': '总拍摄视频数'})
+                data['done_video'].append({'date': i['date'], 'num': i['done_video'], 'name': '已完成视频数'})
+                data['pending_video'].append({'date': i['date'], 'num': i['pending_video'], 'name': '待交付视频数'})
+        return Response(data)
