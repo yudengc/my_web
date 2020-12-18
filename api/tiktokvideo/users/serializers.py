@@ -1,3 +1,5 @@
+import datetime
+
 from django.db.models import Sum, F, FloatField
 from rest_framework import serializers, exceptions
 
@@ -438,5 +440,9 @@ class TemplateMsgSerializer(serializers.ModelSerializer):
     def __init__(self, obj_list, *args, **kwargs):
         for obj in obj_list:
             if obj.status == OfficialTemplateMsg.DOING:
-                pass
+                if obj.send_time + datetime.timedelta(minutes=30) < datetime.datetime.now():
+                    # 超时30min了
+                    obj.status = OfficialTemplateMsg.ERR
+                    obj.fail_reason = "超时30分钟还没执行完"
+                    obj.save()
         super(TemplateMsgSerializer, self).__init__(obj_list, *args, **kwargs)
