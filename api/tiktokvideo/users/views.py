@@ -7,6 +7,7 @@ from xml.etree.ElementTree import tostring
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
+from django.db.models import Prefetch
 from django.db.transaction import atomic
 from django.http import HttpResponse
 from django_filters import rest_framework
@@ -811,73 +812,84 @@ class PublicWeChat(APIView):
             # 发送模板消息
             try:
                 template_list = OfficialAccountMsg().get_template_list()
-                id_dict = {i.get('template_id'): i for i in template_list}
+                template_dict = {i.get('template_id'): i for i in template_list}
                 form, error = JsonParser(
-                    Argument("template_id", help="要输入模板的id噢", filter=lambda x: x in id_dict),
+                    Argument("template_id", help="要输入模板的id噢", filter=lambda x: x in template_dict),
                     Argument("user_list", help="请输入用户列表", type=list),
                     Argument("program_path", help="请输入小程序跳转地址(首页的视频链接)", type=str),
                     *[
                         Argument(i.get("field_name"), help=f"请输入{i.get('field')}{i.get('field_name')}")
                         for i in content_shape(
-                            id_dict.get(request.data.get('template_id'), {}).get("content")
+                            template_dict.get(request.data.get('template_id'), {}).get("content")
                         ) if i.get("field_name")
                     ]
                 ).parse(request.data)
                 if error:
                     return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
                 ManagerOperateTemplateMsg.objects.create(uid=self.request.user, detail_json=self.request.data)
+
                 # 这里要视执行时间改成异步操作
-                user_qs = Users.objects.filter(id__in=form.user_list).only('id').prefetch_related('official_account')
-                record_id_list = []
+                template_content = content_shape(template_dict.get(form.template_id).get("content"))
+                fill_content = []
+                title = None
+                for d in template_content:
+                    field_value = None
+                    if d['field'] == "" and d["field_name"] != "":
+                        title_arg = d["field_name"]
+                        title = form.get(title_arg)
+                        field_value = title
+                    else:
+                        if d["field_name"] != "":
+                            field_value = form.get(d["field_name"])
+                            if not title and field_value:
+                                title = field_value
+                    fill_content.append({
+                        "field": d['field'],
+                        "field_name": d['field_name'],
+                        "field_value": field_value,
+                    })
+
+                user_qs = Users.objects.filter(id__in=form.user_list).select_related('user_extra').\
+                    only('user_extra__is_subscribed').prefetch_related(Prefetch('official_account', to_attr='openid'))
                 to_create_list = []
-                # content =
+                record_id_list = []
                 for user in user_qs:
-                    to_create_list.append(
+                    record_id_list.append(user.id)
+                    off_qs = user.official_account.filter(is_activated=True, is_subscribed=True)
+                    if not off_qs.exists():
                         OfficialTemplateMsg(
                             uid=user,
                             template_id=form.template_id,
-                            title='',
-                            content=''
-                        )
-                    )
-                objs = OfficialTemplateMsg.objects.bulk_create(to_create_list)
-                form.pop()
-                for obj in objs:
-                    try:
-                        success, msg = OfficialAccountMsg.template_send(obj, **form)
-                    except Exception as e:
-                        logger.info(traceback.format_exc())
-                        obj.status = OfficialTemplateMsg.ERR
-                        obj.fail_reason = '程序执行报错'
-                        obj.save()
+                            status=OfficialTemplateMsg.ERR,
+                            title=title,
+                            fail_reason='未订阅公众号',
+                            content=fill_content
+                        ).save()
                         continue
                     else:
-                        if success:
-                            pass
-                        else:
-                            pass
+                        obj = OfficialTemplateMsg(
+                            uid=user,
+                            template_id=form.template_id,
+                            title=title,
+                            content=fill_content,
+                            account=off_qs.first()
+                        )
+                        to_create_list.append(obj)
 
-                # try:
-                #     OfficialAccountMsg.template_send(user, **form)
-                # except Exception as e:
-                #     record_id_list.append(
-                #         {
-                #             'id': user.id,
-                #             'status': 'error',
-                #             'reason': str(e)
-                #         }
-                #     )
-                # else:
-                #     record_id_list.append(
-                #         {
-                #             'id': user.id,
-                #             'status': 'ok',
-                #             'reason': '成功发送'
-                #         }
-                #     )
+                un_match_list = set(form.user_list) - set(record_id_list)  # 这些id是找不到user的
+                to_send_objs = OfficialTemplateMsg.objects.bulk_create(to_create_list)
+                form.pop('template_id')
+                form.pop('user_list')
+                for obj in to_send_objs:
+                    success = OfficialAccountMsg.template_send(obj, **form)
             except Exception as e:
                 logger.info(traceback.format_exc())
                 return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                _msg = "已成功发送"
+                if un_match_list:
+                    _msg += f",但这些人找不到:{un_match_list}"
+                return Response({"detail": _msg}, status=status.HTTP_200_OK)
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
 

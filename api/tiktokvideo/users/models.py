@@ -656,9 +656,9 @@ class OfficialTemplateMsg(models.Model):
         max_length=128
     )
 
-    content = models.CharField(
+    content = JSONField(
         verbose_name='消息内容',
-        max_length=1024
+        null=True
     )
 
     fail_reason = models.CharField(
