@@ -809,7 +809,7 @@ class PublicWeChat(APIView):
                 })
             return Response(result, status=status.HTTP_200_OK)
         elif this_method == 'post':
-            # 发送模板消息
+            # 发送模板消息, 对不起了楚兄, 我已经尽量写的比较简洁了
             try:
                 template_list = OfficialAccountMsg().get_template_list()
                 template_dict = {i.get('template_id'): i for i in template_list}
