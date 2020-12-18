@@ -9,8 +9,9 @@ import datetime
 import json
 import logging
 import re
+import traceback
 import uuid
-from typing import Union, List
+from typing import Union, List, Tuple
 from xml.etree.ElementTree import tostring
 
 import requests
@@ -21,7 +22,7 @@ from django_redis import get_redis_connection
 from redis import StrictRedis
 
 from libs.utils import trans_dict_to_xml
-from users.models import Users, OfficialAccount
+from users.models import Users, OfficialAccount, OfficialTemplateMsg
 
 conn = get_redis_connection('default')  # type: StrictRedis
 logger = logging.getLogger()
@@ -343,8 +344,6 @@ class OfficialAccountMsg(WeChatOfficial):
     """
     公众号消息发送
     """
-    s = "ufmuN9WPpCwAMJK6128mlk_0jAVYxi5R9s4R4Fw8EF0"
-    v = "gcbKpdZ92v1Ybqr8NarUEPTAjsWZT-8nkmjS8XqY-vM"
 
     def get_template_list(self) -> List:
         conn_key = 'wx_public_template'
@@ -366,37 +365,47 @@ class OfficialAccountMsg(WeChatOfficial):
         conn.set(conn_key, json.dumps(template_list, ensure_ascii=False), 86400)
         return template_list
 
-    @staticmethod
-    def template_send(this_man: Users, **data) -> Union[bool, str]:
-        pass
-# {
-#     "touser": "OPENID",
-#     "template_id": "ngqIpbwh8bUfcSsECmogfXcV14J0tQlEpBO27izEYtY",
-#     "url": "http://weixin.qq.com/download",
-#     "miniprogram": {
-#         "appid": "xiaochengxuappid12345",
-#         "pagepath": "index?foo=bar"
-#     },
-#     "data": {
-#         "first": {
-#             "value": "恭喜你购买成功！",
-#             "color": "#173177"
-#         },
-#         "keyword1": {
-#             "value": "巧克力",
-#             "color": "#173177"
-#         },
-#         "keyword2": {
-#             "value": "39.8元",
-#             "color": "#173177"
-#         },
-#         "keyword3": {
-#             "value": "2014年9月22日",
-#             "color": "#173177"
-#         },
-#         "remark": {
-#             "value": "欢迎再次购买！",
-#             "color": "#173177"
-#         }
-#     }
-# }
+    def template_send(self, obj: OfficialTemplateMsg, **kwargs) -> bool:
+        try:
+            send_url = f"https://api.weixin.qq.com/cgi-bin/message/template/send?access_token={self.get_access_token()}"
+            send_data = {
+                "touser": obj.account.openid,
+                "template_id": obj.template_id,
+                "miniprogram": {
+                    "appid": settings.APP_ID,
+                    "pagepath": kwargs.get('program_path')
+                }
+            }
+            value_data = {}
+            for d in obj.content:
+                value_data[d['field_name']] = {
+                    "value": d['field_value'],
+                    "color": "#173177"
+                }
+            send_data['data'] = value_data
+            obj.msg_struct = send_data
+            header = {
+                "Content-Type": "application/json"
+            }
+            rep = requests.post(send_url, json=send_data, headers=header)
+            response = rep.json()
+            if str(response.get('errcode')) == '40001':
+                # 删掉token缓存再执行一次
+                conn.delete('wx_access_token')
+                send_url = f"https://api.weixin.qq.com/cgi-bin/message/template/send?access_token={self.get_access_token()}"
+                rep = requests.post(send_url, json=send_data, headers=header)
+                response = rep.json()
+
+            assert str(response.get('errcode')) == '0', response.get('errmsg')
+        except AssertionError as e:
+            obj.status = OfficialTemplateMsg.ERR
+            obj.fail_reason = str(e)
+        except Exception as e:
+            logger.error(traceback.format_exc())
+            obj.status = OfficialTemplateMsg.ERR
+            obj.fail_reason = '程序执行报错'
+        else:
+            obj.status = OfficialTemplateMsg.DONE
+        finally:
+            obj.save()
+            return True if obj.status == OfficialTemplateMsg.DONE else False

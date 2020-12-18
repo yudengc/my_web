@@ -7,6 +7,7 @@ from xml.etree.ElementTree import tostring
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
+from django.db.models import Prefetch
 from django.db.transaction import atomic
 from django.http import HttpResponse
 from django_filters import rest_framework
@@ -25,6 +26,7 @@ from wechatpy.utils import check_signature
 from account.models import CreatorAccount
 from libs.common.permission import AllowAny, ManagerPermission, CreatorPermission, AdminPermission, \
     custom_check_permission
+from libs.pagination import StandardResultsSetPagination
 from libs.parser import JsonParser, Argument
 from libs.utils import trans_xml_to_dict, trans_dict_to_xml, content_shape
 from permissions.models import UserGroups
@@ -35,7 +37,7 @@ from tiktokvideo.base import APP_ID, SECRET
 from users.filter import TeamFilter, UserInfoManagerFilter, UserCreatorInfoManagerFilter, UserBusinessInfoManagerFilter, \
     TeamUsersManagerTeamFilter, ManagerUserFilter, UserBusinessDeliveryManagerFilter
 from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address, \
-    UserCreator, BusStatistical
+    UserCreator, OfficialTemplateMsg, BusStatistical, ManagerOperateTemplateMsg
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, UserInfoSerializer, \
@@ -45,7 +47,7 @@ from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializ
     BusinessInfoManagerSerializer, TeamManagerSerializer, TeamManagerCreateUpdateSerializer, TeamUserManagerSerializer, \
     TeamUserLeaderManagerSerializer, TeamUserManagerUpdateSerializer, TeamLeaderManagerSerializer, \
     TeamLeaderManagerUpdateSerializer, CelebrityStyleSerializer, ScriptTypeSerializer, ManagerUserSerializer, \
-    ManagerUserUpdateSerializer, UserBusinessDeliveryManagerSerializer
+    ManagerUserUpdateSerializer, UserBusinessDeliveryManagerSerializer, TemplateMsgSerializer
 
 from users.services import WXBizDataCrypt, WeChatApi, InviteCls, WeChatOfficial, HandleOfficialAccount, \
     OfficialAccountMsg
@@ -699,7 +701,7 @@ class PublicWeChat(APIView):
 
     def default(self, request, **kwargs):
         """
-        微信公众号回调处理
+        微信公众号回调处理(要启用了微信公众号服务器地址才生效)
         """
         this_method = self.request.method.lower()
         if this_method == 'get':
@@ -749,10 +751,11 @@ class PublicWeChat(APIView):
         this_method = self.request.method.lower()
         if this_method == 'get':
             form, error = JsonParser(
-                Argument('action', filter=lambda x: x in action_lst, help="请输入正确的行为")
+                Argument('action', filter=lambda x: x in action_lst, help=f"请输入正确的行为(action): {action_lst}")
             ).parse(request.query_params)
             if error:
                 return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+
             if form.action == 'subscribe':
                 key = f'subscribe_{self.request.user.uid.hex}'
                 if redis_conn.exists(key):
@@ -765,14 +768,18 @@ class PublicWeChat(APIView):
                     return Response({"detail": 'timeout'}, status=status.HTTP_200_OK)
             elif form.action == 'login':
                 return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
+
         elif this_method == 'post':
             form, error = JsonParser(
-                Argument('action', filter=lambda x: x in action_lst, help="请输入正确的行为")
+                Argument('action', filter=lambda x: x in action_lst, help=f"请输入正确的行为(action): {action_lst}")
             ).parse(request.data)
             if error:
                 return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+
+            # qr_secret格式: action_user.uid.hex[解析在HandleOfficialAccount中]
+            qr_secret = f"{form.action}_{self.request.user.uid.hex}"
             if form.action == 'subscribe':
-                qr_url = WeChatOfficial().get_qr_url(self.request.user.uid.hex)
+                qr_url = WeChatOfficial().get_qr_url(qr_secret)
                 redis_conn.set(f'subscribe_{self.request.user.uid.hex}', 0, 300)
                 return Response({"url": qr_url}, status=status.HTTP_200_OK)
             elif form.action == 'login':
@@ -785,6 +792,7 @@ class PublicWeChat(APIView):
         """公众号模板消息"""
         this_method = self.request.method.lower()
         if this_method == 'get':
+            # 获取所有模板
             try:
                 template_list = OfficialAccountMsg().get_template_list()
             except Exception as e:
@@ -801,49 +809,99 @@ class PublicWeChat(APIView):
                 })
             return Response(result, status=status.HTTP_200_OK)
         elif this_method == 'post':
+            # 发送模板消息
             try:
                 template_list = OfficialAccountMsg().get_template_list()
-                id_dict = {i.get('template_id'): i for i in template_list}
+                template_dict = {i.get('template_id'): i for i in template_list}
                 form, error = JsonParser(
-                    Argument("template_id", help="要输入模板的id噢", filter=lambda x: x in id_dict),
+                    Argument("template_id", help="要输入模板的id噢", filter=lambda x: x in template_dict),
                     Argument("user_list", help="请输入用户列表", type=list),
+                    Argument("program_path", help="请输入小程序跳转地址(首页的视频链接)", type=str),
                     *[
                         Argument(i.get("field_name"), help=f"请输入{i.get('field')}{i.get('field_name')}")
                         for i in content_shape(
-                            id_dict.get(request.data.get('id')).get("content")
+                            template_dict.get(request.data.get('template_id'), {}).get("content")
                         ) if i.get("field_name")
                     ]
                 ).parse(request.data)
                 if error:
                     return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
-                user_qs = Users.objects.filter(id__in=form.user_list).only('id').prefetch_related('official_account')
-                form.pop("user_list")
+                ManagerOperateTemplateMsg.objects.create(uid=self.request.user, detail_json=self.request.data)
+
+                # 这里要视执行时间改成异步操作
+                template_content = content_shape(template_dict.get(form.template_id).get("content"))
+                fill_content = []
+                title = None
+                for d in template_content:
+                    field_value = None
+                    if d['field'] == "" and d["field_name"] != "":
+                        title_arg = d["field_name"]
+                        title = form.get(title_arg)
+                        field_value = title
+                    else:
+                        if d["field_name"] != "":
+                            field_value = form.get(d["field_name"])
+                            if not title and field_value:
+                                title = field_value
+                    fill_content.append({
+                        "field": d['field'],
+                        "field_name": d['field_name'],
+                        "field_value": field_value,
+                    })
+
+                user_qs = Users.objects.filter(id__in=form.user_list).select_related('user_extra').\
+                    only('user_extra__is_subscribed').prefetch_related(Prefetch('official_account', to_attr='openid'))
+                to_create_list = []
                 record_id_list = []
                 for user in user_qs:
-                    try:
-                        OfficialAccountMsg.template_send(user, **form)
-                    except Exception as e:
-                        record_id_list.append(
-                            {
-                                'id': user.id,
-                                'status': 'error',
-                                'reason': str(e)
-                            }
-                        )
+                    record_id_list.append(user.id)
+                    off_qs = user.official_account.filter(is_activated=True, is_subscribed=True)
+                    if not off_qs.exists():
+                        OfficialTemplateMsg(
+                            uid=user,
+                            template_id=form.template_id,
+                            status=OfficialTemplateMsg.ERR,
+                            title=title,
+                            fail_reason='未订阅公众号',
+                            content=fill_content
+                        ).save()
+                        continue
                     else:
-                        record_id_list.append(
-                            {
-                                'id': user.id,
-                                'status': 'ok',
-                                'reason': '成功发送'
-                            }
+                        obj = OfficialTemplateMsg(
+                            uid=user,
+                            template_id=form.template_id,
+                            title=title,
+                            content=fill_content,
+                            account=off_qs.first()
                         )
+                        to_create_list.append(obj)
 
+                un_match_list = set(form.user_list) - set(record_id_list)  # 这些id是找不到user的
+                to_send_objs = OfficialTemplateMsg.objects.bulk_create(to_create_list)
+                form.pop('template_id')
+                form.pop('user_list')
+                for obj in to_send_objs:
+                    success = OfficialAccountMsg.template_send(obj, **form)
             except Exception as e:
                 logger.info(traceback.format_exc())
                 return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                _msg = "已成功发送"
+                if un_match_list:
+                    _msg += f",但这些人找不到:{un_match_list}"
+                return Response({"detail": _msg}, status=status.HTTP_200_OK)
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
+
+
+class TemplateMsgViewSet(viewsets.ReadOnlyModelViewSet):
+    """历史公众号模板消息"""
+    permission_classes = (AdminPermission,)
+    queryset = OfficialTemplateMsg.objects.all()
+    serializer_class = TemplateMsgSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = (rest_framework.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ('=uid__username', 'uid__auth_base__nickname')
 
 
 class UserBusinessDeliveryManagerViewSet(viewsets.ReadOnlyModelViewSet):

@@ -1,5 +1,6 @@
 import json
 import logging
+import traceback
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -8,6 +9,7 @@ from django.utils.deprecation import MiddlewareMixin
 from django_redis import get_redis_connection
 from redis import StrictRedis
 from rest_framework import status, exceptions
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
@@ -73,12 +75,16 @@ class FrozenCheckMiddleware(MiddlewareMixin):
                 authenticators=[JSONWebTokenAuthentication()],
             )
             request._req = req
-        if isinstance(req.user, Users):
-            if req.user.status == Users.FROZEN:
-                # 冻结用户的所有 post, put, patch, delete 请求都屏蔽了
-                if request.method.lower() in ['post', 'put', 'patch', 'delete']:
-                    return JsonResponse({"detail": "该账号已被冻结, 无法执行该操作, 解冻请联系客服"},
-                                        status=status.HTTP_206_PARTIAL_CONTENT)
+        try:
+            if isinstance(req.user, Users):
+                if req.user.status == Users.FROZEN:
+                    # 冻结用户的所有 post, put, patch, delete 请求都屏蔽了
+                    if request.method.lower() in ['post', 'put', 'patch', 'delete']:
+                        return JsonResponse({"detail": "该账号已被冻结, 无法执行该操作, 解冻请联系客服"},
+                                            status=status.HTTP_206_PARTIAL_CONTENT)
+        except AuthenticationFailed as e:
+            logger.error(traceback.format_exc())
+            raise exceptions.AuthenticationFailed(detail="签名认证失败, 请重新登录")
         response = response or self.get_response(request)
         return response
 

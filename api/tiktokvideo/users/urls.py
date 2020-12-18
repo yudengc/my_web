@@ -5,7 +5,7 @@ from users.views import LoginViewSet, UserBusinessViewSet, UserInfoViewSet, BusI
     UserCreatorViewSet, ManageAddressViewSet, UserInfoManagerViewSet, UserCreatorInfoManagerViewSet, \
     UserBusinessInfoManagerViewSet, BusinessInfoManagerViewSet, TeamManagerViewSet, TeamUsersManagerViewSet, \
     TeamLeaderManagerViewSet, ScriptTypeViewSet, CelebrityStyleViewSet, PublicWeChat, ManagerUserViewSet, \
-    BusStatisticalView, UserBusinessDeliveryManagerViewSet
+    BusStatisticalView, UserBusinessDeliveryManagerViewSet, TemplateMsgViewSet
 
 app_name = "users"
 login_router = DefaultRouter()
@@ -30,6 +30,10 @@ manager_router.register(r'manager-user', ManagerUserViewSet, basename='manager_u
 manager_router.register(r'bus-delivery', UserBusinessDeliveryManagerViewSet, basename='manager_user')
 
 
+official_router = DefaultRouter()
+official_router.register(r'', TemplateMsgViewSet, basename='user_info_man')
+
+
 urlpatterns = [
     path(r'', include(login_router.urls)),
     path(r'manager/', include(manager_router.urls)),
@@ -38,5 +42,6 @@ urlpatterns = [
 
     # 公众号相关
     path(r'wechat-public/', PublicWeChat.as_view()),
+    path(r'wechat-public/msg/', include(official_router.urls)),
     path(r'wechat-public/<str:_action>/', PublicWeChat.as_view()),
 ]
