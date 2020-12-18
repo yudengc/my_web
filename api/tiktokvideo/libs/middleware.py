@@ -84,7 +84,8 @@ class FrozenCheckMiddleware(MiddlewareMixin):
                                             status=status.HTTP_206_PARTIAL_CONTENT)
         except AuthenticationFailed as e:
             logger.error(traceback.format_exc())
-            raise exceptions.AuthenticationFailed(detail="签名认证失败, 请重新登录")
+            return JsonResponse({"detail": "签名认证失败, 请重新登录"},
+                                status=status.HTTP_401_UNAUTHORIZED)
         response = response or self.get_response(request)
         return response
 
