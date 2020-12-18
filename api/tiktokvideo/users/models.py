@@ -597,8 +597,9 @@ class ManagerOperateTemplateMsg(models.Model):
         related_name='operate_template_msg',
     )
 
-    user_list = JSONField(
-        verbose_name='发送的用户列表'
+    detail_json = JSONField(
+        verbose_name='请求的参数列表',
+        null=True,
     )
 
     create_time = models.DateTimeField(
@@ -625,7 +626,8 @@ class OfficialTemplateMsg(models.Model):
         # 未必是这个人的本号
         "OfficialAccount",
         on_delete=models.DO_NOTHING,
-        related_name='official_template_msg'
+        related_name='official_template_msg',
+        null=True
     )
 
     msg_struct = JSONField(
@@ -640,7 +642,8 @@ class OfficialTemplateMsg(models.Model):
             (DOING, '发送中'),
             (DONE, '发送成功'),
             (ERR, '发送失败'),
-        )
+        ),
+        default=DOING
     )
 
     template_id = models.CharField(

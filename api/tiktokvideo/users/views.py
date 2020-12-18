@@ -36,7 +36,7 @@ from tiktokvideo.base import APP_ID, SECRET
 from users.filter import TeamFilter, UserInfoManagerFilter, UserCreatorInfoManagerFilter, UserBusinessInfoManagerFilter, \
     TeamUsersManagerTeamFilter, ManagerUserFilter, UserBusinessDeliveryManagerFilter
 from users.models import Users, UserExtra, UserBase, Team, UserBusiness, ScriptType, CelebrityStyle, Address, \
-    UserCreator, OfficialTemplateMsg, BusStatistical
+    UserCreator, OfficialTemplateMsg, BusStatistical, ManagerOperateTemplateMsg
 from libs.jwt.serializers import CusTomSerializer
 from libs.jwt.services import JwtServers
 from users.serializers import UserBusinessSerializer, UserBusinessCreateSerializer, UserInfoSerializer, \
@@ -754,6 +754,7 @@ class PublicWeChat(APIView):
             ).parse(request.query_params)
             if error:
                 return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+
             if form.action == 'subscribe':
                 key = f'subscribe_{self.request.user.uid.hex}'
                 if redis_conn.exists(key):
@@ -766,6 +767,7 @@ class PublicWeChat(APIView):
                     return Response({"detail": 'timeout'}, status=status.HTTP_200_OK)
             elif form.action == 'login':
                 return Response({"detail": "功能暂未开放"}, status=status.HTTP_400_BAD_REQUEST)
+
         elif this_method == 'post':
             form, error = JsonParser(
                 Argument('action', filter=lambda x: x in action_lst, help=f"请输入正确的行为(action): {action_lst}")
@@ -813,37 +815,66 @@ class PublicWeChat(APIView):
                 form, error = JsonParser(
                     Argument("template_id", help="要输入模板的id噢", filter=lambda x: x in id_dict),
                     Argument("user_list", help="请输入用户列表", type=list),
+                    Argument("program_path", help="请输入小程序跳转地址(首页的视频链接)", type=str),
                     *[
                         Argument(i.get("field_name"), help=f"请输入{i.get('field')}{i.get('field_name')}")
                         for i in content_shape(
-                            id_dict.get(request.data.get('id')).get("content")
+                            id_dict.get(request.data.get('template_id'), {}).get("content")
                         ) if i.get("field_name")
                     ]
                 ).parse(request.data)
                 if error:
                     return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+                ManagerOperateTemplateMsg.objects.create(uid=self.request.user, detail_json=self.request.data)
+                # 这里要视执行时间改成异步操作
                 user_qs = Users.objects.filter(id__in=form.user_list).only('id').prefetch_related('official_account')
-                form.pop("user_list")
                 record_id_list = []
+                to_create_list = []
+                # content =
                 for user in user_qs:
+                    to_create_list.append(
+                        OfficialTemplateMsg(
+                            uid=user,
+                            template_id=form.template_id,
+                            title='',
+                            content=''
+                        )
+                    )
+                objs = OfficialTemplateMsg.objects.bulk_create(to_create_list)
+                form.pop()
+                for obj in objs:
                     try:
-                        OfficialAccountMsg.template_send(user, **form)
+                        success, msg = OfficialAccountMsg.template_send(obj, **form)
                     except Exception as e:
-                        record_id_list.append(
-                            {
-                                'id': user.id,
-                                'status': 'error',
-                                'reason': str(e)
-                            }
-                        )
+                        logger.info(traceback.format_exc())
+                        obj.status = OfficialTemplateMsg.ERR
+                        obj.fail_reason = '程序执行报错'
+                        obj.save()
+                        continue
                     else:
-                        record_id_list.append(
-                            {
-                                'id': user.id,
-                                'status': 'ok',
-                                'reason': '成功发送'
-                            }
-                        )
+                        if success:
+                            pass
+                        else:
+                            pass
+
+                # try:
+                #     OfficialAccountMsg.template_send(user, **form)
+                # except Exception as e:
+                #     record_id_list.append(
+                #         {
+                #             'id': user.id,
+                #             'status': 'error',
+                #             'reason': str(e)
+                #         }
+                #     )
+                # else:
+                #     record_id_list.append(
+                #         {
+                #             'id': user.id,
+                #             'status': 'ok',
+                #             'reason': '成功发送'
+                #         }
+                #     )
             except Exception as e:
                 logger.info(traceback.format_exc())
                 return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
