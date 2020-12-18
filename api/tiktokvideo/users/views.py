@@ -809,7 +809,7 @@ class PublicWeChat(APIView):
                 })
             return Response(result, status=status.HTTP_200_OK)
         elif this_method == 'post':
-            # 发送模板消息
+            # 发送模板消息, 对不起了楚兄, 我已经尽量写的比较简洁了
             try:
                 template_list = OfficialAccountMsg().get_template_list()
                 template_dict = {i.get('template_id'): i for i in template_list}
@@ -884,7 +884,7 @@ class PublicWeChat(APIView):
                     success = OfficialAccountMsg.template_send(obj, **form)
             except Exception as e:
                 logger.info(traceback.format_exc())
-                return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({"detail": '服务器开小差了!'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
                 _msg = "已成功发送"
                 if un_match_list:
