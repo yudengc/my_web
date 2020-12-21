@@ -136,9 +136,14 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             Argument('example1', type=str, required=False, help='请输入 example1(参考视频1)'),
             Argument('example2', type=str, required=False, help='请输入 example2(参考视频2)'),
             Argument('example3', type=str, required=False, help='请输入 example3(参考视频3)'),
+            Argument('return_ways', required=False, help='请输入 return_ways(0顺丰到付,1现付)', filter=lambda x: x in [0, 1]),
             # Argument('goods_images', help='请输入 goods_images(商品商品主图)'),
             Argument('action', type=int, help='请输入 action(发布操作 0保存/1发布)'),
-            Argument('goods_link', help='请输入 goods_link(商品链接)', handler=lambda x: x.strip()),
+            Argument('goods_link', help='请输入 goods_link(商品链接)', handler=lambda x: x.strip(), required=False),
+            Argument('goods_title', help='请输入 goods_title(商品链接): 没有传goods_link的时候要给这个',
+                     handler=lambda x: x.strip(), required=lambda x: x.get('goods_link', None) is None,),
+            Argument('goods_images', help='请输入 goods_images(商品链接): 没有传goods_link的时候要给这个',
+                     handler=lambda x: x.strip(), required=lambda x: x.get('goods_link', None) is None,),
             Argument('category', help='请输入 category(商品品类id)', type=int,
                      filter=lambda x: GoodsCategory.objects.filter(id=x).exists(),
                      handler=lambda x: GoodsCategory.objects.get(id=x)),
@@ -150,7 +155,8 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
 
-        form['goods_title'], form['goods_images'], form['goods_channel'] = self.validate_goods_data(form.goods_link)
+        if 'goods_link' in form:
+            form['goods_title'], form['goods_images'], form['goods_channel'] = self.validate_goods_data(form.goods_link)
 
         if 'address' in form:
             form['receiver_name'] = form.address.name
