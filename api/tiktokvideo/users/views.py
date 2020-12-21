@@ -880,15 +880,20 @@ class PublicWeChat(APIView):
                 to_send_objs = OfficialTemplateMsg.objects.bulk_create(to_create_list)
                 form.pop('template_id')
                 form.pop('user_list')
+                fail_list = []
                 for obj in to_send_objs:
                     success = OfficialAccountMsg.template_send(obj, **form)
+                    if not success:
+                        fail_list.append(obj.uid.id)
             except Exception as e:
                 logger.info(traceback.format_exc())
                 return Response({"detail": '服务器开小差了!'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
                 _msg = "已成功发送"
                 if un_match_list:
-                    _msg += f",但这些人找不到:{un_match_list}"
+                    _msg += f",但这些人找不到:{list(un_match_list)}"
+                if fail_list:
+                    _msg += f",这些人发送失败:{fail_list}"
                 return Response({"detail": _msg}, status=status.HTTP_200_OK)
         else:
             raise exceptions.MethodNotAllowed(this_method.upper())
