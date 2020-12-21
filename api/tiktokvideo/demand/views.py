@@ -458,6 +458,11 @@ class test(APIView):
         return Response('ok')
 
     def get(self, request):
+        # from qiniu import Auth
+        # from tiktokvideo.base import QINIU_ACCESS_KEY, QINIU_SECRET_KEY
+        # auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+        # return Response(auth.private_download_url(
+        #     'https://cdn.darentui.com/songshuVideo/video_1607072492210.mp4' + '?vframe/jpg/offset/1'))
         # hash_key = hash('askjhngkjadhfghiughkjfgnkjn234hiu2h98ry298y4234asdva')
         # conn_key = f'validate_{hash_key}'
         # if not conn.exists(conn_key):
@@ -465,6 +470,7 @@ class test(APIView):
         # else:
         #     conn.delete(conn_key)
         #     return Response(0, status=status.HTTP_200_OK)
+
         a = time.time()
         # u_lis = []
         for v in HomePageVideo.objects.all():
@@ -475,5 +481,19 @@ class test(APIView):
             v.save()
             # u_lis.append(v)
         # HomePageVideo.objects.bulk_update(u_lis, ['like', 'comment', 'share_num'])
-        print(time.time() - a)
+        logger.info(time.time() - a)
+        return Response('ok', status=status.HTTP_200_OK)
+
+    def put(self, request):
+        a = time.time()
+        u_lis = []
+        for v in HomePageVideo.objects.all():
+            import random
+            v.like = random.randint(5000, 50000)
+            v.comment = random.randint(1000, 20000)
+            v.share_num = random.randint(1000, 8888)
+            # v.save()
+            u_lis.append(v)
+        HomePageVideo.objects.bulk_update(u_lis, ['like', 'comment', 'share_num'])
+        logger.info(time.time() - a)
         return Response('ok', status=status.HTTP_200_OK)
