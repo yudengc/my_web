@@ -136,6 +136,7 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
             Argument('example1', type=str, required=False, help='请输入 example1(参考视频1)'),
             Argument('example2', type=str, required=False, help='请输入 example2(参考视频2)'),
             Argument('example3', type=str, required=False, help='请输入 example3(参考视频3)'),
+            Argument('return_ways', required=False, help='请输入 return_ways(0顺丰到付,1现付)', filter=lambda x: x in [0, 1]),
             # Argument('goods_images', help='请输入 goods_images(商品商品主图)'),
             Argument('action', type=int, help='请输入 action(发布操作 0保存/1发布)'),
             Argument('goods_link', help='请输入 goods_link(商品链接)', handler=lambda x: x.strip(), required=False),
