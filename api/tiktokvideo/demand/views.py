@@ -150,7 +150,8 @@ class VideoNeededViewSet(viewsets.ModelViewSet):
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
 
-        form['goods_title'], form['goods_images'], form['goods_channel'] = self.validate_goods_data(form.goods_link)
+        if 'goods_link' in form:
+            form['goods_title'], form['goods_images'], form['goods_channel'] = self.validate_goods_data(form.goods_link)
 
         if 'address' in form:
             form['receiver_name'] = form.address.name
