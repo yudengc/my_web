@@ -17,19 +17,24 @@ simplejson==3.16.0
 django-cors-headers==2.4.0
 
 django-redis==4.9.0
+
 redis==2.10.6
 
 celery==4.2.1
 
+kombu==4.2.0
+
 jsonschema==2.6.0
 
 python-alipay-sdk
+
 Crypto
+
 pycryptodomex
 
 requests
 
-lxml
+# lxml
 
 django-filter==2.2.0
 
@@ -37,3 +42,14 @@ bs4
 
 django-safedelete==0.5.4
 
+django-ckeditor
+
+simpleui
+
+Pillow
+
+demjson
+
+wechatpy
+
+django-extensions

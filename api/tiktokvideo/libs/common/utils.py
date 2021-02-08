@@ -8,7 +8,7 @@
 import random
 import string
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def dict_to_xml(dict_data):
@@ -44,6 +44,14 @@ def get_out_trade_no():
     """
     out_trade_no = datetime.now().__format__('%Y%m%d%H%M%S%f')
     return out_trade_no
+
+
+def get_application_order():
+    """
+    获取申请订单号
+    :return:
+    """
+    return 'vo' + datetime.now().__format__('%Y%m%d%H%M%S%f') + "".join(random.choices(string.digits, k=5))
 
 
 def get_nonce_str():
@@ -94,3 +102,17 @@ def get_iCode(n=4, alpha=False):
             num = random.choice([num, upper_alpha, lower_alpha])
         s = s + str(num)
     return s
+
+
+def get_last_year_month():
+    """获取上个月的年月"""
+    today = datetime.today().date()
+    first = today.replace(day=1)
+    last_date = first - timedelta(days=1)
+    return last_date.year, last_date.month
+
+
+def get_first_and_now():
+    """获取本月第一天和此刻时间"""
+    now = datetime.now()
+    return datetime(now.year, now.month, 1), now

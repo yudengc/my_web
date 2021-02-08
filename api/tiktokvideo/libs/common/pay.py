@@ -12,7 +12,7 @@ import requests
 import logging
 
 from libs.common import utils
-from tiktokdata.config.settings.base import APP_ID, MCH_ID, MCH_KEY, PAY_NOTIFY_URL, REFUND_NOTIFY_URL
+from tiktokvideo.base import APP_ID, MCH_ID, MCH_KEY, PAY_NOTIFY_URL
 
 logger = logging.getLogger()
 
@@ -37,19 +37,20 @@ class WeChatPay(Payment):
     def __init__(self):
         super(WeChatPay, self).__init__()
 
-    def pay(self, money, client_ip, order_number, openid):
+    def pay(self, money, client_ip, order_number, openid, attach=''):
         """
         统一下单
         :param money: 金额
         :param client_ip: ip地址
         :param order_number: 订单号
         :param openid: 用户openid
+        :param attach: 自定义参数
         :return:
         """
         # 拿到封装好的xml数据
         sign_obj = GenerateSign()
         body_data = sign_obj.get_body_data(spbill_create_ip=client_ip, out_trade_no=order_number, total_fee=money,
-                                           openid=openid)
+                                           openid=openid, attach=attach)
         # 获取时间戳
         timestamp = str(int(time.time()))
         # 请求微信接口下单
@@ -57,7 +58,6 @@ class WeChatPay(Payment):
                                  headers={'Content-Type': 'text/xml;charset=utf-8'})
         # 返回数据为xml,将其转为字典
         content = utils.xml_to_dict(response.content)
-        print(content)
         logger.info(f'微信支付接口返回数据{content}')
         if content["return_code"] == 'SUCCESS':
             # 获取预支付交易会话标识
@@ -148,12 +148,12 @@ class GenerateSign:
             }
         else:
             extra_dict = {
-                "body": '松鼠数据-购买会员',
+                "body": '松鼠短视频-购买套餐',
                 "notify_url": PAY_NOTIFY_URL,
                 "trade_type": 'JSAPI',
+                "attach": kwargs.get('attach'),
             }
         dict_data = {**kwargs, **params, **extra_dict}
         sign = self.pay_sign(dict_data)
         dict_data['sign'] = sign
-        print(dict_data)
         return utils.dict_to_xml(dict_data)
